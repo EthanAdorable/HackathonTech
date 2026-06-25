@@ -98,6 +98,7 @@ assert.match(appComponent, /aria-label="Search messages"/, "Messages search inpu
 assert.match(appComponent, /aria-label="Message"/, "Message composer input should have an accessible name");
 assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
 assert.match(appComponent, /aria-pressed=\{thread\.title === selectedThread\.title\}/, "Message thread buttons should expose selected state");
+assert.doesNotMatch(appComponent, /className="thread-summary"/, "Messages chat panel should not duplicate the selected thread preview");
 assert.match(appComponent, /aria-label="Send Message"/, "Icon-only message send button should have an accessible name");
 assert.match(appComponent, /notificationsOpen/, "Topbar notification bell should open prototype alerts");
 assert.match(globalCss, /\.notification-popover/, "Topbar notification alerts should be styled as a popover");
