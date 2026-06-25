@@ -660,13 +660,16 @@ function DashboardView({
 }
 
 function getDashboardStats(role: Role, applications: EventApplication[], queueCount: number) {
-  if (role === "Student Officer") {
-    return { pending: 3, needsAction: 2, approved: 7, messages: 4 };
-  }
+  const pending = role === "Student Officer"
+    ? applications.filter((app) => ["Submitted to SADU", "Under Review", "Resubmitted"].includes(app.status)).length
+    : queueCount;
+  const needsAction = applications.filter((app) =>
+    ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"].includes(app.status),
+  ).length;
 
   return {
-    pending: queueCount,
-    needsAction: applications.filter((app) => app.status === "Revision Requested").length,
+    pending,
+    needsAction,
     approved: applications.filter((app) => app.status === "SADU Approved").length,
     messages: applications.reduce((sum, app) => sum + app.messages.length, 0),
   };

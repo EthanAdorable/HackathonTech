@@ -44,9 +44,10 @@ const railwayConfig = readFileSync(new URL("../railway.json", import.meta.url), 
 const startScript = readFileSync(new URL("../scripts/start.mjs", import.meta.url), "utf8");
 assert.match(
   appComponent,
-  /return \{ pending: 3, needsAction: 2, approved: 7, messages: 4 \};/,
-  "student dashboard summary metrics should stay aligned with the reference screen",
+  /\["Submitted to SADU", "Under Review", "Resubmitted"\]\.includes\(app\.status\)/,
+  "student dashboard pending metric should derive from current application statuses",
 );
+assert.match(appComponent, /applications\.reduce\(\(sum, app\) => sum \+ app\.messages\.length, 0\)/, "dashboard message metric should derive from current message data");
 assert.match(authRoute, /NextAuth\(authOptions\)/, "NextAuth route should use the shared auth options");
 assert.match(authConfig, /CredentialsProvider/, "NextAuth credentials provider should be wired for TAMS Access");
 assert.match(authConfig, /isDemoAuthEnabled/, "NextAuth demo credentials should be gated for public deploys");
@@ -69,6 +70,8 @@ assert.match(appComponent, /Student Org Officer/, "UI role labels should match t
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
 assert.match(appComponent, /formatDashboardDate\(applications\)/, "Dashboard date should derive from current application data");
 assert.doesNotMatch(appComponent, /Thursday, June 19, 2025/, "Dashboard date should not be stale hardcoded copy");
+assert.doesNotMatch(appComponent, /return \{ pending: 3, needsAction: 2, approved: 7, messages: 4 \}/, "Dashboard stats should not be hardcoded for student officers");
+assert.match(appComponent, /const pending = role === "Student Officer"/, "Dashboard pending count should derive from visible student data");
 assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");
 assert.match(appComponent, /aria-pressed=\{onlyActionItems\}/, "Dashboard filter button should expose pressed state");
 assert.match(appComponent, /disabled=\{!onlyActionItems\} onClick=\{\(\) => setOnlyActionItems\(false\)\}/, "Dashboard View All should clear the action filter instead of opening an arbitrary row");
