@@ -104,6 +104,7 @@ assert.match(appComponent, /className="guide-output" role="status" aria-live="po
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
+assert.match(readFileSync("scripts/setup-railway.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED:\s*"false"/, "Railway setup should disable demo auth for public deployments");
 assert.match(packageJson, /"convex:codegen": "convex codegen --typecheck enable"/, "Convex codegen should be available as a checked script");
 assert.match(convexSetup, /Generate Convex client types/, "Convex setup should generate official client types after deployment selection");
 assert.ok(existsSync("convex/_generated/api.js"), "Convex generated runtime API should be committed");

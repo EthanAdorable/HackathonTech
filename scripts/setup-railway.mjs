@@ -65,7 +65,7 @@ function isLoopbackUrl(value) {
 let nextAuthUrl = appUrl || envValue("NEXTAUTH_URL");
 const nextAuthUrlIsLoopback = nextAuthUrl && isLoopbackUrl(nextAuthUrl);
 
-if (!dryRun && nextAuthUrlIsLoopback) {
+if (nextAuthUrlIsLoopback) {
   if (deploy) {
     console.error("Refusing to deploy with Railway NEXTAUTH_URL set to a localhost address.");
     console.error("Pass --app-url https://<railway-domain> or set TAMS_RAILWAY_APP_URL after Railway assigns a public domain.");
@@ -108,6 +108,7 @@ run("Create/link dedicated Railway project", "railway", [
 const variables = {
   NEXTAUTH_SECRET: envValue("NEXTAUTH_SECRET"),
   NEXTAUTH_URL: nextAuthUrl,
+  TAMS_DEMO_AUTH_ENABLED: "false",
   OPENAI_MODEL: envValue("OPENAI_MODEL") || "gpt-4o-mini",
   NEXT_PUBLIC_CONVEX_URL: envValue("NEXT_PUBLIC_CONVEX_URL"),
   OPENAI_API_KEY: envValue("OPENAI_API_KEY"),
