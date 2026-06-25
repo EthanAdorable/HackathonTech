@@ -122,6 +122,7 @@ assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway projec
 assert.match(convexSetup, /const project = .*"tams-hub-prototype"/, "Convex setup should default to the dedicated prototype project");
 assert.match(convexSetup, /Missing Convex \$\{label\} value/, "Convex setup should reject missing project, team, or deployment argument values");
 assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway setup should default to the dedicated prototype project");
+assert.match(railwaySetup, /Missing Railway \$\{label\} value/, "Railway setup should reject missing project or workspace argument values");
 assert.match(railwaySetup, /function isHttpUrl/, "Railway setup should validate public callback URLs before setting NEXTAUTH_URL");
 assert.match(railwaySetup, /absolute http\(s\) URL/, "Railway setup should reject missing or malformed app URLs");
 assert.match(railwaySetup, /TAMS_DEMO_AUTH_ENABLED:\s*"false"/, "Railway setup should disable demo auth for public deployments");

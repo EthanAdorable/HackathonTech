@@ -35,6 +35,16 @@ Environment read from process env or .env.local:
 
 const localEnv = readLocalEnv();
 
+for (const [label, value] of [
+  ["project", project],
+  ["workspace", workspace],
+]) {
+  if (value === "true") {
+    console.error(`Missing Railway ${label} value. Re-run with --${label} <value>.`);
+    process.exit(1);
+  }
+}
+
 function readLocalEnv() {
   if (!existsSync(".env.local")) return {};
   return Object.fromEntries(
