@@ -86,7 +86,7 @@ assert.match(globalCss, /\.table-scroll\s*\{[\s\S]*overflow-x: auto/, "Dashboard
 assert.match(globalCss, /\.guide-alert\s*\{[\s\S]*grid-template-columns: 1fr/, "Guide alert should stack at the mobile breakpoint");
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
 assert.match(nextConfig, /devIndicators:\s*false/, "Local demos should hide the Next.js dev indicator for reference-clean screenshots");
-assert.match(appComponent, /\{"\\u2190"\} Back<\/button>/, "Verification back controls should use the reference left-arrow affordance");
+assert.match(appComponent, /<ArrowLeft size=\{16\} aria-hidden="true" \/> Back/, "Verification back controls should use the shared Lucide icon set");
 assert.match(appComponent, /aria-pressed=\{user\.id === activeUserId\}/, "Access role preview chips should expose selected state");
 assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
 assert.match(appComponent, /aria-controls=\{notificationsOpen \? "notification-popover" : undefined\}/, "Notification trigger should reference the open popover");
@@ -98,10 +98,11 @@ assert.match(globalCss, /\.topbar-identity \.role-badge\s*\{[\s\S]*text-overflow
 assert.match(globalCss, /\.sidebar \.brand \.mascot-logo/, "Sidebar mascot should match the larger reference app chrome");
 assert.match(appComponent, /"dashboard", label: "Dashboard", icon: <LayoutGrid size=\{18\} \/>/, "Sidebar dashboard icon should match the reference utility set");
 assert.match(appComponent, /"applications", label: "My Applications", icon: <ClipboardList size=\{18\} \/>/, "Sidebar applications icon should match the reference utility set");
-assert.match(appComponent, /"guide", label: "TAMS Guide", icon: <BriefcaseBusiness size=\{18\} \/>/, "Sidebar guide icon should match the reference utility set");
+assert.match(appComponent, /"guide", label: "TAMS Guide", icon: <Sparkles size=\{18\} \/>/, "Sidebar guide icon should match the AI assistant icon language");
 assert.match(appComponent, /aria-current=\{item\.id === activeSection \? "page" : undefined\}/, "Sidebar nav should expose the current section");
 assert.match(appComponent, /"Student Officer": <UsersRound size=\{16\} \/>/, "Student organization role picker should use an organization-style icon");
-assert.match(appComponent, /<Feature icon=\{<BriefcaseBusiness \/>\} title="TAMS Guide"/, "Guide overview feature icon should match the reference utility icon language");
+assert.match(appComponent, /<Feature icon=\{<Sparkles \/>\} title="TAMS Guide"/, "Guide overview feature icon should match the AI assistant icon language");
+assert.doesNotMatch(appComponent, /BriefcaseBusiness/, "Guide surfaces should not use a business briefcase icon");
 assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls should use a consistent eye icon");
 assert.match(globalCss, /\.nav-button span\s*\{[\s\S]*text-overflow: ellipsis/, "Mobile nav labels should truncate instead of overflowing");
 assert.match(globalCss, /\.template-card summary > span:first-child\s*\{[\s\S]*min-width: 0/, "Template summary text should not push completion badges");
@@ -147,6 +148,9 @@ assert.match(serviceCheckScript, /TAMS_DEPLOY_CHECK/, "Service checks should sup
 assert.match(serviceCheckScript, /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
 assert.match(serviceCheckScript, /function envValue\(key\)/, "Service checks should read Railway-provided process env values");
 assert.match(serviceCheckScript, /missing\.length \? \(deployCheck \? "fail" : "wait"\)/, "Service checks should fail missing required env values in deploy mode");
+assert.match(serviceCheckScript, /function projectTargetSummary\(\)/, "Service checks should summarize dedicated Convex and Railway project targets");
+assert.match(serviceCheckScript, /TAMS_RAILWAY_PROJECT_ID/, "Service checks should require an explicit Railway project ID for deploy readiness");
+assert.match(serviceCheckScript, /label: "Dedicated project target"/, "Service checks should report dedicated project targeting status");
 assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
 assert.match(serviceRunbook, /setup:railway -- --workspace <workspace> --dry-run/, "Railway runbook should require explicit workspace selection in setup examples");
