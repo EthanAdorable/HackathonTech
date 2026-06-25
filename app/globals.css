@@ -462,6 +462,19 @@ p {
   gap: 9px;
 }
 
+.sidebar .brand {
+  gap: 10px;
+}
+
+.sidebar .brand .mascot-logo {
+  width: 56px;
+  height: 56px;
+}
+
+.sidebar .brand strong {
+  font-size: 17px;
+}
+
 .brand.wide {
   gap: 14px;
   font-size: 21px;
