@@ -34,6 +34,17 @@ if (!team) {
   process.exit(1);
 }
 
+for (const [label, value] of [
+  ["project", project],
+  ["team", team],
+  ["deployment", deployment],
+]) {
+  if (value === "true") {
+    console.error(`Missing Convex ${label} value. Re-run with --${label} <value>.`);
+    process.exit(1);
+  }
+}
+
 function run(label, command, commandArgs, options = {}) {
   const printable = [command, ...commandArgs].join(" ");
   console.log(`${dryRun ? "[DRY-RUN]" : "[RUN]"} ${label}: ${printable}`);

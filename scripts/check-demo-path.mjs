@@ -120,6 +120,7 @@ assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH
 assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
 assert.match(convexSetup, /const project = .*"tams-hub-prototype"/, "Convex setup should default to the dedicated prototype project");
+assert.match(convexSetup, /Missing Convex \$\{label\} value/, "Convex setup should reject missing project, team, or deployment argument values");
 assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway setup should default to the dedicated prototype project");
 assert.match(railwaySetup, /function isHttpUrl/, "Railway setup should validate public callback URLs before setting NEXTAUTH_URL");
 assert.match(railwaySetup, /absolute http\(s\) URL/, "Railway setup should reject missing or malformed app URLs");
