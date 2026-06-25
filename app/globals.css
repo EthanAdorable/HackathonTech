@@ -913,6 +913,12 @@ p {
   color: #263a34;
 }
 
+.ghost-button.active {
+  border-color: #e0a500;
+  background: #fff4cf;
+  color: #8b6100;
+}
+
 .danger-button {
   background: #ffe7e7;
   color: var(--red);

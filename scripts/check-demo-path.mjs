@@ -50,6 +50,7 @@ assert.match(appComponent, /revisionApplication && onSelect\(revisionApplication
 assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
 assert.match(appComponent, /Student Org Officer/, "UI role labels should match the reference screens");
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
+assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");

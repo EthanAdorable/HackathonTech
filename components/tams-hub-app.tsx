@@ -539,7 +539,11 @@ function DashboardView({
   onSelect: (id: string) => void;
 }) {
   const stats = getDashboardStats(activeUser.role, applications, queueCount);
+  const [onlyActionItems, setOnlyActionItems] = useState(false);
   const revisionApplication = applications.find((app) => app.status === "Revision Requested") ?? applications[0];
+  const displayedApplications = onlyActionItems
+    ? applications.filter((app) => app.status === "Revision Requested" || app.status === "Draft" || app.status === "Submitted to SADU")
+    : applications;
 
   return (
     <div className="screen-stack">
@@ -570,12 +574,15 @@ function DashboardView({
       <section className="table-card">
         <div className="table-header">
           <h2>Recent Applications</h2>
-          <div><button className="ghost-button"><Filter size={15} /> Filter</button><button className="ghost-button" disabled={!applications.length} onClick={() => applications[0] && onSelect(applications[0].id)}><FolderKanban size={15} /> View All</button></div>
+          <div>
+            <button className={onlyActionItems ? "ghost-button active" : "ghost-button"} onClick={() => setOnlyActionItems((current) => !current)}><Filter size={15} /> {onlyActionItems ? "Needs Action" : "Filter"}</button>
+            <button className="ghost-button" disabled={!applications.length} onClick={() => applications[0] && onSelect(applications[0].id)}><FolderKanban size={15} /> View All</button>
+          </div>
         </div>
         <table>
           <thead><tr><th>Event Name</th><th>Event Type</th><th>Submitted</th><th>Status</th><th>Required Action</th></tr></thead>
           <tbody>
-            {applications.map((app) => (
+            {displayedApplications.map((app) => (
               <tr key={app.id} onClick={() => onSelect(app.id)}>
                 <td>{app.title}</td>
                 <td>{app.eventType}</td>
@@ -584,6 +591,11 @@ function DashboardView({
                 <td className="action-text">{app.status === "Revision Requested" ? "Revise budget" : app.status === "Draft" ? "Complete form" : app.status.includes("Submitted") ? "Awaiting SADU" : "-"}</td>
               </tr>
             ))}
+            {!displayedApplications.length && (
+              <tr>
+                <td colSpan={5} className="empty-row">No applications match this filter.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </section>
