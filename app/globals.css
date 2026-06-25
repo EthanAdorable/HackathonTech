@@ -68,6 +68,21 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+button svg,
+.nav-button svg,
+.signout-button svg,
+.top-actions svg,
+.guide-card svg,
+.feature-card svg,
+.service-card svg,
+.admin-card svg,
+.reviewer-card svg,
+.required-action svg,
+.access-method > svg {
+  flex: 0 0 auto;
+  stroke-width: 2.15;
+}
+
 textarea {
   min-height: 86px;
   resize: vertical;
@@ -329,6 +344,17 @@ p {
   color: var(--green-700);
   padding: 7px;
   box-sizing: content-box;
+}
+
+.access-method > svg,
+.stat-icon svg,
+.feature-card span svg,
+.service-icon svg,
+.admin-card-heading > svg,
+.reviewer-heading svg,
+.requirement-tile > svg {
+  width: 18px;
+  height: 18px;
 }
 
 .access-method strong,
