@@ -1092,7 +1092,9 @@ function MessagesView({
         {!visibleThreads.length && <p className="empty-thread">No matching conversations.</p>}
       </aside>
       <section className="chat-panel panel">
-        <h2>{selectedThread.title}</h2>
+        <div className="message-thread-header">
+          <h2>{selectedThread.title}</h2>
+        </div>
         <MiniThread application={application} expanded />
         <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
       </section>
