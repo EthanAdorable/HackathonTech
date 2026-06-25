@@ -36,9 +36,9 @@ Expected local artifacts:
 - `NEXT_PUBLIC_CONVEX_URL`
 - generated Convex files under `convex/_generated/`
 
-The setup helper runs `corepack pnpm convex:codegen` after selecting the deployment so official Convex runtime files are committed from the configured project state.
+The setup helper runs `corepack pnpm convex:codegen` after selecting the deployment so official Convex runtime files are committed from the configured project state. It also runs `seed:seedDemoData` before finishing.
 
-Seed the prototype data after deployment configuration. The seed command resets the prototype tables before inserting the demo rows, so it is safe to rerun during setup.
+Rerun the seed command manually if setup is interrupted or if you need to restore the demo rows. The seed command resets the prototype tables before inserting the demo rows, so it is safe to rerun during setup.
 
 ```powershell
 corepack pnpm convex run seed:seedDemoData
