@@ -779,6 +779,8 @@ function ApplicationsView({
         <span className={`status-pill ${statusTone[application.status]}`}>{application.status}</span>
       </div>
 
+      {activeUser.role === "SADU Associate" && <ReviewerInsightsPanel application={application} completionPercent={completionPercent} />}
+
       <section className="status-card">
         <div className="status-header"><strong>Application Progress</strong><span>{completionPercent}%</span></div>
         <div className="progress-track"><span style={{ width: `${completionPercent}%` }} /></div>
@@ -820,6 +822,40 @@ function ApplicationsView({
         </div>
       </section>
     </div>
+  );
+}
+
+function ReviewerInsightsPanel({ application, completionPercent }: { application: EventApplication; completionPercent: number }) {
+  const completion = getApplicationCompletion(application);
+
+  return (
+    <section className="reviewer-grid">
+      <article className="reviewer-card">
+        <div className="reviewer-heading"><Sparkles size={18} /><strong>AI Reviewer Summary</strong><span>Guidance only</span></div>
+        <p>{makeAiSummary(application)}</p>
+      </article>
+      <article className="reviewer-card">
+        <div className="reviewer-heading"><FilePlus2 size={18} /><strong>Template Readiness</strong><span>{completionPercent}%</span></div>
+        <div className="template-mini-list">
+          {templateDefinitions.map((template) => {
+            const status = getTemplateCompletion(application, template.id);
+            return (
+              <div key={template.id} className="template-mini-row">
+                <span className={status.complete ? "mini-dot ready" : "mini-dot waiting"} />
+                <strong>{template.name.replace(" Template", "")}</strong>
+                <small>{status.complete ? "Ready" : `${status.missing.length} missing`}</small>
+              </div>
+            );
+          })}
+        </div>
+      </article>
+      <article className="reviewer-card">
+        <div className="reviewer-heading"><CircleAlert size={18} /><strong>Review Focus</strong><span>{completion.missing.length ? "Needs attention" : "Ready"}</span></div>
+        <ul className="review-focus-list">
+          {(completion.missing.length ? completion.missing.slice(0, 4) : ["Confirm final SADU decision and record reviewer notes."]).map((item) => <li key={item}>{item}</li>)}
+        </ul>
+      </article>
+    </section>
   );
 }
 
