@@ -62,7 +62,20 @@ function isLoopbackUrl(value) {
   }
 }
 
+function isHttpUrl(value) {
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 let nextAuthUrl = appUrl || envValue("NEXTAUTH_URL");
+if (nextAuthUrl && !isHttpUrl(nextAuthUrl)) {
+  console.error("Invalid Railway NEXTAUTH_URL/app URL. Pass an absolute http(s) URL, such as --app-url https://<railway-domain>.");
+  process.exit(1);
+}
 const nextAuthUrlIsLoopback = nextAuthUrl && isLoopbackUrl(nextAuthUrl);
 
 if (nextAuthUrlIsLoopback) {

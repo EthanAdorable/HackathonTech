@@ -121,6 +121,8 @@ assert.match(serviceRunbook, /separate external projects/, "Service runbook shou
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
 assert.match(convexSetup, /const project = .*"tams-hub-prototype"/, "Convex setup should default to the dedicated prototype project");
 assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway setup should default to the dedicated prototype project");
+assert.match(railwaySetup, /function isHttpUrl/, "Railway setup should validate public callback URLs before setting NEXTAUTH_URL");
+assert.match(railwaySetup, /absolute http\(s\) URL/, "Railway setup should reject missing or malformed app URLs");
 assert.match(railwaySetup, /TAMS_DEMO_AUTH_ENABLED:\s*"false"/, "Railway setup should disable demo auth for public deployments");
 assert.match(railwayConfig, /corepack pnpm start/, "Railway should start through the production start wrapper");
 assert.match(startScript, /"--hostname", "0\.0\.0\.0"/, "Production start wrapper should bind to Railway's network interface");
