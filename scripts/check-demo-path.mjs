@@ -82,6 +82,7 @@ assert.match(appComponent, /aria-label="Send Message"/, "Icon-only message send 
 assert.match(appComponent, /notificationsOpen/, "Topbar notification bell should open prototype alerts");
 assert.match(globalCss, /\.notification-popover/, "Topbar notification alerts should be styled as a popover");
 assert.match(appComponent, /TAMS Guide filing question/, "Guide question mode should expose an accessible prompt");
+assert.match(appComponent, /aria-label="TAMS Guide mode"/, "Guide mode selector should expose an accessible name");
 assert.match(appComponent, /guideModeLabels/, "Guide output should identify the active guidance mode");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");

@@ -1141,7 +1141,7 @@ function GuideView({
 
       <section className="guide-workbench panel">
         <div className="guide-controls">
-          <select value={guideMode} onChange={(event) => setGuideMode(event.target.value as GuideMode)}>
+          <select aria-label="TAMS Guide mode" value={guideMode} onChange={(event) => setGuideMode(event.target.value as GuideMode)}>
             <option value="checklist">Requirement checklist</option>
             <option value="missing">Missing fields</option>
             <option value="summary">SADU summary</option>
