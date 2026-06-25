@@ -92,6 +92,8 @@ The running MVP currently uses local browser storage for demo speed. Replace the
 corepack pnpm start
 ```
 
+The detailed Convex and Railway setup runbook is in `docs/service-setup.md`. External project creation is intentionally separate for each service.
+
 Set these Railway variables:
 
 - `NEXTAUTH_SECRET`
