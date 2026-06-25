@@ -1578,6 +1578,14 @@ p {
   white-space: nowrap;
 }
 
+.empty-thread {
+  margin: 18px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .chat-panel {
   min-height: 350px;
 }

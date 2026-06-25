@@ -976,20 +976,27 @@ function MessagesView({
   setMessageDraft: (value: string) => void;
   onSend: () => void;
 }) {
+  const [threadSearch, setThreadSearch] = useState("");
+  const threads = [
+    { title: "SADU Review", preview: "Please revise the budget breakdown.", count: "2", time: "2h ago" },
+    { title: "Junior Philippine CS Society", preview: "Are you open to co-organizing the seminar?", count: "1", time: "1d ago" },
+    { title: "Student Council Federation", preview: "Joint event proposal attached.", count: "", time: "3d ago" },
+  ];
+  const visibleThreads = threads.filter((thread) =>
+    `${thread.title} ${thread.preview}`.toLowerCase().includes(threadSearch.trim().toLowerCase()),
+  );
+
   return (
     <section className="messages-layout">
       <aside className="thread-list panel">
-        <div className="search-box"><Search size={16} /><input placeholder="Search messages..." /></div>
-        {[
-          { title: "SADU Review", preview: "Please revise the budget breakdown.", count: "2", time: "2h ago" },
-          { title: "Junior Philippine CS Society", preview: "Are you open to co-organizing the seminar?", count: "1", time: "1d ago" },
-          { title: "Student Council Federation", preview: "Joint event proposal attached.", count: "", time: "3d ago" },
-        ].map((thread, index) => (
+        <div className="search-box"><Search size={16} /><input value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder="Search messages..." /></div>
+        {visibleThreads.map((thread, index) => (
           <button key={thread.title} className={index === 0 ? "thread-item active" : "thread-item"}>
             <span className="thread-meta"><strong>{thread.title}</strong><span>{thread.count && <em>{thread.count}</em>}{thread.time}</span></span>
             <small>{thread.preview}</small>
           </button>
         ))}
+        {!visibleThreads.length && <p className="empty-thread">No matching conversations.</p>}
       </aside>
       <section className="chat-panel panel">
         <h2>SADU Review</h2>
