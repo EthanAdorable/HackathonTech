@@ -138,8 +138,11 @@ assert.match(appComponent, /guideModeLabels/, "Guide output should identify the 
 assert.match(appComponent, /className="guide-output" role="status" aria-live="polite"/, "Guide workbench output should be announced politely");
 assert.doesNotMatch(globalCss, /var\(--green\)/, "Guide styles should use defined green tokens");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
-assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
-assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
+const serviceCheckScript = readFileSync("scripts/check-services.mjs", "utf8");
+assert.match(serviceCheckScript, /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
+assert.match(serviceCheckScript, /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
+assert.match(serviceCheckScript, /function envValue\(key\)/, "Service checks should read Railway-provided process env values");
+assert.match(serviceCheckScript, /missing\.length \? \(deployCheck \? "fail" : "wait"\)/, "Service checks should fail missing required env values in deploy mode");
 assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
 assert.match(serviceRunbook, /setup:railway -- --workspace <workspace> --dry-run/, "Railway runbook should require explicit workspace selection in setup examples");

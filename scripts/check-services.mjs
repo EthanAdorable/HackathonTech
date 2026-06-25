@@ -43,24 +43,25 @@ function sanitize(value) {
 }
 
 function envSummary() {
-  if (!existsSync(".env.local")) {
-    return { status: "wait", output: ".env.local is missing" };
-  }
-
-  const env = readFileSync(".env.local", "utf8");
   const required = ["NEXTAUTH_SECRET", "NEXTAUTH_URL"];
-  const present = required.filter((key) => new RegExp(`^${key}=.+`, "m").test(env));
+  const present = required.filter((key) => envValue(key));
+  const missing = required.filter((key) => !envValue(key));
   const optional = ["CONVEX_DEPLOYMENT", "NEXT_PUBLIC_CONVEX_URL"];
-  const optionalPresent = optional.filter((key) => new RegExp(`^${key}=.+`, "m").test(env));
+  const optionalPresent = optional.filter((key) => envValue(key));
   const warnings = deployEnvWarnings();
-  const status = present.length !== required.length ? "wait" : deployCheck && warnings.length ? "fail" : "ok";
+  const status = missing.length ? (deployCheck ? "fail" : "wait") : deployCheck && warnings.length ? "fail" : "ok";
   const deployNote = deployCheck ? "deploy check: on" : "deploy check: off";
+  const missingText = missing.length ? `; missing: ${missing.join(", ")}` : "";
   const warningText = warnings.length ? `; warnings: ${warnings.join("; ")}` : "";
 
   return {
     status,
-    output: `required present: ${present.join(", ") || "none"}; optional present: ${optionalPresent.join(", ") || "none"}; ${deployNote}${warningText}`,
+    output: `required present: ${present.join(", ") || "none"}; optional present: ${optionalPresent.join(", ") || "none"}; ${deployNote}${missingText}${warningText}`,
   };
+}
+
+function envValue(key) {
+  return process.env[key] || localEnv[key] || "";
 }
 
 function deployEnvWarnings() {
