@@ -119,6 +119,7 @@ assert.match(appComponent, /TAMS Guide filing question/, "Guide question mode sh
 assert.match(appComponent, /aria-label="TAMS Guide mode"/, "Guide mode selector should expose an accessible name");
 assert.match(appComponent, /guideModeLabels/, "Guide output should identify the active guidance mode");
 assert.match(appComponent, /className="guide-output" role="status" aria-live="polite"/, "Guide workbench output should be announced politely");
+assert.doesNotMatch(globalCss, /var\(--green\)/, "Guide styles should use defined green tokens");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
