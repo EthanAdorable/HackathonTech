@@ -33,6 +33,7 @@ assert.ok(
 const appComponent = readFileSync(new URL("../components/tams-hub-app.tsx", import.meta.url), "utf8");
 const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 const convexApplications = readFileSync(new URL("../convex/applications.ts", import.meta.url), "utf8");
+const convexUsers = readFileSync(new URL("../convex/users.ts", import.meta.url), "utf8");
 const authRoute = readFileSync(new URL("../app/api/auth/[...nextauth]/route.ts", import.meta.url), "utf8");
 const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf8");
 const packageJson = readFileSync(new URL("../package.json", import.meta.url), "utf8");
@@ -173,6 +174,7 @@ assert.match(convexApplications, /function withUiId/, "Convex detailed queries s
 assert.match(convexApplications, /return applications\.map\(withUiId\)/, "Convex list query should expose application ids for UI selection");
 assert.match(convexApplications, /messages: messages\.map\(withUiId\)/, "Convex detailed queries should expose message ids for React keys");
 assert.match(convexApplications, /timeline: timeline\.map\(withUiId\)/, "Convex detailed queries should expose timeline ids for workflow rendering");
+assert.match(convexUsers, /return users\.map\(withUiId\)/, "Convex users query should expose user ids for role selection");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
