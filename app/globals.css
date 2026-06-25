@@ -1486,6 +1486,11 @@ p {
   background: var(--green-700);
 }
 
+.progress-step.done.active > span {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 5px rgba(226, 164, 0, 0.2);
+}
+
 .progress-step strong {
   font-size: 12px;
 }

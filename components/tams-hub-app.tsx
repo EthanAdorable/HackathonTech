@@ -935,7 +935,8 @@ function ApplicationsView({
         <div className="progress-track"><span style={{ width: `${completionPercent}%` }} /></div>
         <div className="progress-steps">
           {getProgressMilestones(application).map((milestone) => {
-            return <div key={milestone.label} className={milestone.done ? "progress-step done" : milestone.active ? "progress-step active" : "progress-step"}><span>{milestone.done ? <CheckCircle2 size={13} /> : null}</span><strong>{milestone.label}</strong><small>{milestone.date ? formatMilestoneDate(milestone.date) : "-"}</small></div>;
+            const className = ["progress-step", milestone.done ? "done" : "", milestone.active ? "active" : ""].filter(Boolean).join(" ");
+            return <div key={milestone.label} className={className}><span>{milestone.done ? <CheckCircle2 size={13} /> : null}</span><strong>{milestone.label}</strong><small>{milestone.date ? formatMilestoneDate(milestone.date) : "-"}</small></div>;
           })}
         </div>
       </section>

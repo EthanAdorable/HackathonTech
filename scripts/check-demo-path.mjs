@@ -86,6 +86,8 @@ assert.match(appComponent, /aria-pressed=\{selectedPartners\.includes\(partner\)
 assert.match(globalCss, /\.partner-chip\.active/, "Selected partner chips should have a visible active state");
 assert.match(appComponent, /Final Approval/, "Application progress tracker should match the reference milestone labels");
 assert.match(appComponent, /formatMilestoneDate/, "Application progress tracker should use compact reference-style dates");
+assert.match(appComponent, /milestone\.done \? "done" : ""/, "Application progress tracker should allow active milestones to remain highlighted after completion");
+assert.match(globalCss, /\.progress-step\.done\.active > span/, "Completed active progress milestones should keep the reference gold halo");
 assert.match(appComponent, /Upload revised budget breakdown/, "Revision status should show reference-style required actions");
 assert.match(appComponent, /Clarify expected number of participants/, "Revision status should call out participant count reconciliation");
 assert.match(appComponent, /aria-pressed=\{app\.id === application\.id\}/, "Application cards should expose selected state");
