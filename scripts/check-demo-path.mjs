@@ -78,10 +78,12 @@ assert.match(appComponent, /Final Approval/, "Application progress tracker shoul
 assert.match(appComponent, /formatMilestoneDate/, "Application progress tracker should use compact reference-style dates");
 assert.match(appComponent, /Upload revised budget breakdown/, "Revision status should show reference-style required actions");
 assert.match(appComponent, /Clarify expected number of participants/, "Revision status should call out participant count reconciliation");
+assert.match(appComponent, /aria-pressed=\{app\.id === application\.id\}/, "Application cards should expose selected state");
 assert.match(appComponent, /threadSearch/, "Messages search box should filter visible conversations");
 assert.match(appComponent, /aria-label="Search messages"/, "Messages search input should have an accessible name");
 assert.match(appComponent, /aria-label="Message"/, "Message composer input should have an accessible name");
 assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
+assert.match(appComponent, /aria-pressed=\{thread\.title === selectedThread\.title\}/, "Message thread buttons should expose selected state");
 assert.match(appComponent, /aria-label="Send Message"/, "Icon-only message send button should have an accessible name");
 assert.match(appComponent, /notificationsOpen/, "Topbar notification bell should open prototype alerts");
 assert.match(globalCss, /\.notification-popover/, "Topbar notification alerts should be styled as a popover");

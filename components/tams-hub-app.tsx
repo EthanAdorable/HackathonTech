@@ -953,7 +953,12 @@ function ApplicationsView({
         <div className="table-header"><h2>All Visible Applications</h2></div>
         <div className="application-list compact">
           {applications.map((app) => (
-            <button key={app.id} className={app.id === application.id ? "application-card active" : "application-card"} onClick={() => onSelect(app.id)}>
+            <button
+              key={app.id}
+              className={app.id === application.id ? "application-card active" : "application-card"}
+              aria-pressed={app.id === application.id}
+              onClick={() => onSelect(app.id)}
+            >
               <div><strong>{app.title}</strong><span>{app.organization}</span></div>
               <span className={`status-pill ${statusTone[app.status]}`}>{shortStatus(app.status)}</span>
             </button>
@@ -1064,7 +1069,12 @@ function MessagesView({
       <aside className="thread-list panel">
         <div className="search-box"><Search size={16} aria-hidden="true" /><input aria-label="Search messages" value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder="Search messages..." /></div>
         {visibleThreads.map((thread) => (
-          <button key={thread.title} className={thread.title === selectedThread.title ? "thread-item active" : "thread-item"} onClick={() => setSelectedThreadTitle(thread.title)}>
+          <button
+            key={thread.title}
+            className={thread.title === selectedThread.title ? "thread-item active" : "thread-item"}
+            aria-pressed={thread.title === selectedThread.title}
+            onClick={() => setSelectedThreadTitle(thread.title)}
+          >
             <span className="thread-meta"><strong>{thread.title}</strong><span>{thread.count && <em>{thread.count}</em>}{thread.time}</span></span>
             <small>{thread.preview}</small>
           </button>
