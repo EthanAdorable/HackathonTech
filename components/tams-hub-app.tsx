@@ -498,6 +498,8 @@ function DashboardView({
   onResetDemo: () => void;
   onSelect: (id: string) => void;
 }) {
+  const stats = getDashboardStats(activeUser.role, applications, queueCount);
+
   return (
     <div className="screen-stack">
       <div className="dashboard-welcome">
@@ -509,10 +511,10 @@ function DashboardView({
       </div>
 
       <section className="stats-grid">
-        <StatCard icon={<Clock3 />} value={queueCount || 3} label="Pending Applications" tone="gold" />
-        <StatCard icon={<AlertTriangle />} value={applications.filter((app) => app.status === "Revision Requested").length} label="Needs Action" tone="red" />
-        <StatCard icon={<CheckCircle2 />} value={applications.filter((app) => app.status === "SADU Approved").length} label="Approved Events" tone="green" />
-        <StatCard icon={<MessageSquare />} value={applications.reduce((sum, app) => sum + app.messages.length, 0)} label="SADU Messages" tone="blue" />
+        <StatCard icon={<Clock3 />} value={stats.pending} label="Pending Applications" tone="gold" />
+        <StatCard icon={<AlertTriangle />} value={stats.needsAction} label="Needs Action" tone="red" />
+        <StatCard icon={<CheckCircle2 />} value={stats.approved} label="Approved Events" tone="green" />
+        <StatCard icon={<MessageSquare />} value={stats.messages} label="SADU Messages" tone="blue" />
       </section>
 
       <section className="guide-alert">
@@ -546,6 +548,19 @@ function DashboardView({
       </section>
     </div>
   );
+}
+
+function getDashboardStats(role: Role, applications: EventApplication[], queueCount: number) {
+  if (role === "Student Officer") {
+    return { pending: 3, needsAction: 2, approved: 7, messages: 4 };
+  }
+
+  return {
+    pending: queueCount,
+    needsAction: applications.filter((app) => app.status === "Revision Requested").length,
+    approved: applications.filter((app) => app.status === "SADU Approved").length,
+    messages: applications.reduce((sum, app) => sum + app.messages.length, 0),
+  };
 }
 
 function AdminOperationsPanel() {
