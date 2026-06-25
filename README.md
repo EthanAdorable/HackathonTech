@@ -74,6 +74,7 @@ The visible role switcher simulates TAMS Access with OTP and NFC/card-tap verifi
 - SADU approves or rejects; status and timeline update across roles.
 - Faculty Adviser can view organization applications and add notes through the message flow.
 - Admin can inspect all applications and toggle template availability in prototype form.
+- Admin dashboard shows service readiness for Convex/Railway and can reset local demo data.
 
 ## Convex Notes
 

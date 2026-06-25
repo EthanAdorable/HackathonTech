@@ -6,6 +6,7 @@ import {
   Bell,
   Bot,
   Building2,
+  Database,
   CalendarDays,
   CheckCircle2,
   CircleAlert,
@@ -27,6 +28,7 @@ import {
   Sparkles,
   UploadCloud,
   UserRound,
+  RotateCcw,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
@@ -45,6 +47,7 @@ import {
 import { addMessage, transitionApplication } from "@/lib/workflow";
 
 const storageKey = "tams-hub-prototype-state";
+const convexConfigured = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 
 type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
 type GuideMode = "checklist" | "missing" | "summary" | "revision" | "question";
@@ -135,6 +138,14 @@ export function TamsHubApp() {
 
   function updateApplication(next: EventApplication) {
     setApplications((current) => current.map((application) => (application.id === next.id ? next : application)));
+  }
+
+  function resetDemoData() {
+    window.localStorage.removeItem(storageKey);
+    setApplications(seedApplications);
+    setSelectedAppId(seedApplications[2].id);
+    setGuideOutput([]);
+    setMessageDraft("");
   }
 
   function updateTemplateValue(templateId: string, fieldId: string, value: string) {
@@ -242,6 +253,7 @@ export function TamsHubApp() {
             applications={visibleApplications}
             queueCount={queueCount}
             onNewEvent={createApplication}
+            onResetDemo={resetDemoData}
             onSelect={(id) => {
               setSelectedAppId(id);
               setSection("applications");
@@ -426,12 +438,14 @@ function DashboardView({
   applications,
   queueCount,
   onNewEvent,
+  onResetDemo,
   onSelect,
 }: {
   activeUser: (typeof users)[number];
   applications: EventApplication[];
   queueCount: number;
   onNewEvent: () => void;
+  onResetDemo: () => void;
   onSelect: (id: string) => void;
 }) {
   return (
@@ -457,6 +471,8 @@ function DashboardView({
         <button className="gold-button">View</button>
       </section>
 
+      {activeUser.role === "Admin" && <ServiceReadinessPanel onResetDemo={onResetDemo} />}
+
       <section className="table-card">
         <div className="table-header">
           <h2>Recent Applications</h2>
@@ -478,6 +494,37 @@ function DashboardView({
         </table>
       </section>
     </div>
+  );
+}
+
+function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
+  return (
+    <section className="service-grid">
+      <article className="service-card">
+        <span className={convexConfigured ? "service-icon ready" : "service-icon waiting"}><Database size={18} /></span>
+        <div>
+          <strong>Convex Project</strong>
+          <p>{convexConfigured ? "NEXT_PUBLIC_CONVEX_URL is configured for this build." : "Waiting for Convex team/project selection."}</p>
+        </div>
+        <span className={convexConfigured ? "status-pill green" : "status-pill gold"}>{convexConfigured ? "Ready" : "Waiting"}</span>
+      </article>
+      <article className="service-card">
+        <span className="service-icon waiting"><ShieldCheck size={18} /></span>
+        <div>
+          <strong>Railway Project</strong>
+          <p>Railway CLI is installed; OAuth account selection is still pending.</p>
+        </div>
+        <span className="status-pill gold">Waiting</span>
+      </article>
+      <article className="service-card">
+        <span className="service-icon ready"><RotateCcw size={18} /></span>
+        <div>
+          <strong>Demo Data</strong>
+          <p>Restore local prototype data after a review or revision demo.</p>
+        </div>
+        <button className="secondary-button" onClick={onResetDemo}>Reset</button>
+      </article>
+    </section>
   );
 }
 

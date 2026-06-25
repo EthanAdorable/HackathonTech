@@ -592,7 +592,8 @@ p {
 }
 
 .stats-grid,
-.feature-grid {
+.feature-grid,
+.service-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
@@ -662,6 +663,43 @@ p {
 .guide-alert p {
   margin-bottom: 0;
   font-size: 13px;
+}
+
+.service-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.service-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.service-card p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.service-icon {
+  display: inline-flex;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.service-icon.ready {
+  background: #dff6e9;
+  color: var(--green-700);
+}
+
+.service-icon.waiting {
+  background: #fff2d3;
+  color: #b06c00;
 }
 
 .table-card {
@@ -1368,6 +1406,7 @@ p {
 
   .hero-metrics,
   .stats-grid,
+  .service-grid,
   .feature-grid,
   .form-grid,
   .field-grid,
