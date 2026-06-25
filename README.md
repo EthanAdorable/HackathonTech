@@ -35,6 +35,8 @@ Copy `.env.example` to `.env.local`.
 ```bash
 NEXTAUTH_SECRET=replace-with-a-local-secret
 NEXTAUTH_URL=http://127.0.0.1:3000
+# Optional override for services:check
+# TAMS_HUB_HEALTH_URL=http://127.0.0.1:3000
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
 CONVEX_DEPLOYMENT=
@@ -122,7 +124,7 @@ corepack pnpm services:check
 
 `demo:check` verifies the seeded roles, required templates, revision loop, SADU approval transition, and TAMS Guide helper outputs.
 
-When checking a running deployment, set `TAMS_HUB_HEALTH_URL` to the app URL so `services:check` probes `/api/health`.
+When checking a running deployment, set `TAMS_HUB_HEALTH_URL` to the app URL so `services:check` probes `/api/health`. The script reports account setup gaps as `WAIT` and optional fallbacks as `INFO`; only an unreachable or unhealthy app returns a failure exit code.
 
 ## Current Limitations
 

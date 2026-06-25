@@ -76,11 +76,10 @@ Create a separate Railway project from this repo:
 railway init --name tams-hub-prototype
 ```
 
-Set variables after Convex provides a URL:
+Set the initial variables after Convex provides a URL:
 
 ```powershell
 railway variable set NEXTAUTH_SECRET=<production-secret>
-railway variable set NEXTAUTH_URL=https://<railway-domain>
 railway variable set OPENAI_MODEL=gpt-4o-mini
 railway variable set NEXT_PUBLIC_CONVEX_URL=<convex-url>
 ```
@@ -97,11 +96,17 @@ Deploy:
 railway up --detach -m "Initial TAMS Hub deployment"
 ```
 
+After Railway assigns a public domain, set the final auth URL to that domain:
+
+```powershell
+railway domain
+railway variable set NEXTAUTH_URL=https://<railway-domain>
+```
+
 Evidence checks:
 
 ```powershell
 $env:TAMS_HUB_HEALTH_URL="https://<railway-domain>"; corepack pnpm services:check
-corepack pnpm services:check
 railway status --json
 railway service status --all --json
 railway variable list --json
