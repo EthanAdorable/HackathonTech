@@ -2,6 +2,24 @@ import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const checks = [];
+const localEnv = readLocalEnv();
+
+function readLocalEnv() {
+  if (!existsSync(".env.local")) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    readFileSync(".env.local", "utf8")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#") && line.includes("="))
+      .map((line) => {
+        const index = line.indexOf("=");
+        return [line.slice(0, index), line.slice(index + 1)];
+      }),
+  );
+}
 
 function run(label, command, args) {
   const result = spawnSync(command, args, {
@@ -38,7 +56,7 @@ function envSummary() {
 }
 
 async function healthSummary() {
-  const baseUrl = process.env.TAMS_HUB_HEALTH_URL || process.env.NEXTAUTH_URL;
+  const baseUrl = process.env.TAMS_HUB_HEALTH_URL || process.env.NEXTAUTH_URL || localEnv.NEXTAUTH_URL;
   if (!baseUrl) {
     return { ok: false, output: "Set TAMS_HUB_HEALTH_URL or NEXTAUTH_URL to check /api/health" };
   }
@@ -63,8 +81,8 @@ checks.push({ label: "Local env", ...envSummary() });
 checks.push({ label: "App health", ...(await healthSummary()) });
 checks.push({
   label: "OpenAI env",
-  ok: Boolean(process.env.OPENAI_API_KEY),
-  output: process.env.OPENAI_API_KEY ? "OPENAI_API_KEY is set" : "OPENAI_API_KEY is not set; mock guide fallback will be used",
+  ok: Boolean(process.env.OPENAI_API_KEY || localEnv.OPENAI_API_KEY),
+  output: process.env.OPENAI_API_KEY || localEnv.OPENAI_API_KEY ? "OPENAI_API_KEY is set" : "OPENAI_API_KEY is not set; mock guide fallback will be used",
 });
 checks.push({
   label: "Railway runtime env",
