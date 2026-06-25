@@ -6,7 +6,6 @@ import {
   BadgeCheck,
   Bell,
   Bot,
-  Building2,
   Database,
   CalendarDays,
   CheckCircle2,
@@ -30,7 +29,6 @@ import {
   Smartphone,
   Sparkles,
   UploadCloud,
-  UserRound,
   UsersRound,
   RotateCcw,
 } from "lucide-react";
@@ -72,10 +70,10 @@ const sectionItems: { id: Section; label: string; icon: ReactNode }[] = [
 ];
 
 const roleIcons: Record<Role, ReactNode> = {
-  "Student Officer": <UserRound size={16} />,
+  "Student Officer": <FilePlus2 size={16} />,
   "SADU Associate": <ShieldCheck size={16} />,
   "Faculty Adviser": <ClipboardCheck size={16} />,
-  Admin: <Building2 size={16} />,
+  Admin: <Settings2 size={16} />,
 };
 
 const statusTone: Record<EventStatus, string> = {
@@ -580,7 +578,7 @@ function DashboardView({
           <h2>Recent Applications</h2>
           <div>
             <button className={onlyActionItems ? "ghost-button active" : "ghost-button"} onClick={() => setOnlyActionItems((current) => !current)}><Filter size={15} /> {onlyActionItems ? "Needs Action" : "Filter"}</button>
-            <button className="ghost-button" disabled={!applications.length} onClick={() => applications[0] && onSelect(applications[0].id)}><FolderKanban size={15} /> View All</button>
+            <button className="ghost-button" disabled={!applications.length} onClick={() => applications[0] && onSelect(applications[0].id)}><Eye size={15} /> View All</button>
           </div>
         </div>
         <table>
