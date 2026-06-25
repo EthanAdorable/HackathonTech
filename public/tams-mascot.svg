@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">TAMS Hub mascot</title>
+  <desc id="desc">A friendly green campus mascot with gold horns and a thumbs-up gesture.</desc>
+  <defs>
+    <linearGradient id="green" x1="24" x2="136" y1="18" y2="145" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#119458"/>
+      <stop offset="1" stop-color="#075331"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="40" x2="120" y1="8" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffd943"/>
+      <stop offset="1" stop-color="#e3a600"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="145%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#062d1e" flood-opacity=".25"/>
+    </filter>
+  </defs>
+  <circle cx="80" cy="82" r="72" fill="#fff"/>
+  <circle cx="80" cy="82" r="66" fill="#f4fbf6"/>
+  <g filter="url(#shadow)">
+    <path d="M41 54c-14-15-16-31-8-39 13 4 24 17 29 34Z" fill="url(#gold)" stroke="#075331" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M119 54c14-15 16-31 8-39-13 4-24 17-29 34Z" fill="url(#gold)" stroke="#075331" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M34 83c0-33 20-55 46-55s46 22 46 55c0 34-20 55-46 55S34 117 34 83Z" fill="url(#green)" stroke="#064526" stroke-width="5"/>
+    <path d="M41 78c-12-3-20 2-23 13 11 4 20 1 28-9Z" fill="#0c6a3d" stroke="#064526" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M119 78c12-3 20 2 23 13-11 4-20 1-28-9Z" fill="#0c6a3d" stroke="#064526" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M56 38c9-13 39-14 50 0-11-2-18 4-26 4s-15-6-24-4Z" fill="#ffe58b"/>
+    <circle cx="58" cy="74" r="12" fill="#fff"/>
+    <circle cx="102" cy="74" r="12" fill="#fff"/>
+    <circle cx="61" cy="76" r="5" fill="#0a3325"/>
+    <circle cx="99" cy="76" r="5" fill="#0a3325"/>
+    <path d="M70 91c3-7 17-7 20 0 2 5-2 14-10 14s-12-9-10-14Z" fill="#f4bd21" stroke="#064526" stroke-width="4"/>
+    <path d="M66 112c9 9 19 9 28 0" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+    <path d="M111 101c8 0 15 6 15 15v17c0 7-5 12-12 12h-4c-6 0-10-4-10-10v-23c0-6 5-11 11-11Z" fill="#0f7a46" stroke="#064526" stroke-width="5"/>
+    <path d="M111 103V83c0-5 4-9 9-9s9 4 9 9v23" fill="#0f7a46" stroke="#064526" stroke-width="5" stroke-linecap="round"/>
+    <path d="M125 115h12" stroke="#064526" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

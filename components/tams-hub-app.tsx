@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   AlertTriangle,
   BadgeCheck,
@@ -907,9 +908,7 @@ function MiniThread({ application, expanded = false }: { application: EventAppli
 function MascotLogo({ large = false }: { large?: boolean }) {
   return (
     <div className={large ? "mascot-logo large" : "mascot-logo"} aria-label="TAMS Hub mascot">
-      <span className="horn left" />
-      <span className="horn right" />
-      <span className="face">T</span>
+      <Image src="/tams-mascot.svg" alt="" width={large ? 156 : 43} height={large ? 156 : 43} priority={large} />
     </div>
   );
 }

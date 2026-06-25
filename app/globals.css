@@ -461,70 +461,21 @@ p {
 }
 
 .mascot-logo {
-  position: relative;
-  display: grid;
-  place-items: center;
   width: 43px;
   height: 43px;
-  border: 3px solid #ffffff;
-  border-radius: 999px;
-  background: #0f8c4f;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  flex: 0 0 auto;
 }
 
 .mascot-logo.large {
   width: 156px;
   height: 156px;
-  border-width: 8px;
 }
 
-.mascot-logo .face {
-  display: grid;
-  place-items: center;
-  width: 66%;
-  height: 66%;
-  border-radius: 50%;
-  background: #0d7f49;
-  color: #ffd23f;
-  font-size: 19px;
-  font-weight: 950;
-}
-
-.mascot-logo.large .face {
-  font-size: 62px;
-}
-
-.horn {
-  position: absolute;
-  top: -7px;
-  width: 13px;
-  height: 18px;
-  border-radius: 12px 12px 0 0;
-  background: #f2bf22;
-}
-
-.horn.left {
-  left: 3px;
-  rotate: -35deg;
-}
-
-.horn.right {
-  right: 3px;
-  rotate: 35deg;
-}
-
-.mascot-logo.large .horn {
-  top: -21px;
-  width: 37px;
-  height: 51px;
-}
-
-.mascot-logo.large .horn.left {
-  left: 13px;
-}
-
-.mascot-logo.large .horn.right {
-  right: 13px;
+.mascot-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .logged-card {
