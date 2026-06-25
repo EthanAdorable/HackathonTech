@@ -41,6 +41,16 @@ run("Convex login", "corepack", ["pnpm", "convex", "login", "status"]);
 run("Railway CLI", "railway", ["--version"]);
 run("Railway auth", "railway", ["whoami", "--json"]);
 checks.push({ label: "Local env", ...envSummary() });
+checks.push({
+  label: "OpenAI env",
+  ok: Boolean(process.env.OPENAI_API_KEY),
+  output: process.env.OPENAI_API_KEY ? "OPENAI_API_KEY is set" : "OPENAI_API_KEY is not set; mock guide fallback will be used",
+});
+checks.push({
+  label: "Railway runtime env",
+  ok: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
+  output: process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_ENVIRONMENT || "Not running inside Railway",
+});
 
 for (const check of checks) {
   const icon = check.ok ? "OK" : "WAIT";

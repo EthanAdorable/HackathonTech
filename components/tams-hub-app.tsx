@@ -47,7 +47,13 @@ import {
 import { addMessage, transitionApplication } from "@/lib/workflow";
 
 const storageKey = "tams-hub-prototype-state";
-const convexConfigured = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
+
+type ServiceStatus = {
+  convexConfigured: boolean;
+  openAiConfigured: boolean;
+  railwayConfigured: boolean;
+  railwayEnvironment?: string;
+};
 
 type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
 type GuideMode = "checklist" | "missing" | "summary" | "revision" | "question";
@@ -498,23 +504,52 @@ function DashboardView({
 }
 
 function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
+  const [status, setStatus] = useState<ServiceStatus | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/service-status")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: ServiceStatus | null) => {
+        if (active) setStatus(data);
+      })
+      .catch(() => {
+        if (active) setStatus(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const convexReady = status?.convexConfigured ?? false;
+  const railwayReady = status?.railwayConfigured ?? false;
+  const openAiReady = status?.openAiConfigured ?? false;
+
   return (
     <section className="service-grid">
       <article className="service-card">
-        <span className={convexConfigured ? "service-icon ready" : "service-icon waiting"}><Database size={18} /></span>
+        <span className={convexReady ? "service-icon ready" : "service-icon waiting"}><Database size={18} /></span>
         <div>
           <strong>Convex Project</strong>
-          <p>{convexConfigured ? "NEXT_PUBLIC_CONVEX_URL is configured for this build." : "Waiting for Convex team/project selection."}</p>
+          <p>{convexReady ? "Runtime Convex URL is configured." : "Waiting for Convex team/project selection."}</p>
         </div>
-        <span className={convexConfigured ? "status-pill green" : "status-pill gold"}>{convexConfigured ? "Ready" : "Waiting"}</span>
+        <span className={convexReady ? "status-pill green" : "status-pill gold"}>{convexReady ? "Ready" : "Waiting"}</span>
       </article>
       <article className="service-card">
-        <span className="service-icon waiting"><ShieldCheck size={18} /></span>
+        <span className={railwayReady ? "service-icon ready" : "service-icon waiting"}><ShieldCheck size={18} /></span>
         <div>
           <strong>Railway Project</strong>
-          <p>Railway CLI is installed; OAuth account selection is still pending.</p>
+          <p>{railwayReady ? `Running on Railway${status?.railwayEnvironment ? ` (${status.railwayEnvironment})` : ""}.` : "Railway CLI is installed; OAuth account selection is still pending."}</p>
         </div>
-        <span className="status-pill gold">Waiting</span>
+        <span className={railwayReady ? "status-pill green" : "status-pill gold"}>{railwayReady ? "Ready" : "Waiting"}</span>
+      </article>
+      <article className="service-card">
+        <span className={openAiReady ? "service-icon ready" : "service-icon waiting"}><Bot size={18} /></span>
+        <div>
+          <strong>OpenAI Guide</strong>
+          <p>{openAiReady ? "OPENAI_API_KEY is configured for live guidance." : "Using deterministic mock guidance fallback."}</p>
+        </div>
+        <span className={openAiReady ? "status-pill green" : "status-pill neutral"}>{openAiReady ? "Live" : "Mock"}</span>
       </article>
       <article className="service-card">
         <span className="service-icon ready"><RotateCcw size={18} /></span>

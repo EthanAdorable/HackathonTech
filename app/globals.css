@@ -666,12 +666,12 @@ p {
 }
 
 .service-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .service-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   border: 1px solid var(--line);
@@ -679,6 +679,12 @@ p {
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 14px;
+}
+
+.service-card > .status-pill,
+.service-card > button {
+  grid-column: 2;
+  justify-self: start;
 }
 
 .service-card p {
