@@ -455,7 +455,7 @@ function AccessScreen({
               {otpDigits.map((digit, index) => <input key={index} value={digit} aria-label={`OTP digit ${index + 1}`} readOnly />)}
             </div>
             <button className="primary-button full" onClick={onEnter}>Verify & Enter</button>
-            <button className="link-button" onClick={() => setAccessStep("login")}>Back</button>
+            <button className="link-button" onClick={() => setAccessStep("login")}>← Back</button>
           </div>
         )}
 

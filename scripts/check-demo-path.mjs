@@ -67,6 +67,7 @@ assert.match(appComponent, /onKeyDown=\{\(event\) =>/, "Dashboard table rows sho
 assert.match(globalCss, /tbody tr:focus-visible/, "Dashboard table rows should show focus affordance");
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
 assert.match(nextConfig, /devIndicators:\s*false/, "Local demos should hide the Next.js dev indicator for reference-clean screenshots");
+assert.match(appComponent, />← Back<\/button>/, "OTP back control should use the reference left-arrow affordance");
 assert.match(appComponent, /aria-pressed=\{user\.id === activeUserId\}/, "Access role preview chips should expose selected state");
 assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
 assert.match(appComponent, /aria-controls=\{notificationsOpen \? "notification-popover" : undefined\}/, "Notification trigger should reference the open popover");
