@@ -26,8 +26,8 @@ Project creation should continue only after those ownership choices are confirme
 Create the project under the chosen team:
 
 ```powershell
-corepack pnpm convex project create tams-hub-prototype --team <team-slug>
-corepack pnpm convex dev --once --configure new --team <team-slug> --project tams-hub-prototype --dev-deployment cloud
+corepack pnpm setup:convex -- --team <team-slug> --dry-run
+corepack pnpm setup:convex -- --team <team-slug>
 ```
 
 Expected local artifacts:
@@ -73,7 +73,8 @@ railway whoami --json
 Create a separate Railway project from this repo:
 
 ```powershell
-railway init --name tams-hub-prototype
+corepack pnpm setup:railway -- --dry-run
+corepack pnpm setup:railway
 ```
 
 Set the initial variables after Convex provides a URL:
@@ -93,7 +94,7 @@ railway variable set OPENAI_API_KEY=<optional-key>
 Deploy:
 
 ```powershell
-railway up --detach -m "Initial TAMS Hub deployment"
+corepack pnpm setup:railway -- --domain --deploy
 ```
 
 After Railway assigns a public domain, set the final auth URL to that domain:
