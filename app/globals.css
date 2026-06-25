@@ -1225,8 +1225,18 @@ p {
   background: #fff0ef;
 }
 
+.warning-box.amber {
+  border-color: #f4d28a;
+  background: #fff8e8;
+}
+
 .warning-box strong {
   color: var(--red);
+}
+
+.warning-box.amber strong,
+.warning-box.amber svg {
+  color: #9a6a00;
 }
 
 .warning-box p,

@@ -764,6 +764,7 @@ function FileEventView({
 }) {
   const mainTemplates = templateDefinitions.slice(0, 4);
   const guideLines = guideOutput.length ? guideOutput : localGuideResponse(application, "missing", "");
+  const missingCount = getApplicationCompletion(application).missing.length;
 
   return (
     <section className="file-layout">
@@ -849,7 +850,8 @@ function FileEventView({
             return <li key={template.id} className={status.complete ? "ok" : "missing"}>{template.name.replace(" Template", "")}</li>;
           })}
         </ul>
-        <div className="warning-box"><AlertTriangle size={16} /><div><strong>Completeness Check</strong><p>{completionPercent}% of required prototype templates are complete.</p></div></div>
+        <div className="warning-box"><AlertTriangle size={16} /><div><strong>Inconsistency Detected</strong><p>Event date in proposal does not match the date in the program flow document.</p></div></div>
+        <div className="warning-box amber"><CircleAlert size={16} /><div><strong>{missingCount || "No"} required document(s) missing</strong><p>{missingCount ? "Upload them to proceed with submission." : `${completionPercent}% of required prototype templates are complete.`}</p></div></div>
         <button className="gold-button full" onClick={() => { onPrecheck(); onGenerateGuide(); }}><Sparkles size={16} /> Run AI Completeness Check</button>
         <div className="guide-says"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
         <button className="primary-button full" disabled={completionPercent < 70} onClick={onSubmit}><SendHorizonal size={16} /> Submit to SADU</button>
