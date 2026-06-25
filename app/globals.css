@@ -615,6 +615,10 @@ p {
   gap: 18px;
 }
 
+.guide-screen {
+  gap: 14px;
+}
+
 .dashboard-welcome,
 .table-header,
 .application-title-row {
@@ -1531,7 +1535,8 @@ p {
     radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.18), transparent 20%),
     linear-gradient(145deg, #0a703f, #064026);
   color: #ffffff;
-  padding: 28px 36px;
+  min-height: 196px;
+  padding: 24px 32px;
 }
 
 .guide-hero > div:first-child {
@@ -1544,7 +1549,7 @@ p {
   display: grid;
   place-items: center;
   width: 250px;
-  min-height: 150px;
+  min-height: 142px;
 }
 
 .guide-hero-mark > svg {
@@ -1566,17 +1571,19 @@ p {
 .guide-hero h2 {
   max-width: 650px;
   color: #ffffff;
-  font-size: 31px;
+  font-size: 30px;
 }
 
 .guide-hero p {
   max-width: 610px;
   color: rgba(255, 255, 255, 0.82);
   margin-bottom: 0;
+  font-size: 15px;
 }
 
 .guide-kicker {
   gap: 8px;
+  margin-bottom: 12px;
   color: #ffd23f;
   font-size: 13px;
   font-weight: 900;
@@ -1588,7 +1595,8 @@ p {
 }
 
 .feature-card {
-  padding: 20px;
+  min-height: 110px;
+  padding: 16px;
 }
 
 .feature-card span {
@@ -1600,17 +1608,18 @@ p {
 }
 
 .feature-card h3 {
-  margin: 13px 0 6px;
+  margin: 10px 0 5px;
+  font-size: 14px;
 }
 
 .feature-card p {
   margin-bottom: 0;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .sdg-section {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .sdg-section h2 {
@@ -1626,7 +1635,7 @@ p {
 .sdg-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .sdg-card {
@@ -1638,7 +1647,8 @@ p {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  padding: 14px;
+  min-height: 66px;
+  padding: 12px;
 }
 
 .sdg-number {
