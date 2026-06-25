@@ -582,6 +582,7 @@ function DashboardView({
   const stats = getDashboardStats(activeUser.role, applications, queueCount);
   const [onlyActionItems, setOnlyActionItems] = useState(false);
   const revisionApplication = applications.find((app) => app.status === "Revision Requested") ?? applications[0];
+  const dashboardDate = formatDashboardDate(applications);
   const displayedApplications = onlyActionItems
     ? applications.filter((app) => app.status === "Revision Requested" || app.status === "Draft" || app.status === "Submitted to SADU")
     : applications;
@@ -591,7 +592,7 @@ function DashboardView({
       <div className="dashboard-welcome">
         <div>
           <h2>Welcome, FEU Alabang {roleWelcomeName(activeUser.role)}</h2>
-          <p>Thursday, June 19, 2025 - Semester 2, A.Y. 2024-2025</p>
+          <p>{dashboardDate} - Semester 2, A.Y. 2024-2025</p>
         </div>
         {activeUser.role === "Student Officer" && <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>}
       </div>
@@ -1348,6 +1349,14 @@ function roleWelcomeName(role: Role) {
 
 function formatShortDate(value: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+}
+
+function formatDashboardDate(applications: EventApplication[]) {
+  const latestTimelineDate = applications
+    .flatMap((application) => application.timeline.map((entry) => entry.createdAt))
+    .sort((first, second) => new Date(second).getTime() - new Date(first).getTime())[0];
+  const date = latestTimelineDate ? new Date(latestTimelineDate) : new Date();
+  return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(date);
 }
 
 function formatMilestoneDate(value: string) {
