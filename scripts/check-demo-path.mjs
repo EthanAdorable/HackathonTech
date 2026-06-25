@@ -72,7 +72,10 @@ assert.match(appComponent, /aria-pressed=\{onlyActionItems\}/, "Dashboard filter
 assert.match(appComponent, /disabled=\{!onlyActionItems\} onClick=\{\(\) => setOnlyActionItems\(false\)\}/, "Dashboard View All should clear the action filter instead of opening an arbitrary row");
 assert.match(appComponent, /aria-label=\{`Open \$\{app\.title\}`\}/, "Dashboard table rows should expose their open action");
 assert.match(appComponent, /onKeyDown=\{\(event\) =>/, "Dashboard table rows should support keyboard selection");
+assert.match(appComponent, /className="table-scroll"/, "Dashboard table should remain horizontally accessible on narrow screens");
 assert.match(globalCss, /tbody tr:focus-visible/, "Dashboard table rows should show focus affordance");
+assert.match(globalCss, /\.table-scroll\s*\{[\s\S]*overflow-x: auto/, "Dashboard table wrapper should allow horizontal scrolling");
+assert.match(globalCss, /\.guide-alert\s*\{[\s\S]*grid-template-columns: 1fr/, "Guide alert should stack at the mobile breakpoint");
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
 assert.match(nextConfig, /devIndicators:\s*false/, "Local demos should hide the Next.js dev indicator for reference-clean screenshots");
 assert.match(appComponent, /\{"\\u2190"\} Back<\/button>/, "Verification back controls should use the reference left-arrow affordance");
@@ -91,6 +94,8 @@ assert.match(appComponent, /aria-current=\{item\.id === activeSection \? "page" 
 assert.match(appComponent, /"Student Officer": <UsersRound size=\{16\} \/>/, "Student organization role picker should use an organization-style icon");
 assert.match(appComponent, /<Feature icon=\{<BriefcaseBusiness \/>\} title="TAMS Guide"/, "Guide overview feature icon should match the reference utility icon language");
 assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls should use a consistent eye icon");
+assert.match(globalCss, /\.nav-button span\s*\{[\s\S]*text-overflow: ellipsis/, "Mobile nav labels should truncate instead of overflowing");
+assert.match(globalCss, /\.template-card summary > span:first-child\s*\{[\s\S]*min-width: 0/, "Template summary text should not push completion badges");
 assert.match(appComponent, /partner-chip active/, "Suggested partner chips should include consistent icons and plus affordances");
 assert.match(appComponent, /aria-pressed=\{selectedPartners\.includes\(partner\)\}/, "Suggested partner chips should behave as selectable controls");
 assert.match(globalCss, /\.partner-chip\.active/, "Selected partner chips should have a visible active state");
@@ -104,6 +109,7 @@ assert.match(appComponent, /aria-pressed=\{app\.id === application\.id\}/, "Appl
 assert.match(appComponent, /threadSearch/, "Messages search box should filter visible conversations");
 assert.match(appComponent, /aria-label="Search messages"/, "Messages search input should have an accessible name");
 assert.match(appComponent, /aria-label="Message"/, "Message composer input should have an accessible name");
+assert.match(appComponent, /placeholder=\{"Search messages\\u2026"\}/, "Visible placeholders should use polished ellipsis glyphs");
 assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
 assert.match(appComponent, /visibleThreads\.find\(\(thread\) => thread\.title === selectedThreadTitle\)/, "Messages selected thread should stay aligned with filtered conversations");
 assert.match(appComponent, /empty-chat-state/, "Messages should show an empty chat state when search hides every thread");

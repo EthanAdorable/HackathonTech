@@ -589,6 +589,8 @@ p {
 
 .nav-button span {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -630,19 +632,24 @@ p {
 .top-actions {
   gap: 9px;
   font-size: 13px;
+  min-width: 0;
 }
 
 .topbar-identity {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   border-left: 1px solid var(--line);
   padding-left: 12px;
 }
 
 .topbar-identity strong {
+  min-width: 0;
+  overflow: hidden;
   color: #172b24;
   font-size: 13px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -987,6 +994,14 @@ p {
   gap: 8px;
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table-scroll table {
+  min-width: 720px;
+}
+
 .status-pill.neutral {
   background: #edf0ee;
   color: #65736d;
@@ -1314,6 +1329,14 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.template-card summary > span:first-child {
+  min-width: 0;
+}
+
+.template-card summary > span:last-child {
+  flex: 0 0 auto;
 }
 
 .template-card summary::-webkit-details-marker {
@@ -2130,6 +2153,15 @@ p {
   .guide-output-header,
   .guide-output-lines {
     grid-template-columns: 1fr;
+  }
+
+  .guide-alert {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .guide-alert .gold-button {
+    justify-self: start;
   }
 
   .progress-steps::before {

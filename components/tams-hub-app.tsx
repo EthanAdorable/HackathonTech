@@ -620,37 +620,39 @@ function DashboardView({
             <button className="ghost-button" disabled={!onlyActionItems} onClick={() => setOnlyActionItems(false)}><Eye size={15} /> View All</button>
           </div>
         </div>
-        <table>
-          <thead><tr><th>Event Name</th><th>Event Type</th><th>Submitted</th><th>Status</th><th>Required Action</th></tr></thead>
-          <tbody>
-            {displayedApplications.map((app) => (
-              <tr
-                key={app.id}
-                role="button"
-                tabIndex={0}
-                aria-label={`Open ${app.title}`}
-                onClick={() => onSelect(app.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onSelect(app.id);
-                  }
-                }}
-              >
-                <td>{app.title}</td>
-                <td>{app.eventType}</td>
-                <td>{formatShortDate(getSubmittedDate(app))}</td>
-                <td><span className={`status-pill ${statusTone[app.status]}`}>{shortStatus(app.status)}</span></td>
-                <td className="action-text">{app.status === "Revision Requested" ? "Revise budget" : app.status === "Draft" ? "Complete form" : app.status.includes("Submitted") ? "Awaiting SADU" : "-"}</td>
-              </tr>
-            ))}
-            {!displayedApplications.length && (
-              <tr>
-                <td colSpan={5} className="empty-row">No applications match this filter.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table>
+            <thead><tr><th>Event Name</th><th>Event Type</th><th>Submitted</th><th>Status</th><th>Required Action</th></tr></thead>
+            <tbody>
+              {displayedApplications.map((app) => (
+                <tr
+                  key={app.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open ${app.title}`}
+                  onClick={() => onSelect(app.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelect(app.id);
+                    }
+                  }}
+                >
+                  <td>{app.title}</td>
+                  <td>{app.eventType}</td>
+                  <td>{formatShortDate(getSubmittedDate(app))}</td>
+                  <td><span className={`status-pill ${statusTone[app.status]}`}>{shortStatus(app.status)}</span></td>
+                  <td className="action-text">{app.status === "Revision Requested" ? "Revise budget" : app.status === "Draft" ? "Complete form" : app.status.includes("Submitted") ? "Awaiting SADU" : "-"}</td>
+                </tr>
+              ))}
+              {!displayedApplications.length && (
+                <tr>
+                  <td colSpan={5} className="empty-row">No applications match this filter.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );
@@ -816,7 +818,7 @@ function FileEventView({
             <Field label="Expected Participants"><input value={application.expectedParticipants} readOnly /></Field>
             <Field label="Adviser Name"><input value={activeUser.role === "Faculty Adviser" ? activeUser.name : "Prof. Maria Santos"} readOnly /></Field>
             <Field label="Budget Estimate (PHP)"><input value="25,000.00" readOnly /></Field>
-            <Field label="Event Objectives" wide><textarea placeholder="Describe the purpose, goals, and expected outcomes of this event..." /></Field>
+            <Field label="Event Objectives" wide><textarea placeholder={"Describe the purpose, goals, and expected outcomes of this event\u2026"} /></Field>
           </div>
         </div>
 
@@ -1080,7 +1082,7 @@ function MessagesView({
   return (
     <section className="messages-layout">
       <aside className="thread-list panel">
-        <div className="search-box"><Search size={16} aria-hidden="true" /><input aria-label="Search messages" value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder="Search messages..." /></div>
+        <div className="search-box"><Search size={16} aria-hidden="true" /><input aria-label="Search messages" value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder={"Search messages\u2026"} /></div>
         {visibleThreads.map((thread) => (
           <button
             key={thread.title}
@@ -1101,7 +1103,7 @@ function MessagesView({
               <h2>{selectedThread.title}</h2>
             </div>
             <MiniThread application={application} expanded />
-            <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
+            <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder={"Type a message\u2026"} /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
           </>
         ) : (
           <div className="empty-chat-state" role="status" aria-live="polite"><Search size={22} aria-hidden="true" /><strong>No conversation selected</strong><p>Clear the search to return to the collaboration thread.</p></div>
@@ -1191,7 +1193,7 @@ function GuideView({
           {guideMode === "question" && (
             <textarea
               aria-label="TAMS Guide filing question"
-              placeholder="Ask about filing requirements, revisions, templates, or SADU review steps..."
+              placeholder={"Ask about filing requirements, revisions, templates, or SADU review steps\u2026"}
               value={guideQuestion}
               onChange={(event) => setGuideQuestion(event.target.value)}
             />
