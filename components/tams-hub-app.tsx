@@ -1072,7 +1072,10 @@ function MessagesView({
   const visibleThreads = threads.filter((thread) =>
     `${thread.title} ${thread.preview}`.toLowerCase().includes(threadSearch.trim().toLowerCase()),
   );
-  const selectedThread = threads.find((thread) => thread.title === selectedThreadTitle) ?? threads[0];
+  const selectedThread =
+    visibleThreads.find((thread) => thread.title === selectedThreadTitle) ??
+    visibleThreads[0] ??
+    threads[0];
 
   return (
     <section className="messages-layout">

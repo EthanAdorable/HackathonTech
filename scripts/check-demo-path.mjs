@@ -101,6 +101,7 @@ assert.match(appComponent, /threadSearch/, "Messages search box should filter vi
 assert.match(appComponent, /aria-label="Search messages"/, "Messages search input should have an accessible name");
 assert.match(appComponent, /aria-label="Message"/, "Message composer input should have an accessible name");
 assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
+assert.match(appComponent, /visibleThreads\.find\(\(thread\) => thread\.title === selectedThreadTitle\)/, "Messages selected thread should stay aligned with filtered conversations");
 assert.match(appComponent, /aria-pressed=\{thread\.title === selectedThread\.title\}/, "Message thread buttons should expose selected state");
 assert.match(appComponent, /className="message-thread-header"/, "Messages chat panel should use a reference-style thread header band");
 assert.match(globalCss, /\.message-thread-header/, "Messages thread header should have a scoped divider style");
