@@ -14,6 +14,7 @@ import {
   ClipboardCheck,
   Clock3,
   CreditCard,
+  Eye,
   FilePlus2,
   Filter,
   FolderKanban,
@@ -568,7 +569,7 @@ function DashboardView({
       <section className="guide-alert">
         <Sparkles size={18} />
         <div><strong>TAMS Guide Alert</strong><p>Tech Career Fair 2025 needs revised budget and participant clarification. Deadline in 6 days.</p></div>
-        <button className="gold-button" disabled={!revisionApplication} onClick={() => revisionApplication && onSelect(revisionApplication.id)}><Search size={15} /> View</button>
+        <button className="gold-button" disabled={!revisionApplication} onClick={() => revisionApplication && onSelect(revisionApplication.id)}><Eye size={15} /> View</button>
       </section>
 
       {activeUser.role === "Admin" && <ServiceReadinessPanel onResetDemo={onResetDemo} />}
