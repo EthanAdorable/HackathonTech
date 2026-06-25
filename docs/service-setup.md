@@ -90,6 +90,7 @@ railway up --detach -m "Initial TAMS Hub deployment"
 Evidence checks:
 
 ```powershell
+$env:TAMS_HUB_HEALTH_URL="https://<railway-domain>"; corepack pnpm services:check
 corepack pnpm services:check
 railway status --json
 railway service status --all --json
@@ -97,4 +98,4 @@ railway variable list --json
 railway logs --lines 200
 ```
 
-The deployed service should respond at its Railway public URL and run `next start` bound to `0.0.0.0` and Railway's `PORT`.
+The deployed service should respond at its Railway public URL, expose `/api/health`, and run `next start` bound to `0.0.0.0` and Railway's `PORT`.

@@ -37,10 +37,30 @@ function envSummary() {
   };
 }
 
+async function healthSummary() {
+  const baseUrl = process.env.TAMS_HUB_HEALTH_URL || process.env.NEXTAUTH_URL;
+  if (!baseUrl) {
+    return { ok: false, output: "Set TAMS_HUB_HEALTH_URL or NEXTAUTH_URL to check /api/health" };
+  }
+
+  const url = new URL("/api/health", baseUrl).toString();
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return { ok: false, output: `${url} returned HTTP ${response.status}` };
+    }
+    const data = await response.json();
+    return { ok: data.ok === true, output: `${url} -> ${JSON.stringify(data.services)}` };
+  } catch (error) {
+    return { ok: false, output: `${url} unavailable: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
 run("Convex login", "corepack", ["pnpm", "convex", "login", "status"]);
 run("Railway CLI", "railway", ["--version"]);
 run("Railway auth", "railway", ["whoami", "--json"]);
 checks.push({ label: "Local env", ...envSummary() });
+checks.push({ label: "App health", ...(await healthSummary()) });
 checks.push({
   label: "OpenAI env",
   ok: Boolean(process.env.OPENAI_API_KEY),

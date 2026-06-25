@@ -119,6 +119,8 @@ corepack pnpm start
 corepack pnpm services:check
 ```
 
+When checking a running deployment, set `TAMS_HUB_HEALTH_URL` to the app URL so `services:check` probes `/api/health`.
+
 ## Current Limitations
 
 - Compliance and formal policy validation are intentionally future scope.
