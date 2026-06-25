@@ -999,7 +999,13 @@ function MessagesView({
       <section className="partner-card">
         <Sparkles size={18} />
         <div><strong>TAMS Guide - Suggested Partners</strong><p>This event may fit collaboration with Junior Philippine Computer Society and FEU Engineering Society.</p></div>
-        <span>Junior Philippine CS Society +</span><span>Student Council Federation +</span><span>FEU Engineering Society +</span>
+        {["Junior Philippine CS Society", "Student Council Federation", "FEU Engineering Society"].map((partner) => (
+          <span className="partner-chip" key={partner}>
+            <UsersRound size={14} />
+            <span>{partner}</span>
+            <Plus size={14} />
+          </span>
+        ))}
       </section>
     </section>
   );

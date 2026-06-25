@@ -1636,12 +1636,23 @@ p {
   font-size: 12px;
 }
 
-.partner-card span {
+.partner-card > span {
   border-radius: 999px;
   background: #eef4ef;
   padding: 6px 11px;
   font-size: 12px;
   font-weight: 850;
+}
+
+.partner-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.partner-chip svg {
+  color: var(--green-700);
+  flex: 0 0 auto;
 }
 
 .guide-hero {
