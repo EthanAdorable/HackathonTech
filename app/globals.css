@@ -1415,6 +1415,7 @@ p {
 }
 
 .thread-list {
+  grid-row: 1 / span 2;
   min-height: 500px;
   padding: 10px;
 }
@@ -1487,7 +1488,7 @@ p {
 }
 
 .chat-panel {
-  min-height: 400px;
+  min-height: 350px;
 }
 
 .chat-thread {
@@ -1496,14 +1497,14 @@ p {
 }
 
 .chat-thread.expanded {
-  min-height: 315px;
+  min-height: 240px;
 }
 
 .chat-bubble {
   max-width: 360px;
   border-radius: 8px;
   background: #edf2ef;
-  padding: 12px;
+  padding: 10px 12px;
 }
 
 .chat-bubble.own {
@@ -1536,7 +1537,7 @@ p {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 13px;
+  padding: 12px;
 }
 
 .partner-card p {
@@ -1547,7 +1548,7 @@ p {
 .partner-card span {
   border-radius: 999px;
   background: #eef4ef;
-  padding: 7px 12px;
+  padding: 6px 11px;
   font-size: 12px;
   font-weight: 850;
 }
