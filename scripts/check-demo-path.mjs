@@ -112,6 +112,7 @@ assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH
 assert.match(readFileSync("scripts/setup-railway.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED:\s*"false"/, "Railway setup should disable demo auth for public deployments");
 assert.match(packageJson, /"convex:codegen": "convex codegen --typecheck enable"/, "Convex codegen should be available as a checked script");
 assert.match(convexSetup, /Generate Convex client types/, "Convex setup should generate official client types after deployment selection");
+assert.match(convexSetup, /Convex setup dry-run complete/, "Convex setup dry-run should make clear that no cloud changes were made");
 assert.ok(existsSync("convex/_generated/api.js"), "Convex generated runtime API should be committed");
 assert.ok(existsSync("convex/_generated/dataModel.d.ts"), "Convex generated data model types should be committed");
 

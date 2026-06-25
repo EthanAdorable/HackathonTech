@@ -82,4 +82,8 @@ run("Generate Convex client types", "corepack", ["pnpm", "convex:codegen"]);
 run("Push Convex functions once", "corepack", ["pnpm", "convex", "dev", "--once"]);
 run("Seed prototype data", "corepack", ["pnpm", "convex", "run", "seed:seedDemoData"]);
 
-console.log("Convex setup complete. Review .env.local and generated files under convex/_generated/.");
+if (dryRun) {
+  console.log("Convex setup dry-run complete. No project, deployment, function push, or seed changes were made.");
+} else {
+  console.log("Convex setup complete. Review .env.local and generated files under convex/_generated/.");
+}
