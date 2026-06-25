@@ -57,6 +57,7 @@ assert.match(appComponent, /aria-pressed=\{available\}/, "Admin template toggles
 assert.match(appComponent, /disabled=\{!canStartReview\}/, "SADU review action should be gated by submitted states");
 assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resubmission should require completed fields");
 assert.match(appComponent, /revisionApplication && onSelect\(revisionApplication\.id\)/, "Dashboard guide alert should open the revision application");
+assert.match(appComponent, /\{revisionApplication\.title\} needs revised budget/, "Dashboard guide alert should describe the selected revision application");
 assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
 assert.match(appComponent, /Revision Inconsistency/, "File event guide should show a reference-style revision alert");
 assert.match(appComponent, /application\.status === "Revision Requested"/, "File event revision alert should only appear for applications with requested revisions");
