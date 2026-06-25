@@ -325,6 +325,8 @@ function AccessScreen({
   onEnter: () => void;
 }) {
   const activeUser = users.find((user) => user.id === activeUserId) ?? users[0];
+  const [accessStep, setAccessStep] = useState<"login" | "otp" | "card">("login");
+  const otpDigits = ["", "", "", "", "", ""];
 
   return (
     <main className="access-shell">
@@ -354,28 +356,55 @@ function AccessScreen({
           </div>
         </div>
 
-        <div className="access-login-card">
-          <p className="label">FEU account login</p>
-          <input value="student@feualabang.edu.ph" readOnly aria-label="FEU email" />
-          <input value="Password" readOnly aria-label="Password" type="password" />
-          <button className="primary-button full" onClick={onEnter}>Continue with FEU Account</button>
-        </div>
+        {accessStep === "login" && (
+          <>
+            <div className="access-login-card">
+              <p className="label">FEU account login</p>
+              <input value="student@feualabang.edu.ph" readOnly aria-label="FEU email" />
+              <input value="Password" readOnly aria-label="Password" type="password" />
+              <button className="primary-button full" onClick={() => setAccessStep("otp")}>Continue with FEU Account</button>
+            </div>
 
-        <div className="access-method"><CreditCard size={18} /><div><strong>Tap TAMS ID Card</strong><span>Hold your campus card near the reader</span></div></div>
-        <div className="access-method"><Smartphone size={18} /><div><strong>OTP Verification</strong><span>Receive a one-time code via SMS or email</span></div></div>
+            <button className="access-method" onClick={() => setAccessStep("card")}><CreditCard size={18} /><div><strong>Tap TAMS ID Card</strong><span>Hold your campus card near the reader</span></div></button>
+            <button className="access-method" onClick={() => setAccessStep("otp")}><Smartphone size={18} /><div><strong>OTP Verification</strong><span>Receive a one-time code via SMS or email</span></div></button>
 
-        <div className="access-login-card">
-          <p className="label">Preview as role</p>
-          <div className="role-choice-grid">
-            {users.map((user) => (
-              <button key={user.id} className={user.id === activeUserId ? "role-chip active" : "role-chip"} onClick={() => setActiveUserId(user.id)}>
-                {roleIcons[user.role]}
-                {user.role}
-              </button>
-            ))}
+            <div className="access-login-card">
+              <p className="label">Preview as role</p>
+              <div className="role-choice-grid">
+                {users.map((user) => (
+                  <button key={user.id} className={user.id === activeUserId ? "role-chip active" : "role-chip"} onClick={() => setActiveUserId(user.id)}>
+                    {roleIcons[user.role]}
+                    {user.role}
+                  </button>
+                ))}
+              </div>
+              <button className="gold-button full" onClick={onEnter}>Enter as {activeUser.role}</button>
+            </div>
+          </>
+        )}
+
+        {accessStep === "otp" && (
+          <div className="access-login-card verification-card">
+            <div className="verification-title"><KeyRound size={18} /><div><strong>OTP Verification</strong><span>Enter the 6-digit code sent to ju***@feualabang.edu.ph</span></div></div>
+            <div className="otp-grid">
+              {otpDigits.map((digit, index) => <input key={index} value={digit} aria-label={`OTP digit ${index + 1}`} readOnly />)}
+            </div>
+            <button className="primary-button full" onClick={onEnter}>Verify & Enter</button>
+            <button className="link-button" onClick={() => setAccessStep("login")}>Back</button>
           </div>
-          <button className="gold-button full" onClick={onEnter}>Enter as {activeUser.role}</button>
-        </div>
+        )}
+
+        {accessStep === "card" && (
+          <div className="access-login-card verification-card">
+            <div className="card-reader">
+              <CreditCard size={28} />
+              <span />
+            </div>
+            <div className="verification-title centered"><strong>Tap TAMS ID Card</strong><span>Hold your campus card near the reader to verify your campus role.</span></div>
+            <button className="primary-button full" onClick={onEnter}>Simulate Card Tap</button>
+            <button className="link-button" onClick={() => setAccessStep("login")}>Back</button>
+          </div>
+        )}
 
         <p className="secure-note"><KeyRound size={14} /> Access is based on verified campus role.</p>
       </section>

@@ -288,6 +288,8 @@ p {
 
 .access-method {
   gap: 13px;
+  width: 100%;
+  text-align: left;
   padding: 15px 18px;
 }
 
@@ -311,6 +313,82 @@ p {
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
+}
+
+.verification-card {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.verification-title {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.verification-title svg {
+  color: var(--green-700);
+}
+
+.verification-title strong,
+.verification-title span {
+  display: block;
+}
+
+.verification-title span {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.verification-title.centered {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+.otp-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 9px;
+}
+
+.otp-grid input {
+  aspect-ratio: 1;
+  padding: 0;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.link-button {
+  border: 0;
+  background: transparent;
+  color: var(--green-700);
+  font-weight: 900;
+}
+
+.card-reader {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(15, 122, 70, 0.15), transparent 62%),
+    #f4faf6;
+  color: var(--green-700);
+}
+
+.card-reader span {
+  position: absolute;
+  inset: 18px;
+  border: 2px solid rgba(15, 122, 70, 0.12);
+  border-radius: inherit;
 }
 
 .role-choice-grid {
