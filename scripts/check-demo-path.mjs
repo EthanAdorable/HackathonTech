@@ -59,6 +59,8 @@ assert.match(appComponent, /aria-label="View notifications"/, "Topbar notificati
 assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");
 assert.match(appComponent, /topbar-identity/, "Topbar user identity should be grouped like the reference header");
 assert.match(globalCss, /\.sidebar \.brand \.mascot-logo/, "Sidebar mascot should match the larger reference app chrome");
+assert.match(appComponent, /"dashboard", label: "Dashboard", icon: <LayoutGrid size=\{18\} \/>/, "Sidebar dashboard icon should match the reference utility set");
+assert.match(appComponent, /"applications", label: "My Applications", icon: <ClipboardList size=\{18\} \/>/, "Sidebar applications icon should match the reference utility set");
 assert.match(appComponent, /"Student Officer": <FilePlus2 size=\{16\} \/>/, "Role picker icons should use the workflow icon language");
 assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls should use a consistent eye icon");
 assert.match(appComponent, /className="partner-chip"/, "Suggested partner chips should include consistent icons and plus affordances");

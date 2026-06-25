@@ -14,11 +14,12 @@ import {
   Clock3,
   CreditCard,
   Eye,
+  ClipboardList,
+  FileText,
   FilePlus2,
   Filter,
-  FolderKanban,
   KeyRound,
-  LayoutDashboard,
+  LayoutGrid,
   LogOut,
   MessageSquare,
   Plus,
@@ -62,11 +63,11 @@ type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
 type GuideMode = "checklist" | "missing" | "summary" | "revision" | "question";
 
 const sectionItems: { id: Section; label: string; icon: ReactNode }[] = [
-  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
-  { id: "file", label: "File Event", icon: <FilePlus2 size={18} /> },
-  { id: "applications", label: "My Applications", icon: <FolderKanban size={18} /> },
+  { id: "dashboard", label: "Dashboard", icon: <LayoutGrid size={18} /> },
+  { id: "file", label: "File Event", icon: <FileText size={18} /> },
+  { id: "applications", label: "My Applications", icon: <ClipboardList size={18} /> },
   { id: "messages", label: "Messages", icon: <MessageSquare size={18} /> },
-  { id: "guide", label: "TAMS Guide", icon: <Bot size={18} /> },
+  { id: "guide", label: "TAMS Guide", icon: <Sparkles size={18} /> },
 ];
 
 const roleIcons: Record<Role, ReactNode> = {
