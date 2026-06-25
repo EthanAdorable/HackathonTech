@@ -496,7 +496,12 @@ function Sidebar({
       <div className="logged-card"><span>Logged in as</span><strong>{roleDisplayName(activeUser.role)}</strong></div>
       <nav className="nav-list" aria-label="Main navigation">
         {sectionItems.map((item) => (
-          <button key={item.id} className={item.id === activeSection ? "nav-button active" : "nav-button"} onClick={() => setSection(item.id)}>
+          <button
+            key={item.id}
+            className={item.id === activeSection ? "nav-button active" : "nav-button"}
+            aria-current={item.id === activeSection ? "page" : undefined}
+            onClick={() => setSection(item.id)}
+          >
             {item.icon}
             <span>{item.label}</span>
           </button>

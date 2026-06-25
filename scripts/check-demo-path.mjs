@@ -68,6 +68,7 @@ assert.match(appComponent, /topbar-identity/, "Topbar user identity should be gr
 assert.match(globalCss, /\.sidebar \.brand \.mascot-logo/, "Sidebar mascot should match the larger reference app chrome");
 assert.match(appComponent, /"dashboard", label: "Dashboard", icon: <LayoutGrid size=\{18\} \/>/, "Sidebar dashboard icon should match the reference utility set");
 assert.match(appComponent, /"applications", label: "My Applications", icon: <ClipboardList size=\{18\} \/>/, "Sidebar applications icon should match the reference utility set");
+assert.match(appComponent, /aria-current=\{item\.id === activeSection \? "page" : undefined\}/, "Sidebar nav should expose the current section");
 assert.match(appComponent, /"Student Officer": <FilePlus2 size=\{16\} \/>/, "Role picker icons should use the workflow icon language");
 assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls should use a consistent eye icon");
 assert.match(appComponent, /partner-chip active/, "Suggested partner chips should include consistent icons and plus affordances");
