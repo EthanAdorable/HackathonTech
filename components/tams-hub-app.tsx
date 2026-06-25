@@ -883,6 +883,8 @@ function ApplicationsView({
   onReject: () => void;
   onEndorse: () => void;
 }) {
+  const requiredActions = getRequiredActionCards(application);
+
   return (
     <div className="screen-stack">
       <div className="application-title-row">
@@ -906,10 +908,10 @@ function ApplicationsView({
         <div className="panel">
           <h3>Required Actions</h3>
           <div className="action-list">
-            {getApplicationCompletion(application).missing.slice(0, 3).map((item) => (
-              <div className="required-action" key={item}><CircleAlert size={18} /><div><strong>{item.split(":")[0]}</strong><p>{item.split(":")[1] ?? "Complete before proceeding."}</p></div></div>
+            {requiredActions.map((item) => (
+              <div className="required-action" key={item.title}><CircleAlert size={18} /><div><strong>{item.title}</strong><p>{item.detail}</p></div></div>
             ))}
-            {!getApplicationCompletion(application).missing.length && <div className="required-action ok"><CheckCircle2 size={18} /><div><strong>No missing prototype fields</strong><p>Ready for human review.</p></div></div>}
+            {!requiredActions.length && <div className="required-action ok"><CheckCircle2 size={18} /><div><strong>No missing prototype fields</strong><p>Ready for human review.</p></div></div>}
           </div>
           <WorkflowActions role={activeUser.role} status={application.status} onReview={onReview} onRevision={onRevision} onResubmit={onResubmit} onApprove={onApprove} onReject={onReject} onEndorse={onEndorse} />
         </div>
@@ -948,6 +950,26 @@ function getProgressMilestones(application: EventApplication) {
     { label: "Adviser Endorsement", done: Boolean(adviserEntry || finalEntry), active: false, date: adviserEntry?.createdAt },
     { label: "Final Approval", done: Boolean(finalEntry), active: application.status === "SADU Approved" || application.status === "Rejected" || application.status === "Archived", date: finalEntry?.createdAt },
   ];
+}
+
+function getRequiredActionCards(application: EventApplication) {
+  if (application.status === "Revision Requested") {
+    return [
+      {
+        title: "Upload revised budget breakdown",
+        detail: "Include itemized food, materials, and honorarium costs.",
+      },
+      {
+        title: "Clarify expected number of participants",
+        detail: "Proposal says 120 but registration form says 150 - reconcile both.",
+      },
+    ];
+  }
+
+  return getApplicationCompletion(application).missing.slice(0, 3).map((item) => {
+    const [title, detail] = item.split(":");
+    return { title, detail: detail?.trim() || "Complete before proceeding." };
+  });
 }
 
 function ReviewerInsightsPanel({ application, completionPercent }: { application: EventApplication; completionPercent: number }) {

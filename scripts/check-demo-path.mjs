@@ -62,6 +62,8 @@ assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls shoul
 assert.match(appComponent, /className="partner-chip"/, "Suggested partner chips should include consistent icons and plus affordances");
 assert.match(appComponent, /Final Approval/, "Application progress tracker should match the reference milestone labels");
 assert.match(appComponent, /formatMilestoneDate/, "Application progress tracker should use compact reference-style dates");
+assert.match(appComponent, /Upload revised budget breakdown/, "Revision status should show reference-style required actions");
+assert.match(appComponent, /Clarify expected number of participants/, "Revision status should call out participant count reconciliation");
 assert.match(appComponent, /threadSearch/, "Messages search box should filter visible conversations");
 assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
 assert.match(appComponent, /notificationsOpen/, "Topbar notification bell should open prototype alerts");
