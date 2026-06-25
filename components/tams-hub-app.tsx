@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  type DemoUser,
   type EventApplication,
   type EventStatus,
   type Role,
