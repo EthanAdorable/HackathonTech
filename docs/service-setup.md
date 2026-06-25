@@ -77,6 +77,8 @@ corepack pnpm setup:railway -- --dry-run
 corepack pnpm setup:railway
 ```
 
+The setup script will not copy a local `NEXTAUTH_URL` such as `http://127.0.0.1:3000` into Railway. After Railway assigns a public URL, pass it with `--app-url` or set `TAMS_RAILWAY_APP_URL`.
+
 Set the initial variables after Convex provides a URL:
 
 ```powershell
@@ -91,17 +93,19 @@ railway variable set NEXT_PUBLIC_CONVEX_URL=<convex-url>
 railway variable set OPENAI_API_KEY=<optional-key>
 ```
 
-Deploy:
+Create a Railway-provided domain, then deploy with the public auth callback URL:
 
 ```powershell
-corepack pnpm setup:railway -- --domain --deploy
+corepack pnpm setup:railway -- --domain
+railway domain
+corepack pnpm setup:railway -- --app-url https://<railway-domain> --deploy
 ```
 
-After Railway assigns a public domain, set the final auth URL to that domain:
+You can also set the public URL through an environment variable:
 
 ```powershell
-railway domain
-railway variable set NEXTAUTH_URL=https://<railway-domain>
+$env:TAMS_RAILWAY_APP_URL="https://<railway-domain>"
+corepack pnpm setup:railway -- --deploy
 ```
 
 Evidence checks:

@@ -12,12 +12,13 @@ const args = new Map(
 
 const project = args.get("project") || process.env.TAMS_RAILWAY_PROJECT || "tams-hub-prototype";
 const workspace = args.get("workspace") || process.env.TAMS_RAILWAY_WORKSPACE;
+const appUrl = args.get("app-url") || process.env.TAMS_RAILWAY_APP_URL || "";
 const deploy = args.has("deploy");
 const createDomain = args.has("domain");
 const dryRun = args.has("dry-run");
 
 if (args.has("help") || args.has("h")) {
-  console.log(`Usage: node scripts/setup-railway.mjs [--workspace <workspace>] [--project tams-hub-prototype] [--domain] [--deploy] [--dry-run]
+  console.log(`Usage: node scripts/setup-railway.mjs [--workspace <workspace>] [--project tams-hub-prototype] [--app-url https://...] [--domain] [--deploy] [--dry-run]
 
 Creates the dedicated Railway project after Railway login is complete, sets
 runtime variables from local env values with secret output redacted, and
@@ -25,7 +26,7 @@ optionally creates a Railway domain or starts a detached deployment.
 
 Environment read from process env or .env.local:
   NEXTAUTH_SECRET
-  NEXTAUTH_URL
+  NEXTAUTH_URL or TAMS_RAILWAY_APP_URL / --app-url for Railway auth callbacks
   OPENAI_MODEL
   NEXT_PUBLIC_CONVEX_URL
   OPENAI_API_KEY (optional, set only when present)`);
@@ -50,6 +51,29 @@ function readLocalEnv() {
 
 function envValue(key) {
   return process.env[key] || localEnv[key] || "";
+}
+
+function isLoopbackUrl(value) {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
+let nextAuthUrl = appUrl || envValue("NEXTAUTH_URL");
+const nextAuthUrlIsLoopback = nextAuthUrl && isLoopbackUrl(nextAuthUrl);
+
+if (!dryRun && nextAuthUrlIsLoopback) {
+  if (deploy) {
+    console.error("Refusing to deploy with Railway NEXTAUTH_URL set to a localhost address.");
+    console.error("Pass --app-url https://<railway-domain> or set TAMS_RAILWAY_APP_URL after Railway assigns a public domain.");
+    process.exit(1);
+  }
+
+  console.log("[SKIP] NEXTAUTH_URL is a local callback URL; pass --app-url or TAMS_RAILWAY_APP_URL after Railway assigns a public domain.");
+  nextAuthUrl = "";
 }
 
 function run(label, command, commandArgs, options = {}) {
@@ -83,7 +107,7 @@ run("Create/link dedicated Railway project", "railway", [
 
 const variables = {
   NEXTAUTH_SECRET: envValue("NEXTAUTH_SECRET"),
-  NEXTAUTH_URL: envValue("NEXTAUTH_URL"),
+  NEXTAUTH_URL: nextAuthUrl,
   OPENAI_MODEL: envValue("OPENAI_MODEL") || "gpt-4o-mini",
   NEXT_PUBLIC_CONVEX_URL: envValue("NEXT_PUBLIC_CONVEX_URL"),
   OPENAI_API_KEY: envValue("OPENAI_API_KEY"),
