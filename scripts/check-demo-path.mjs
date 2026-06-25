@@ -48,6 +48,7 @@ assert.match(authConfig, /isDemoAuthEnabled/, "NextAuth demo credentials should 
 assert.match(authConfig, /session\.user\.role = token\.role/, "NextAuth session should expose the demo user role");
 assert.match(authConfig, /session\.user\.title = token\.title/, "NextAuth session should expose the demo user title");
 assert.match(appComponent, /function toggleTemplateAvailability/, "Admin template availability toggles should be interactive");
+assert.match(appComponent, /aria-pressed=\{available\}/, "Admin template toggles should expose pressed state");
 assert.match(appComponent, /disabled=\{!canStartReview\}/, "SADU review action should be gated by submitted states");
 assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resubmission should require completed fields");
 assert.match(appComponent, /revisionApplication && onSelect\(revisionApplication\.id\)/, "Dashboard guide alert should open the revision application");

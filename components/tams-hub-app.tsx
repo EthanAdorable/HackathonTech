@@ -671,7 +671,11 @@ function AdminOperationsPanel({
             return (
               <div className="admin-row" key={template.id}>
                 <div><strong>{template.name}</strong><span>{template.fields.filter((field) => field.required).length} required fields</span></div>
-                <button className={available ? "toggle-button active" : "toggle-button"} onClick={() => onToggleTemplate(template.id)}>
+                <button
+                  className={available ? "toggle-button active" : "toggle-button"}
+                  aria-pressed={available}
+                  onClick={() => onToggleTemplate(template.id)}
+                >
                   {available ? "Available" : "Disabled"}
                 </button>
               </div>
