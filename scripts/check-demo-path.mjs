@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   getApplicationCompletion,
   makeAiSummary,
@@ -19,6 +20,23 @@ assert.ok(byStatus.get("Draft"), "seed data should include a draft application")
 assert.ok(byStatus.get("Submitted to SADU"), "seed data should include a submitted application");
 assert.ok(byStatus.get("Revision Requested"), "seed data should include a revision-requested application");
 assert.ok(byStatus.get("SADU Approved"), "seed data should include an approved application");
+assert.deepEqual(
+  seedApplications.map((application) => application.title),
+  ["Tech Career Fair 2025", "Leadership Summit Vol.3", "FEU Hackathon 2025", "Org Anniversary Night", "Python Workshop Series"],
+  "dashboard seed rows should stay aligned with the reference screens",
+);
+assert.ok(
+  seedApplications.every((application) => application.timeline.every((entry) => entry.createdAt.startsWith("2025-"))),
+  "demo timeline dates should stay in the reference 2025 period",
+);
+
+const appComponent = readFileSync(new URL("../components/tams-hub-app.tsx", import.meta.url), "utf8");
+const convexApplications = readFileSync(new URL("../convex/applications.ts", import.meta.url), "utf8");
+assert.match(
+  appComponent,
+  /return \{ pending: 3, needsAction: 2, approved: 7, messages: 4 \};/,
+  "student dashboard summary metrics should stay aligned with the reference screen",
+);
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
@@ -63,4 +81,8 @@ assert.ok(approved.timeline.some((entry) => entry.status === "SADU Approved"));
 assert.ok(makeChecklist(approved).length >= 4, "TAMS Guide checklist should return useful guidance");
 assert.match(makeAiSummary(approved), /SADU should verify final readiness/i);
 
-console.log("Demo path check passed: roles, templates, revision loop, approval, and guide helpers are coherent.");
+for (const mutationName of ["requestRevision", "resubmit", "approve", "reject", "addEndorsement"]) {
+  assert.match(convexApplications, new RegExp(`export const ${mutationName} = mutation`), `Convex mutation ${mutationName} should be available`);
+}
+
+console.log("Demo path check passed: reference seeds, roles, templates, revision loop, approval, Convex workflow mutations, and guide helpers are coherent.");
