@@ -581,7 +581,7 @@ function DashboardView({
 }) {
   const stats = getDashboardStats(activeUser.role, applications, queueCount);
   const [onlyActionItems, setOnlyActionItems] = useState(false);
-  const revisionApplication = applications.find((app) => app.status === "Revision Requested") ?? applications[0];
+  const revisionApplication = applications.find((app) => app.status === "Revision Requested");
   const dashboardDate = formatDashboardDate(applications);
   const displayedApplications = onlyActionItems
     ? applications.filter((app) => app.status === "Revision Requested" || app.status === "Draft" || app.status === "Submitted to SADU")
@@ -604,11 +604,13 @@ function DashboardView({
         <StatCard icon={<MessageSquare />} value={stats.messages} label="SADU Messages" tone="blue" />
       </section>
 
-      <section className="guide-alert">
-        <Sparkles size={18} />
-        <div><strong>TAMS Guide Alert</strong><p>{revisionApplication.title} needs revised budget and participant clarification. Deadline in 6 days.</p></div>
-        <button className="gold-button" disabled={!revisionApplication} onClick={() => revisionApplication && onSelect(revisionApplication.id)}><Eye size={15} /> View</button>
-      </section>
+      {revisionApplication && (
+        <section className="guide-alert">
+          <Sparkles size={18} />
+          <div><strong>TAMS Guide Alert</strong><p>{revisionApplication.title} needs revised budget and participant clarification. Deadline in 6 days.</p></div>
+          <button className="gold-button" onClick={() => onSelect(revisionApplication.id)}><Eye size={15} /> View</button>
+        </section>
+      )}
 
       {activeUser.role === "Admin" && <ServiceReadinessPanel onResetDemo={onResetDemo} />}
       {activeUser.role === "Admin" && <AdminOperationsPanel templateAvailability={templateAvailability} onToggleTemplate={onToggleTemplate} />}
