@@ -1683,10 +1683,19 @@ p {
   font-size: 11px;
 }
 
+.thread-meta strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #162821;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .thread-meta > span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  flex: 0 0 auto;
   white-space: nowrap;
 }
 

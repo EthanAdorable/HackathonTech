@@ -116,6 +116,7 @@ assert.match(appComponent, /threadSearch/, "Messages search box should filter vi
 assert.match(appComponent, /aria-label="Search messages"/, "Messages search input should have an accessible name");
 assert.match(appComponent, /aria-label="Message"/, "Message composer input should have an accessible name");
 assert.match(appComponent, /placeholder=\{"Search messages\\u2026"\}/, "Visible placeholders should use polished ellipsis glyphs");
+assert.match(globalCss, /\.thread-meta strong\s*\{[\s\S]*text-overflow: ellipsis/, "Message thread titles should truncate in the compact sidebar");
 assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
 assert.match(appComponent, /visibleThreads\.find\(\(thread\) => thread\.title === selectedThreadTitle\)/, "Messages selected thread should stay aligned with filtered conversations");
 assert.match(appComponent, /empty-chat-state/, "Messages should show an empty chat state when search hides every thread");
