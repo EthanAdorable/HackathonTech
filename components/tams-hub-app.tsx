@@ -1057,7 +1057,7 @@ function MessagesView({
   return (
     <section className="messages-layout">
       <aside className="thread-list panel">
-        <div className="search-box"><Search size={16} /><input value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder="Search messages..." /></div>
+        <div className="search-box"><Search size={16} aria-hidden="true" /><input aria-label="Search messages" value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder="Search messages..." /></div>
         {visibleThreads.map((thread) => (
           <button key={thread.title} className={thread.title === selectedThread.title ? "thread-item active" : "thread-item"} onClick={() => setSelectedThreadTitle(thread.title)}>
             <span className="thread-meta"><strong>{thread.title}</strong><span>{thread.count && <em>{thread.count}</em>}{thread.time}</span></span>
@@ -1070,7 +1070,7 @@ function MessagesView({
         <h2>{selectedThread.title}</h2>
         <p className="thread-summary">{selectedThread.preview}</p>
         <MiniThread application={application} expanded />
-        <div className="composer-row"><input value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
+        <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
       </section>
       <section className="partner-card">
         <Sparkles size={18} />
