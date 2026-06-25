@@ -84,7 +84,7 @@ Convex files live in `convex/`:
 - `applications.ts` includes list, status update, and message mutations.
 - `seed.ts` mirrors the prototype seed data for backend initialization.
 
-The running MVP currently uses local browser storage for demo speed. Replace the local state in `components/tams-hub-app.tsx` with Convex hooks after creating a Convex deployment and setting `NEXT_PUBLIC_CONVEX_URL`.
+The running MVP currently uses local browser storage for demo speed. `app/providers.tsx` already enables `ConvexProvider` when `NEXT_PUBLIC_CONVEX_URL` exists, so the next migration step is replacing local state in `components/tams-hub-app.tsx` with Convex hooks after project setup.
 
 ## Railway Notes
 
