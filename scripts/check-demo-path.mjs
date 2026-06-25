@@ -42,6 +42,7 @@ assert.match(
 );
 assert.match(authRoute, /NextAuth\(authOptions\)/, "NextAuth route should use the shared auth options");
 assert.match(authConfig, /CredentialsProvider/, "NextAuth credentials provider should be wired for TAMS Access");
+assert.match(authConfig, /isDemoAuthEnabled/, "NextAuth demo credentials should be gated for public deploys");
 assert.match(authConfig, /session\.user\.role = token\.role/, "NextAuth session should expose the demo user role");
 assert.match(authConfig, /session\.user\.title = token\.title/, "NextAuth session should expose the demo user title");
 assert.match(appComponent, /function toggleTemplateAvailability/, "Admin template availability toggles should be interactive");
@@ -76,6 +77,7 @@ assert.match(appComponent, /TAMS Guide filing question/, "Guide question mode sh
 assert.match(appComponent, /guideModeLabels/, "Guide output should identify the active guidance mode");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
+assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");

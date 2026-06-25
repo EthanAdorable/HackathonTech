@@ -13,6 +13,14 @@ function toAuthUser(user: DemoUser) {
   };
 }
 
+function isDemoAuthEnabled() {
+  if (process.env.TAMS_DEMO_AUTH_ENABLED) {
+    return process.env.TAMS_DEMO_AUTH_ENABLED === "true";
+  }
+
+  return process.env.NODE_ENV !== "production" && !process.env.RAILWAY_ENVIRONMENT;
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -21,6 +29,7 @@ export const authOptions: NextAuthOptions = {
         userId: { label: "User", type: "text" },
       },
       async authorize(credentials) {
+        if (!isDemoAuthEnabled()) return null;
         const user = users.find((item) => item.id === credentials?.userId);
         if (!user) return null;
         return toAuthUser(user);

@@ -67,6 +67,7 @@ function deployEnvWarnings() {
   const warnings = [];
   const nextAuthSecret = process.env.NEXTAUTH_SECRET || localEnv.NEXTAUTH_SECRET || "";
   const nextAuthUrl = process.env.NEXTAUTH_URL || localEnv.NEXTAUTH_URL || "";
+  const demoAuthEnabled = process.env.TAMS_DEMO_AUTH_ENABLED || localEnv.TAMS_DEMO_AUTH_ENABLED || "";
 
   if (nextAuthSecret === "replace-with-a-local-secret" || nextAuthSecret === "local-tams-hub-prototype-secret") {
     warnings.push("NEXTAUTH_SECRET uses a local prototype value");
@@ -74,6 +75,10 @@ function deployEnvWarnings() {
 
   if (isLoopbackUrl(nextAuthUrl)) {
     warnings.push("NEXTAUTH_URL points to localhost");
+  }
+
+  if (demoAuthEnabled === "true") {
+    warnings.push("TAMS_DEMO_AUTH_ENABLED exposes prototype role switching");
   }
 
   return warnings;

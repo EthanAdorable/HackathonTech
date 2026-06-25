@@ -83,6 +83,7 @@ Set the initial variables after Convex provides a URL:
 
 ```powershell
 railway variable set NEXTAUTH_SECRET=<production-secret>
+railway variable set TAMS_DEMO_AUTH_ENABLED=false
 railway variable set OPENAI_MODEL=gpt-4o-mini
 railway variable set NEXT_PUBLIC_CONVEX_URL=<convex-url>
 ```

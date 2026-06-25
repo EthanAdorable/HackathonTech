@@ -35,6 +35,7 @@ Copy `.env.example` to `.env.local`.
 ```bash
 NEXTAUTH_SECRET=replace-with-a-local-secret
 NEXTAUTH_URL=http://127.0.0.1:3000
+TAMS_DEMO_AUTH_ENABLED=true
 # Optional override for services:check
 # TAMS_HUB_HEALTH_URL=http://127.0.0.1:3000
 OPENAI_API_KEY=
@@ -52,7 +53,7 @@ NEXT_PUBLIC_CONVEX_URL=
 - Faculty Adviser
 - Admin
 
-The visible role switcher simulates TAMS Access with OTP and NFC/card-tap verification. The NextAuth route at `/api/auth/[...nextauth]` is included as the structured auth placeholder for real credentials or campus providers later.
+The visible role switcher simulates TAMS Access with OTP and NFC/card-tap verification. The NextAuth route at `/api/auth/[...nextauth]` is included as the structured auth placeholder for real credentials or campus providers later. `TAMS_DEMO_AUTH_ENABLED=true` keeps credentials role switching available for local prototype demos; leave it unset or false for public deploys unless demo access is intentional.
 
 ## Main Modules
 
