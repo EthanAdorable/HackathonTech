@@ -150,7 +150,7 @@ p {
 
 .access-hero {
   position: relative;
-  padding: 54px 64px;
+  padding: 48px 64px;
   overflow: hidden;
   background:
     linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
@@ -167,8 +167,8 @@ p {
 
 .access-hero h1 {
   max-width: 560px;
-  margin: 44px 0 20px;
-  font-size: 52px;
+  margin: 34px 0 16px;
+  font-size: 47px;
   font-weight: 900;
   line-height: 1.14;
 }
@@ -181,7 +181,7 @@ p {
 .access-hero p {
   max-width: 390px;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .hero-metrics {
@@ -189,11 +189,11 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   max-width: 540px;
-  margin-top: 72px;
+  margin-top: 38px;
 }
 
 .hero-metric {
-  min-height: 66px;
+  min-height: 60px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.14);
   padding: 14px 18px;
@@ -221,7 +221,7 @@ p {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 14px;
+  gap: 9px;
   width: min(430px, calc(100% - 48px));
   margin: 0 auto;
 }
@@ -249,7 +249,7 @@ p {
 
 .access-heading {
   gap: 18px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .access-heading h2 {
@@ -277,12 +277,12 @@ p {
 }
 
 .access-login-card {
-  padding: 18px;
+  padding: 12px 18px;
 }
 
 .access-login-card input + input,
 .access-login-card input + button {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .label {
@@ -298,7 +298,7 @@ p {
   gap: 13px;
   width: 100%;
   text-align: left;
-  padding: 15px 18px;
+  padding: 9px 18px;
 }
 
 .access-method > svg,
@@ -408,7 +408,7 @@ p {
 .role-chip {
   justify-content: center;
   gap: 7px;
-  min-height: 34px;
+  min-height: 32px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--field);
@@ -616,7 +616,7 @@ p {
 }
 
 .guide-screen {
-  gap: 14px;
+  gap: 12px;
 }
 
 .dashboard-welcome,
@@ -917,13 +917,14 @@ p {
 .file-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 20px;
+  gap: 16px;
   align-items: start;
+  margin-top: 12px;
 }
 
 .form-column {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .section-heading {
@@ -931,7 +932,7 @@ p {
 }
 
 .section-heading h2 {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .section-heading p {
@@ -951,12 +952,12 @@ p {
 .applications-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .field {
   display: grid;
-  gap: 7px;
+  gap: 5px;
 }
 
 .field.wide {
@@ -979,6 +980,34 @@ p {
   border-radius: 8px;
   background: #f3f7f3;
   padding: 10px 13px;
+}
+
+.file-layout .panel {
+  padding: 12px 18px;
+}
+
+.file-layout h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.file-layout input,
+.file-layout select,
+.file-layout textarea {
+  font-size: 14px;
+}
+
+.file-layout input,
+.file-layout select {
+  padding-block: 6px;
+}
+
+.file-layout textarea {
+  min-height: 42px;
+}
+
+.file-layout .field span {
+  font-size: 11px;
 }
 
 .requirement-tile svg {
@@ -1535,8 +1564,8 @@ p {
     radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.18), transparent 20%),
     linear-gradient(145deg, #0a703f, #064026);
   color: #ffffff;
-  min-height: 196px;
-  padding: 24px 32px;
+  min-height: 186px;
+  padding: 22px 32px;
 }
 
 .guide-hero > div:first-child {
@@ -1595,8 +1624,8 @@ p {
 }
 
 .feature-card {
-  min-height: 110px;
-  padding: 16px;
+  min-height: 96px;
+  padding: 14px 16px;
 }
 
 .feature-card span {
@@ -1604,7 +1633,7 @@ p {
   border-radius: 8px;
   background: #e5f3eb;
   color: var(--green-700);
-  padding: 8px;
+  padding: 7px;
 }
 
 .feature-card h3 {

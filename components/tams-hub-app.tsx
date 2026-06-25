@@ -264,7 +264,7 @@ export function TamsHubApp() {
           title={sectionTitle(section)}
           activeUser={activeUser}
           onNewEvent={createApplication}
-          showNewEvent={activeUser.role === "Student Officer" && section !== "file" && section !== "dashboard"}
+          showNewEvent={false}
         />
 
         {section === "dashboard" && (
