@@ -55,6 +55,8 @@ assert.match(appComponent, /revisionApplication && onSelect\(revisionApplication
 assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
 assert.match(appComponent, /Inconsistency Detected/, "File event guide should show the reference inconsistency alert");
 assert.match(appComponent, /required document\(s\) missing/, "File event guide should show a separate missing-documents notice");
+assert.match(appComponent, /className="warning-box" role="alert"/, "File event inconsistency warning should be announced as an alert");
+assert.match(appComponent, /className="guide-says" role="status" aria-live="polite"/, "File event guide output should be announced politely");
 assert.match(appComponent, /Student Org Officer/, "UI role labels should match the reference screens");
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
 assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");
@@ -92,6 +94,7 @@ assert.match(globalCss, /\.notification-popover/, "Topbar notification alerts sh
 assert.match(appComponent, /TAMS Guide filing question/, "Guide question mode should expose an accessible prompt");
 assert.match(appComponent, /aria-label="TAMS Guide mode"/, "Guide mode selector should expose an accessible name");
 assert.match(appComponent, /guideModeLabels/, "Guide output should identify the active guidance mode");
+assert.match(appComponent, /className="guide-output" role="status" aria-live="polite"/, "Guide workbench output should be announced politely");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
