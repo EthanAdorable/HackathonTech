@@ -617,7 +617,7 @@ function DashboardView({
           <h2>Recent Applications</h2>
           <div>
             <button className={onlyActionItems ? "ghost-button active" : "ghost-button"} aria-pressed={onlyActionItems} onClick={() => setOnlyActionItems((current) => !current)}><Filter size={15} /> {onlyActionItems ? "Needs Action" : "Filter"}</button>
-            <button className="ghost-button" disabled={!applications.length} onClick={() => applications[0] && onSelect(applications[0].id)}><Eye size={15} /> View All</button>
+            <button className="ghost-button" disabled={!onlyActionItems} onClick={() => setOnlyActionItems(false)}><Eye size={15} /> View All</button>
           </div>
         </div>
         <table>
