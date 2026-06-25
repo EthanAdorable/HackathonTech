@@ -1686,6 +1686,29 @@ p {
   min-height: 240px;
 }
 
+.empty-chat-state {
+  display: grid;
+  min-height: 280px;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty-chat-state svg {
+  color: var(--green-700);
+}
+
+.empty-chat-state strong {
+  color: var(--ink);
+}
+
+.empty-chat-state p {
+  margin: 0;
+  font-size: 12px;
+}
+
 .chat-bubble {
   max-width: 360px;
   border-radius: 8px;

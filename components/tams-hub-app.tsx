@@ -1074,8 +1074,7 @@ function MessagesView({
   );
   const selectedThread =
     visibleThreads.find((thread) => thread.title === selectedThreadTitle) ??
-    visibleThreads[0] ??
-    threads[0];
+    visibleThreads[0];
 
   return (
     <section className="messages-layout">
@@ -1095,11 +1094,17 @@ function MessagesView({
         {!visibleThreads.length && <p className="empty-thread">No matching conversations.</p>}
       </aside>
       <section className="chat-panel panel">
-        <div className="message-thread-header">
-          <h2>{selectedThread.title}</h2>
-        </div>
-        <MiniThread application={application} expanded />
-        <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
+        {selectedThread ? (
+          <>
+            <div className="message-thread-header">
+              <h2>{selectedThread.title}</h2>
+            </div>
+            <MiniThread application={application} expanded />
+            <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
+          </>
+        ) : (
+          <div className="empty-chat-state"><Search size={22} /><strong>No conversation selected</strong><p>Clear the search to return to the collaboration thread.</p></div>
+        )}
       </section>
       <section className="partner-card">
         <Sparkles size={18} />
