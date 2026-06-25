@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import {
   getApplicationCompletion,
   makeAiSummary,
@@ -82,6 +82,8 @@ assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CH
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
 assert.match(packageJson, /"convex:codegen": "convex codegen --typecheck enable"/, "Convex codegen should be available as a checked script");
 assert.match(convexSetup, /Generate Convex client types/, "Convex setup should generate official client types after deployment selection");
+assert.ok(existsSync("convex/_generated/api.js"), "Convex generated runtime API should be committed");
+assert.ok(existsSync("convex/_generated/dataModel.d.ts"), "Convex generated data model types should be committed");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
