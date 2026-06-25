@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 
 const checks = [];
 const localEnv = readLocalEnv();
+const deployCheck = process.env.TAMS_DEPLOY_CHECK === "1" || Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
 
 function readLocalEnv() {
   if (!existsSync(".env.local")) {
@@ -51,10 +52,40 @@ function envSummary() {
   const present = required.filter((key) => new RegExp(`^${key}=.+`, "m").test(env));
   const optional = ["CONVEX_DEPLOYMENT", "NEXT_PUBLIC_CONVEX_URL"];
   const optionalPresent = optional.filter((key) => new RegExp(`^${key}=.+`, "m").test(env));
+  const warnings = deployEnvWarnings();
+  const status = present.length !== required.length ? "wait" : deployCheck && warnings.length ? "fail" : "ok";
+  const deployNote = deployCheck ? "deploy check: on" : "deploy check: off";
+  const warningText = warnings.length ? `; warnings: ${warnings.join("; ")}` : "";
+
   return {
-    status: present.length === required.length ? "ok" : "wait",
-    output: `required present: ${present.join(", ") || "none"}; optional present: ${optionalPresent.join(", ") || "none"}`,
+    status,
+    output: `required present: ${present.join(", ") || "none"}; optional present: ${optionalPresent.join(", ") || "none"}; ${deployNote}${warningText}`,
   };
+}
+
+function deployEnvWarnings() {
+  const warnings = [];
+  const nextAuthSecret = process.env.NEXTAUTH_SECRET || localEnv.NEXTAUTH_SECRET || "";
+  const nextAuthUrl = process.env.NEXTAUTH_URL || localEnv.NEXTAUTH_URL || "";
+
+  if (nextAuthSecret === "replace-with-a-local-secret" || nextAuthSecret === "local-tams-hub-prototype-secret") {
+    warnings.push("NEXTAUTH_SECRET uses a local prototype value");
+  }
+
+  if (isLoopbackUrl(nextAuthUrl)) {
+    warnings.push("NEXTAUTH_URL points to localhost");
+  }
+
+  return warnings;
+}
+
+function isLoopbackUrl(value) {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
 }
 
 async function healthSummary() {

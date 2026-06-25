@@ -111,7 +111,7 @@ corepack pnpm setup:railway -- --deploy
 Evidence checks:
 
 ```powershell
-$env:TAMS_HUB_HEALTH_URL="https://<railway-domain>"; corepack pnpm services:check
+$env:TAMS_DEPLOY_CHECK="1"; $env:TAMS_HUB_HEALTH_URL="https://<railway-domain>"; corepack pnpm services:check
 railway status --json
 railway service status --all --json
 railway variable list --json

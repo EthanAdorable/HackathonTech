@@ -75,6 +75,7 @@ assert.match(globalCss, /\.notification-popover/, "Topbar notification alerts sh
 assert.match(appComponent, /TAMS Guide filing question/, "Guide question mode should expose an accessible prompt");
 assert.match(appComponent, /guideModeLabels/, "Guide output should identify the active guidance mode");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
+assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
