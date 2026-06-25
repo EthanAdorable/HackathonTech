@@ -58,9 +58,10 @@ assert.match(appComponent, /disabled=\{!canStartReview\}/, "SADU review action s
 assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resubmission should require completed fields");
 assert.match(appComponent, /revisionApplication && onSelect\(revisionApplication\.id\)/, "Dashboard guide alert should open the revision application");
 assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
-assert.match(appComponent, /Inconsistency Detected/, "File event guide should show the reference inconsistency alert");
+assert.match(appComponent, /Revision Inconsistency/, "File event guide should show a reference-style revision alert");
+assert.match(appComponent, /application\.status === "Revision Requested"/, "File event revision alert should only appear for applications with requested revisions");
 assert.match(appComponent, /required document\(s\) missing/, "File event guide should show a separate missing-documents notice");
-assert.match(appComponent, /className="warning-box" role="alert"/, "File event inconsistency warning should be announced as an alert");
+assert.match(appComponent, /className="warning-box" role="alert"/, "File event revision warning should be announced as an alert");
 assert.match(appComponent, /className="guide-says" role="status" aria-live="polite"/, "File event guide output should be announced politely");
 assert.match(globalCss, /\.requirement-tile > svg/, "Upload requirement icons should use reference-style icon chips");
 assert.match(appComponent, /Student Org Officer/, "UI role labels should match the reference screens");

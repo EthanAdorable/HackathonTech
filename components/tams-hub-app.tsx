@@ -799,6 +799,7 @@ function FileEventView({
   const mainTemplates = templateDefinitions.slice(0, 4);
   const guideLines = guideOutput.length ? guideOutput : localGuideResponse(application, "missing", "");
   const missingCount = getApplicationCompletion(application).missing.length;
+  const revisionAlert = application.status === "Revision Requested";
 
   return (
     <section className="file-layout">
@@ -884,7 +885,7 @@ function FileEventView({
             return <li key={template.id} className={status.complete ? "ok" : "missing"}>{template.name.replace(" Template", "")}</li>;
           })}
         </ul>
-        <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>Inconsistency Detected</strong><p>Event date in proposal does not match the date in the program flow document.</p></div></div>
+        {revisionAlert && <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>Revision Inconsistency</strong><p>SADU flagged the budget breakdown and participant count for reconciliation before resubmission.</p></div></div>}
         <div className="warning-box amber" role="status" aria-live="polite"><CircleAlert size={16} /><div><strong>{missingCount || "No"} required document(s) missing</strong><p>{missingCount ? "Upload them to proceed with submission." : `${completionPercent}% of required prototype templates are complete.`}</p></div></div>
         <button className="gold-button full" onClick={() => { onPrecheck(); onGenerateGuide(); }}><Sparkles size={16} /> Run AI Completeness Check</button>
         <div className="guide-says" role="status" aria-live="polite"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
