@@ -1034,6 +1034,7 @@ function MessagesView({
 }) {
   const [threadSearch, setThreadSearch] = useState("");
   const [selectedThreadTitle, setSelectedThreadTitle] = useState("SADU Review");
+  const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
   const threads = [
     { title: "SADU Review", preview: "Please revise the budget breakdown.", count: "2", time: "2h ago" },
     { title: "Junior Philippine CS Society", preview: "Are you open to co-organizing the seminar?", count: "1", time: "1d ago" },
@@ -1066,11 +1067,17 @@ function MessagesView({
         <Sparkles size={18} />
         <div><strong>TAMS Guide - Suggested Partners</strong><p>This event may fit collaboration with Junior Philippine Computer Society and FEU Engineering Society.</p></div>
         {["Junior Philippine CS Society", "Student Council Federation", "FEU Engineering Society"].map((partner) => (
-          <span className="partner-chip" key={partner}>
+          <button
+            type="button"
+            className={selectedPartners.includes(partner) ? "partner-chip active" : "partner-chip"}
+            aria-pressed={selectedPartners.includes(partner)}
+            key={partner}
+            onClick={() => setSelectedPartners((current) => (current.includes(partner) ? current.filter((item) => item !== partner) : [...current, partner]))}
+          >
             <UsersRound size={14} />
             <span>{partner}</span>
             <Plus size={14} />
-          </span>
+          </button>
         ))}
       </section>
     </section>

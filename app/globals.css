@@ -1719,23 +1719,37 @@ p {
   font-size: 12px;
 }
 
-.partner-card > span {
+.partner-chip {
+  border: 1px solid transparent;
   border-radius: 999px;
   background: #eef4ef;
+  color: #21372f;
   padding: 6px 11px;
-  font-size: 12px;
-  font-weight: 850;
-}
-
-.partner-chip {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .partner-chip svg {
   color: var(--green-700);
   flex: 0 0 auto;
+}
+
+.partner-chip:hover {
+  border-color: #c8ded0;
+  background: #e4f0e8;
+}
+
+.partner-chip.active {
+  border-color: var(--green-700);
+  background: var(--green-700);
+  color: #ffffff;
+}
+
+.partner-chip.active svg {
+  color: var(--gold);
 }
 
 .guide-hero {

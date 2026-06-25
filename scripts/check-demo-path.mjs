@@ -68,7 +68,9 @@ assert.match(appComponent, /"dashboard", label: "Dashboard", icon: <LayoutGrid s
 assert.match(appComponent, /"applications", label: "My Applications", icon: <ClipboardList size=\{18\} \/>/, "Sidebar applications icon should match the reference utility set");
 assert.match(appComponent, /"Student Officer": <FilePlus2 size=\{16\} \/>/, "Role picker icons should use the workflow icon language");
 assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls should use a consistent eye icon");
-assert.match(appComponent, /className="partner-chip"/, "Suggested partner chips should include consistent icons and plus affordances");
+assert.match(appComponent, /partner-chip active/, "Suggested partner chips should include consistent icons and plus affordances");
+assert.match(appComponent, /aria-pressed=\{selectedPartners\.includes\(partner\)\}/, "Suggested partner chips should behave as selectable controls");
+assert.match(globalCss, /\.partner-chip\.active/, "Selected partner chips should have a visible active state");
 assert.match(appComponent, /Final Approval/, "Application progress tracker should match the reference milestone labels");
 assert.match(appComponent, /formatMilestoneDate/, "Application progress tracker should use compact reference-style dates");
 assert.match(appComponent, /Upload revised budget breakdown/, "Revision status should show reference-style required actions");
