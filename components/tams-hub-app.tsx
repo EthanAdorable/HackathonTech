@@ -1,25 +1,34 @@
 "use client";
 
 import {
-  Archive,
+  AlertTriangle,
+  BadgeCheck,
+  Bell,
   Bot,
+  Building2,
+  CalendarDays,
   CheckCircle2,
+  CircleAlert,
   ClipboardCheck,
-  FileText,
-  IdCard,
-  Inbox,
+  Clock3,
+  CreditCard,
+  FilePlus2,
+  Filter,
+  FolderKanban,
+  KeyRound,
   LayoutDashboard,
-  LockKeyhole,
+  LogOut,
   MessageSquare,
   Plus,
-  RefreshCw,
-  Send,
+  Search,
+  SendHorizonal,
   ShieldCheck,
+  Smartphone,
   Sparkles,
-  Users,
-  XCircle,
+  UploadCloud,
+  UserRound,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   type EventApplication,
   type EventStatus,
@@ -30,7 +39,6 @@ import {
   makeChecklist,
   makeRevisionDraft,
   seedApplications,
-  statuses,
   templateDefinitions,
   users,
 } from "@/lib/tams-data";
@@ -38,32 +46,43 @@ import { addMessage, transitionApplication } from "@/lib/workflow";
 
 const storageKey = "tams-hub-prototype-state";
 
-const roleIcons: Record<Role, React.ReactNode> = {
-  "Student Officer": <FileText size={18} />,
-  "SADU Associate": <ShieldCheck size={18} />,
-  "Faculty Adviser": <ClipboardCheck size={18} />,
-  Admin: <Users size={18} />,
+type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
+type GuideMode = "checklist" | "missing" | "summary" | "revision" | "question";
+
+const sectionItems: { id: Section; label: string; icon: ReactNode }[] = [
+  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+  { id: "file", label: "File Event", icon: <FilePlus2 size={18} /> },
+  { id: "applications", label: "My Applications", icon: <FolderKanban size={18} /> },
+  { id: "messages", label: "Messages", icon: <MessageSquare size={18} /> },
+  { id: "guide", label: "TAMS Guide", icon: <Bot size={18} /> },
+];
+
+const roleIcons: Record<Role, ReactNode> = {
+  "Student Officer": <UserRound size={16} />,
+  "SADU Associate": <ShieldCheck size={16} />,
+  "Faculty Adviser": <ClipboardCheck size={16} />,
+  Admin: <Building2 size={16} />,
 };
 
 const statusTone: Record<EventStatus, string> = {
   Draft: "neutral",
-  "Template Completion": "blue",
+  "Template Completion": "gold",
   "AI Pre-check": "gold",
   "Submitted to SADU": "blue",
-  "Under Review": "gold",
-  "Revision Requested": "red",
+  "Under Review": "blue",
+  "Revision Requested": "gold",
   Resubmitted: "blue",
   "SADU Approved": "green",
   Rejected: "red",
   Archived: "neutral",
 };
 
-type GuideMode = "checklist" | "missing" | "summary" | "revision" | "question";
-
 export function TamsHubApp() {
+  const [entered, setEntered] = useState(false);
   const [activeUserId, setActiveUserId] = useState("juan");
+  const [section, setSection] = useState<Section>("dashboard");
   const [applications, setApplications] = useState<EventApplication[]>(seedApplications);
-  const [selectedAppId, setSelectedAppId] = useState(seedApplications[0].id);
+  const [selectedAppId, setSelectedAppId] = useState(seedApplications[2].id);
   const [guideMode, setGuideMode] = useState<GuideMode>("checklist");
   const [guideQuestion, setGuideQuestion] = useState("What should be completed before SADU review?");
   const [guideOutput, setGuideOutput] = useState<string[]>([]);
@@ -79,7 +98,7 @@ export function TamsHubApp() {
       try {
         const parsed = JSON.parse(stored) as EventApplication[];
         setApplications(parsed);
-        setSelectedAppId(parsed[0]?.id ?? seedApplications[0].id);
+        setSelectedAppId(parsed.find((app) => app.status === "Revision Requested")?.id ?? parsed[0]?.id ?? seedApplications[0].id);
       } catch {
         setApplications(seedApplications);
       }
@@ -104,10 +123,10 @@ export function TamsHubApp() {
   }, [activeUser, applications]);
 
   useEffect(() => {
-    if (!visibleApplications.some((application) => application.id === selectedAppId)) {
-      setSelectedAppId(visibleApplications[0]?.id ?? applications[0]?.id);
+    if (visibleApplications.length && !visibleApplications.some((application) => application.id === selectedAppId)) {
+      setSelectedAppId(visibleApplications[0].id);
     }
-  }, [applications, selectedAppId, visibleApplications]);
+  }, [selectedAppId, visibleApplications]);
 
   const completion = getApplicationCompletion(selectedApp);
   const queueCount = applications.filter((application) =>
@@ -115,22 +134,17 @@ export function TamsHubApp() {
   ).length;
 
   function updateApplication(next: EventApplication) {
-    setApplications((current) =>
-      current.map((application) => (application.id === next.id ? next : application)),
-    );
+    setApplications((current) => current.map((application) => (application.id === next.id ? next : application)));
   }
 
   function updateTemplateValue(templateId: string, fieldId: string, value: string) {
-    const updated: EventApplication = {
+    updateApplication({
       ...selectedApp,
       status: selectedApp.status === "Draft" ? "Template Completion" : selectedApp.status,
       templates: selectedApp.templates.map((template) =>
-        template.templateId === templateId
-          ? { ...template, values: { ...template.values, [fieldId]: value } }
-          : template,
+        template.templateId === templateId ? { ...template, values: { ...template.values, [fieldId]: value } } : template,
       ),
-    };
-    updateApplication(updated);
+    });
   }
 
   function createApplication() {
@@ -140,7 +154,7 @@ export function TamsHubApp() {
       title: "New Campus Event",
       organization: activeUser.organization ?? "Junior Philippine Computer Society",
       eventType: "Workshop",
-      venue: "To be assigned",
+      venue: "FEU Alabang Auditorium",
       eventDate: "2026-09-01",
       expectedParticipants: 40,
       ownerId: "juan",
@@ -160,6 +174,7 @@ export function TamsHubApp() {
     };
     setApplications((current) => [next, ...current]);
     setSelectedAppId(id);
+    setSection("file");
   }
 
   function setStatus(status: EventStatus, note: string) {
@@ -196,442 +211,612 @@ export function TamsHubApp() {
   }
 
   function approveApplication() {
-    const withMessage = addMessage(
-      selectedApp,
-      activeUser.name,
-      activeUser.role,
-      "Approved. Final decision recorded by SADU reviewer.",
-    );
+    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, "Approved. Final decision recorded by SADU reviewer.");
     updateApplication(transitionApplication(withMessage, "SADU Approved", "SADU approved the application."));
   }
 
   function rejectApplication() {
-    const withMessage = addMessage(
-      selectedApp,
-      activeUser.name,
-      activeUser.role,
-      "Rejected by SADU after human review. Please coordinate before filing again.",
-    );
+    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, "Rejected by SADU after human review. Please coordinate before filing again.");
     updateApplication(transitionApplication(withMessage, "Rejected", "SADU rejected the application."));
+  }
+
+  if (!entered) {
+    return <AccessScreen activeUserId={activeUserId} setActiveUserId={setActiveUserId} onEnter={() => setEntered(true)} />;
   }
 
   return (
     <main className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">TH</div>
-          <div>
-            <strong>TAMS Hub</strong>
-            <span>FEU Alabang</span>
-          </div>
-        </div>
-
-        <div className="access-card">
-          <div className="access-row">
-            <LockKeyhole size={18} />
-            <span>TAMS Access</span>
-          </div>
-          <strong>{activeUser.name}</strong>
-          <span>{activeUser.title}</span>
-          <div className="tap-row">
-            <IdCard size={16} />
-            <span>OTP verified + NFC tap simulated</span>
-          </div>
-        </div>
-
-        <nav className="role-list" aria-label="Demo roles">
-          {users.map((user) => (
-            <button
-              key={user.id}
-              className={user.id === activeUserId ? "role-button active" : "role-button"}
-              onClick={() => setActiveUserId(user.id)}
-            >
-              {roleIcons[user.role]}
-              <span>{user.role}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
+      <Sidebar activeUser={activeUser} activeSection={section} setSection={setSection} onSignOut={() => setEntered(false)} />
 
       <section className="workspace">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">AI-assisted campus workflow</p>
-            <h1>{dashboardTitle(activeUser.role)}</h1>
-          </div>
-          <div className="top-actions">
-            <div className="metric compact">
-              <span>Review queue</span>
-              <strong>{queueCount}</strong>
-            </div>
-            {activeUser.role === "Student Officer" && (
-              <button className="primary-button" onClick={createApplication}>
-                <Plus size={18} />
-                New event
-              </button>
-            )}
-          </div>
-        </header>
+        <Topbar
+          title={sectionTitle(section)}
+          activeUser={activeUser}
+          onNewEvent={createApplication}
+          showNewEvent={activeUser.role === "Student Officer" && section !== "file"}
+        />
 
-        <section className="dashboard-grid">
-          <div className="panel span-2">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">TAMS Events</p>
-                <h2>Applications</h2>
-              </div>
-              <LayoutDashboard size={20} />
-            </div>
-            <div className="application-list">
-              {visibleApplications.map((application) => {
-                const appCompletion = getApplicationCompletion(application);
-                return (
-                  <button
-                    key={application.id}
-                    className={application.id === selectedApp.id ? "application-card active" : "application-card"}
-                    onClick={() => setSelectedAppId(application.id)}
-                  >
-                    <div>
-                      <strong>{application.title}</strong>
-                      <span>{application.organization}</span>
-                    </div>
-                    <div className="application-meta">
-                      <span className={`status-pill ${statusTone[application.status]}`}>{application.status}</span>
-                      <span>{appCompletion.percent}% templates</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        {section === "dashboard" && (
+          <DashboardView
+            activeUser={activeUser}
+            applications={visibleApplications}
+            queueCount={queueCount}
+            onNewEvent={createApplication}
+            onSelect={(id) => {
+              setSelectedAppId(id);
+              setSection("applications");
+            }}
+          />
+        )}
 
-          <div className="panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Role dashboard</p>
-                <h2>{activeUser.role}</h2>
-              </div>
-              {roleIcons[activeUser.role]}
-            </div>
-            <div className="metric-grid">
-              <div className="metric">
-                <span>Total apps</span>
-                <strong>{visibleApplications.length}</strong>
-              </div>
-              <div className="metric">
-                <span>Approved</span>
-                <strong>{visibleApplications.filter((app) => app.status === "SADU Approved").length}</strong>
-              </div>
-              <div className="metric">
-                <span>Needs action</span>
-                <strong>{visibleApplications.filter((app) => app.status === "Revision Requested").length}</strong>
-              </div>
-            </div>
-            <p className="role-note">{roleNote(activeUser.role)}</p>
-          </div>
-        </section>
+        {section === "file" && (
+          <FileEventView
+            application={selectedApp}
+            activeUser={activeUser}
+            completionPercent={completion.percent}
+            guideOutput={guideOutput}
+            onTemplateChange={updateTemplateValue}
+            onPrecheck={() => setStatus("AI Pre-check", "TAMS Guide pre-check completed.")}
+            onSubmit={() => setStatus("Submitted to SADU", "Student submitted the application to SADU.")}
+            onGenerateGuide={generateGuide}
+          />
+        )}
 
-        <section className="detail-grid">
-          <article className="panel detail-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">{selectedApp.eventType}</p>
-                <h2>{selectedApp.title}</h2>
-              </div>
-              <span className={`status-pill ${statusTone[selectedApp.status]}`}>{selectedApp.status}</span>
-            </div>
+        {section === "applications" && (
+          <ApplicationsView
+            application={selectedApp}
+            applications={visibleApplications}
+            activeUser={activeUser}
+            completionPercent={completion.percent}
+            onSelect={setSelectedAppId}
+            onReview={() => setStatus("Under Review", "SADU opened the application for review.")}
+            onRevision={requestRevision}
+            onResubmit={() => setStatus("Resubmitted", "Student resubmitted after revision.")}
+            onApprove={approveApplication}
+            onReject={rejectApplication}
+          />
+        )}
 
-            <div className="summary-grid">
-              <SummaryItem label="Venue" value={selectedApp.venue} />
-              <SummaryItem label="Event date" value={selectedApp.eventDate} />
-              <SummaryItem label="Participants" value={String(selectedApp.expectedParticipants)} />
-              <SummaryItem label="Risk" value={selectedApp.riskLevel} />
-            </div>
+        {section === "messages" && (
+          <MessagesView application={selectedApp} messageDraft={messageDraft} setMessageDraft={setMessageDraft} onSend={() => sendMessage()} />
+        )}
 
-            <div className="progress-row">
-              <div>
-                <strong>{completion.percent}% complete</strong>
-                <span>{completion.complete} of {completion.total} templates ready</span>
-              </div>
-              <div className="progress-track">
-                <span style={{ width: `${completion.percent}%` }} />
-              </div>
-            </div>
-
-            <ActionBar
-              role={activeUser.role}
-              status={selectedApp.status}
-              completionPercent={completion.percent}
-              onPrecheck={() => setStatus("AI Pre-check", "TAMS Guide pre-check completed.")}
-              onSubmit={() => setStatus("Submitted to SADU", "Student submitted the application to SADU.")}
-              onReview={() => setStatus("Under Review", "SADU opened the application for review.")}
-              onRevision={requestRevision}
-              onResubmit={() => setStatus("Resubmitted", "Student resubmitted after revision.")}
-              onApprove={approveApplication}
-              onReject={rejectApplication}
-              onArchive={() => setStatus("Archived", "Application archived.")}
-            />
-          </article>
-
-          <aside className="panel guide-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">TAMS Guide</p>
-                <h2>AI guidance</h2>
-              </div>
-              <Bot size={20} />
-            </div>
-            <div className="guide-controls">
-              <select value={guideMode} onChange={(event) => setGuideMode(event.target.value as GuideMode)}>
-                <option value="checklist">Requirement checklist</option>
-                <option value="missing">Missing fields</option>
-                <option value="summary">SADU summary</option>
-                <option value="revision">Revision draft</option>
-                <option value="question">Filing question</option>
-              </select>
-              {guideMode === "question" && (
-                <textarea value={guideQuestion} onChange={(event) => setGuideQuestion(event.target.value)} />
-              )}
-              <button className="primary-button full" onClick={generateGuide}>
-                <Sparkles size={18} />
-                Generate
-              </button>
-            </div>
-            <div className="guide-output">
-              {(guideOutput.length ? guideOutput : localGuideResponse(selectedApp, "summary", guideQuestion)).map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
-            <p className="fine-print">AI guidance only. Final decisions remain with SADU and human reviewers.</p>
-          </aside>
-        </section>
-
-        <section className="detail-grid lower">
-          <article className="panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Template library</p>
-                <h2>Completion editor</h2>
-              </div>
-              <FileText size={20} />
-            </div>
-            <div className="template-stack">
-              {templateDefinitions.map((template) => {
-                const entry = selectedApp.templates.find((item) => item.templateId === template.id);
-                const templateCompletion = getTemplateCompletion(selectedApp, template.id);
-                return (
-                  <details key={template.id} className="template-card" open={templateCompletion.missing.length > 0}>
-                    <summary>
-                      <span>
-                        <strong>{template.name}</strong>
-                        <small>{template.description}</small>
-                      </span>
-                      <span className={templateCompletion.complete ? "ready-tag" : "missing-tag"}>
-                        {templateCompletion.completed}/{templateCompletion.required || template.fields.length}
-                      </span>
-                    </summary>
-                    {activeUser.role === "Admin" && (
-                      <label className="toggle-row">
-                        <input
-                          type="checkbox"
-                          checked={entry?.enabled ?? true}
-                          onChange={(event) => {
-                            updateApplication({
-                              ...selectedApp,
-                              templates: selectedApp.templates.map((item) =>
-                                item.templateId === template.id ? { ...item, enabled: event.target.checked } : item,
-                              ),
-                            });
-                          }}
-                        />
-                        Available in prototype
-                      </label>
-                    )}
-                    <div className="field-grid">
-                      {template.fields.map((field) => (
-                        <label key={field.id} className="field">
-                          <span>{field.label}{field.required ? " *" : ""}</span>
-                          {field.type === "textarea" ? (
-                            <textarea
-                              value={entry?.values[field.id] ?? ""}
-                              onChange={(event) => updateTemplateValue(template.id, field.id, event.target.value)}
-                            />
-                          ) : field.type === "select" ? (
-                            <select
-                              value={entry?.values[field.id] ?? ""}
-                              onChange={(event) => updateTemplateValue(template.id, field.id, event.target.value)}
-                            >
-                              <option value="">Select</option>
-                              {field.options?.map((option) => <option key={option}>{option}</option>)}
-                            </select>
-                          ) : (
-                            <input
-                              type={field.type}
-                              value={entry?.values[field.id] ?? ""}
-                              onChange={(event) => updateTemplateValue(template.id, field.id, event.target.value)}
-                            />
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                );
-              })}
-            </div>
-          </article>
-
-          <aside className="panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Messages</p>
-                <h2>Revision thread</h2>
-              </div>
-              <MessageSquare size={20} />
-            </div>
-            <div className="message-list">
-              {selectedApp.messages.length === 0 && <p className="empty">No messages yet.</p>}
-              {selectedApp.messages.map((message) => (
-                <div key={message.id} className="message">
-                  <strong>{message.author}</strong>
-                  <span>{message.role} · {formatDate(message.createdAt)}</span>
-                  <p>{message.body}</p>
-                </div>
-              ))}
-            </div>
-            <div className="composer">
-              <textarea value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} />
-              <button className="primary-button full" onClick={() => sendMessage()}>
-                <Send size={18} />
-                Send message
-              </button>
-            </div>
-          </aside>
-        </section>
-
-        <section className="panel timeline-panel">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Status tracker</p>
-              <h2>Timeline</h2>
-            </div>
-            <Inbox size={20} />
-          </div>
-          <div className="timeline">
-            {statuses.map((status) => {
-              const hit = selectedApp.timeline.findLast((entry) => entry.status === status);
-              return (
-                <div key={status} className={hit ? "timeline-step done" : "timeline-step"}>
-                  <span />
-                  <strong>{status}</strong>
-                  <small>{hit ? `${hit.note} ${formatDate(hit.createdAt)}` : "Waiting"}</small>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        {section === "guide" && (
+          <GuideView
+            application={selectedApp}
+            guideMode={guideMode}
+            setGuideMode={setGuideMode}
+            guideQuestion={guideQuestion}
+            setGuideQuestion={setGuideQuestion}
+            guideOutput={guideOutput}
+            onGenerateGuide={generateGuide}
+          />
+        )}
       </section>
     </main>
   );
 }
 
-function SummaryItem({ label, value }: { label: string; value: string }) {
+function AccessScreen({
+  activeUserId,
+  setActiveUserId,
+  onEnter,
+}: {
+  activeUserId: string;
+  setActiveUserId: (id: string) => void;
+  onEnter: () => void;
+}) {
+  const activeUser = users.find((user) => user.id === activeUserId) ?? users[0];
+
   return (
-    <div className="summary-item">
-      <span>{label}</span>
-      <strong>{value}</strong>
+    <main className="access-shell">
+      <section className="access-hero">
+        <div className="brand wide">
+          <MascotLogo />
+          <strong>TAMS Hub</strong>
+        </div>
+        <h1>
+          Smarter campus workflows for <span>FEU organizations.</span>
+        </h1>
+        <p>TAMS Hub helps FEU Alabang student organizations submit event requirements, track SADU approvals, and collaborate in one secure platform.</p>
+        <div className="hero-metrics">
+          <Metric value="48" label="Active Organizations" />
+          <Metric value="213" label="Events Filed This Sem" />
+          <Metric value="91%" label="Approval Rate" />
+          <Metric value="2.3 days" label="Avg. Review Time" />
+        </div>
+      </section>
+
+      <section className="access-panel-wrap">
+        <div className="access-heading">
+          <MascotLogo />
+          <div>
+            <h2>Access TAMS Hub</h2>
+            <p>Secure AI-assisted campus workflow platform</p>
+          </div>
+        </div>
+
+        <div className="access-login-card">
+          <p className="label">FEU account login</p>
+          <input value="student@feualabang.edu.ph" readOnly aria-label="FEU email" />
+          <input value="Password" readOnly aria-label="Password" type="password" />
+          <button className="primary-button full" onClick={onEnter}>Continue with FEU Account</button>
+        </div>
+
+        <div className="access-method"><CreditCard size={18} /><div><strong>Tap TAMS ID Card</strong><span>Hold your campus card near the reader</span></div></div>
+        <div className="access-method"><Smartphone size={18} /><div><strong>OTP Verification</strong><span>Receive a one-time code via SMS or email</span></div></div>
+
+        <div className="access-login-card">
+          <p className="label">Preview as role</p>
+          <div className="role-choice-grid">
+            {users.map((user) => (
+              <button key={user.id} className={user.id === activeUserId ? "role-chip active" : "role-chip"} onClick={() => setActiveUserId(user.id)}>
+                {roleIcons[user.role]}
+                {user.role}
+              </button>
+            ))}
+          </div>
+          <button className="gold-button full" onClick={onEnter}>Enter as {activeUser.role}</button>
+        </div>
+
+        <p className="secure-note"><KeyRound size={14} /> Access is based on verified campus role.</p>
+      </section>
+    </main>
+  );
+}
+
+function Sidebar({
+  activeUser,
+  activeSection,
+  setSection,
+  onSignOut,
+}: {
+  activeUser: (typeof users)[number];
+  activeSection: Section;
+  setSection: (section: Section) => void;
+  onSignOut: () => void;
+}) {
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <MascotLogo />
+        <div><strong>TAMS Hub</strong><span>FEU Campus Workflow</span></div>
+      </div>
+      <div className="logged-card"><span>Logged in as</span><strong>{activeUser.role}</strong></div>
+      <nav className="nav-list" aria-label="Main navigation">
+        {sectionItems.map((item) => (
+          <button key={item.id} className={item.id === activeSection ? "nav-button active" : "nav-button"} onClick={() => setSection(item.id)}>
+            {item.icon}
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+      <button className="signout-button" onClick={onSignOut}><LogOut size={18} /> Sign Out</button>
+    </aside>
+  );
+}
+
+function Topbar({
+  title,
+  activeUser,
+  onNewEvent,
+  showNewEvent,
+}: {
+  title: string;
+  activeUser: (typeof users)[number];
+  onNewEvent: () => void;
+  showNewEvent: boolean;
+}) {
+  return (
+    <header className="topbar">
+      <h1>{title}</h1>
+      <div className="top-actions">
+        <Bell size={19} />
+        <div className="avatar">{activeUser.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
+        <strong>{activeUser.name}</strong>
+        <span className="role-badge">{activeUser.role}</span>
+        {showNewEvent && <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>}
+      </div>
+    </header>
+  );
+}
+
+function DashboardView({
+  activeUser,
+  applications,
+  queueCount,
+  onNewEvent,
+  onSelect,
+}: {
+  activeUser: (typeof users)[number];
+  applications: EventApplication[];
+  queueCount: number;
+  onNewEvent: () => void;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="screen-stack">
+      <div className="dashboard-welcome">
+        <div>
+          <h2>Welcome, FEU Alabang {activeUser.role}</h2>
+          <p>Friday, June 26, 2026 - Semester 2, A.Y. 2024-2025</p>
+        </div>
+        {activeUser.role === "Student Officer" && <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>}
+      </div>
+
+      <section className="stats-grid">
+        <StatCard icon={<Clock3 />} value={queueCount || 3} label="Pending Applications" tone="gold" />
+        <StatCard icon={<AlertTriangle />} value={applications.filter((app) => app.status === "Revision Requested").length} label="Needs Action" tone="red" />
+        <StatCard icon={<CheckCircle2 />} value={applications.filter((app) => app.status === "SADU Approved").length} label="Approved Events" tone="green" />
+        <StatCard icon={<MessageSquare />} value={applications.reduce((sum, app) => sum + app.messages.length, 0)} label="SADU Messages" tone="blue" />
+      </section>
+
+      <section className="guide-alert">
+        <Sparkles size={18} />
+        <div><strong>TAMS Guide Alert</strong><p>Tech Career Fair 2025 needs revised budget and participant clarification. Deadline in 6 days.</p></div>
+        <button className="gold-button">View</button>
+      </section>
+
+      <section className="table-card">
+        <div className="table-header">
+          <h2>Recent Applications</h2>
+          <div><button className="ghost-button"><Filter size={15} /> Filter</button><button className="ghost-button">View All</button></div>
+        </div>
+        <table>
+          <thead><tr><th>Event Name</th><th>Event Type</th><th>Submitted</th><th>Status</th><th>Required Action</th></tr></thead>
+          <tbody>
+            {applications.map((app) => (
+              <tr key={app.id} onClick={() => onSelect(app.id)}>
+                <td>{app.title}</td>
+                <td>{app.eventType}</td>
+                <td>{formatShortDate(app.timeline[0]?.createdAt ?? app.eventDate)}</td>
+                <td><span className={`status-pill ${statusTone[app.status]}`}>{shortStatus(app.status)}</span></td>
+                <td className="action-text">{app.status === "Revision Requested" ? "Revise budget" : app.status === "Draft" ? "Complete form" : app.status.includes("Submitted") ? "Awaiting SADU" : "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }
 
-function ActionBar({
-  role,
-  status,
+function FileEventView({
+  application,
+  activeUser,
   completionPercent,
+  guideOutput,
+  onTemplateChange,
   onPrecheck,
   onSubmit,
+  onGenerateGuide,
+}: {
+  application: EventApplication;
+  activeUser: (typeof users)[number];
+  completionPercent: number;
+  guideOutput: string[];
+  onTemplateChange: (templateId: string, fieldId: string, value: string) => void;
+  onPrecheck: () => void;
+  onSubmit: () => void;
+  onGenerateGuide: () => void;
+}) {
+  const mainTemplates = templateDefinitions.slice(0, 4);
+  const guideLines = guideOutput.length ? guideOutput : localGuideResponse(application, "missing", "");
+
+  return (
+    <section className="file-layout">
+      <div className="form-column">
+        <div className="section-heading"><h2>Submit Event Proposal</h2><p>Fill out all required fields and attach supporting documents.</p></div>
+        <div className="panel">
+          <h3>Event Information</h3>
+          <div className="form-grid">
+            <Field label="Event Title"><input value={application.title} readOnly /></Field>
+            <Field label="Organization"><input value={application.organization} readOnly /></Field>
+            <Field label="Event Type"><input value={application.eventType} readOnly /></Field>
+            <Field label="Date & Time"><input value={application.eventDate} readOnly /></Field>
+            <Field label="Venue"><input value={application.venue} readOnly /></Field>
+            <Field label="Expected Participants"><input value={application.expectedParticipants} readOnly /></Field>
+            <Field label="Adviser Name"><input value={activeUser.role === "Faculty Adviser" ? activeUser.name : "Prof. Maria Santos"} readOnly /></Field>
+            <Field label="Budget Estimate (PHP)"><input value="25,000.00" readOnly /></Field>
+            <Field label="Event Objectives" wide><textarea placeholder="Describe the purpose, goals, and expected outcomes of this event..." /></Field>
+          </div>
+        </div>
+
+        <div className="panel">
+          <h3>Upload Requirements</h3>
+          <div className="requirement-grid">
+            {mainTemplates.map((template) => {
+              const status = getTemplateCompletion(application, template.id);
+              return (
+                <div className="requirement-tile" key={template.id}>
+                  <UploadCloud size={18} />
+                  <div><strong>{template.name.replace(" Template", "")}</strong><span>{status.complete ? "Ready" : "Required"}</span></div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="panel">
+          <h3>Template Completion</h3>
+          <div className="template-stack">
+            {templateDefinitions.map((template) => {
+              const entry = application.templates.find((item) => item.templateId === template.id);
+              const templateCompletion = getTemplateCompletion(application, template.id);
+              return (
+                <details key={template.id} className="template-card" open={templateCompletion.missing.length > 0}>
+                  <summary>
+                    <span><strong>{template.name}</strong><small>{template.description}</small></span>
+                    <span className={templateCompletion.complete ? "ready-tag" : "missing-tag"}>{templateCompletion.completed}/{templateCompletion.required || template.fields.length}</span>
+                  </summary>
+                  <div className="field-grid">
+                    {template.fields.map((field) => (
+                      <label key={field.id} className="field">
+                        <span>{field.label}{field.required ? " *" : ""}</span>
+                        {field.type === "textarea" ? (
+                          <textarea value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
+                        ) : field.type === "select" ? (
+                          <select value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)}>
+                            <option value="">Select</option>
+                            {field.options?.map((option) => <option key={option}>{option}</option>)}
+                          </select>
+                        ) : (
+                          <input type={field.type} value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <aside className="guide-card">
+        <div className="guide-card-title"><Sparkles size={18} /><strong>TAMS Guide</strong><span>AI Assistant</span></div>
+        <p className="label">Suggested requirements</p>
+        <ul className="guide-checklist">
+          {templateDefinitions.slice(0, 6).map((template) => {
+            const status = getTemplateCompletion(application, template.id);
+            return <li key={template.id} className={status.complete ? "ok" : "missing"}>{template.name.replace(" Template", "")}</li>;
+          })}
+        </ul>
+        <div className="warning-box"><AlertTriangle size={16} /><div><strong>Completeness Check</strong><p>{completionPercent}% of required prototype templates are complete.</p></div></div>
+        <button className="gold-button full" onClick={() => { onPrecheck(); onGenerateGuide(); }}><Sparkles size={16} /> Run AI Completeness Check</button>
+        <div className="guide-says"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
+        <button className="primary-button full" disabled={completionPercent < 70} onClick={onSubmit}>Submit to SADU</button>
+      </aside>
+    </section>
+  );
+}
+
+function ApplicationsView({
+  application,
+  applications,
+  activeUser,
+  completionPercent,
+  onSelect,
   onReview,
   onRevision,
   onResubmit,
   onApprove,
   onReject,
-  onArchive,
 }: {
-  role: Role;
-  status: EventStatus;
+  application: EventApplication;
+  applications: EventApplication[];
+  activeUser: (typeof users)[number];
   completionPercent: number;
-  onPrecheck: () => void;
-  onSubmit: () => void;
+  onSelect: (id: string) => void;
   onReview: () => void;
   onRevision: () => void;
   onResubmit: () => void;
   onApprove: () => void;
   onReject: () => void;
-  onArchive: () => void;
 }) {
-  if (role === "Student Officer") {
-    return (
-      <div className="action-row">
-        <button className="secondary-button" onClick={onPrecheck}>
-          <RefreshCw size={18} />
-          Run pre-check
-        </button>
-        {status === "Revision Requested" ? (
-          <button className="primary-button" onClick={onResubmit}>
-            <Send size={18} />
-            Resubmit
-          </button>
-        ) : (
-          <button className="primary-button" disabled={completionPercent < 70} onClick={onSubmit}>
-            <Send size={18} />
-            Submit to SADU
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  if (role === "SADU Associate") {
-    return (
-      <div className="action-row">
-        <button className="secondary-button" onClick={onReview}>
-          <ClipboardCheck size={18} />
-          Mark under review
-        </button>
-        <button className="secondary-button danger" onClick={onRevision}>
-          <RefreshCw size={18} />
-          Request revision
-        </button>
-        <button className="secondary-button danger" onClick={onReject}>
-          <XCircle size={18} />
-          Reject
-        </button>
-        <button className="primary-button" onClick={onApprove}>
-          <CheckCircle2 size={18} />
-          Approve
-        </button>
-      </div>
-    );
-  }
-
-  if (role === "Faculty Adviser") {
-    return (
-      <div className="action-row">
-        <button className="secondary-button" onClick={onPrecheck}>
-          <MessageSquare size={18} />
-          Add endorsement note
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="action-row">
-      <button className="secondary-button" onClick={onArchive}>
-        <Archive size={18} />
-        Archive
-      </button>
+    <div className="screen-stack">
+      <div className="application-title-row">
+        <div><h2>{application.title}</h2><p>Application ID: {application.id.toUpperCase()} · {application.eventType} · {application.organization}</p></div>
+        <span className={`status-pill ${statusTone[application.status]}`}>{application.status}</span>
+      </div>
+
+      <section className="status-card">
+        <div className="status-header"><strong>Application Progress</strong><span>{completionPercent}%</span></div>
+        <div className="progress-track"><span style={{ width: `${completionPercent}%` }} /></div>
+        <div className="progress-steps">
+          {["Draft", "Submitted to SADU", "Under Review", "Revision Requested", "SADU Approved"].map((status) => {
+            const hit = application.timeline.find((entry) => entry.status === status);
+            return <div key={status} className={hit ? "progress-step done" : "progress-step"}><span /><strong>{status}</strong><small>{hit ? formatShortDate(hit.createdAt) : "-"}</small></div>;
+          })}
+        </div>
+      </section>
+
+      <section className="applications-layout">
+        <div className="panel">
+          <h3>Required Actions</h3>
+          <div className="action-list">
+            {getApplicationCompletion(application).missing.slice(0, 3).map((item) => (
+              <div className="required-action" key={item}><CircleAlert size={18} /><div><strong>{item.split(":")[0]}</strong><p>{item.split(":")[1] ?? "Complete before proceeding."}</p></div></div>
+            ))}
+            {!getApplicationCompletion(application).missing.length && <div className="required-action ok"><CheckCircle2 size={18} /><div><strong>No missing prototype fields</strong><p>Ready for human review.</p></div></div>}
+          </div>
+          <WorkflowActions role={activeUser.role} status={application.status} onReview={onReview} onRevision={onRevision} onResubmit={onResubmit} onApprove={onApprove} onReject={onReject} />
+        </div>
+
+        <div className="panel">
+          <h3>Communication Thread</h3>
+          <MiniThread application={application} />
+        </div>
+      </section>
+
+      <section className="table-card">
+        <div className="table-header"><h2>All Visible Applications</h2></div>
+        <div className="application-list compact">
+          {applications.map((app) => (
+            <button key={app.id} className={app.id === application.id ? "application-card active" : "application-card"} onClick={() => onSelect(app.id)}>
+              <div><strong>{app.title}</strong><span>{app.organization}</span></div>
+              <span className={`status-pill ${statusTone[app.status]}`}>{shortStatus(app.status)}</span>
+            </button>
+          ))}
+        </div>
+      </section>
     </div>
   );
+}
+
+function MessagesView({
+  application,
+  messageDraft,
+  setMessageDraft,
+  onSend,
+}: {
+  application: EventApplication;
+  messageDraft: string;
+  setMessageDraft: (value: string) => void;
+  onSend: () => void;
+}) {
+  return (
+    <section className="messages-layout">
+      <aside className="thread-list panel">
+        <div className="search-box"><Search size={16} /><input placeholder="Search messages..." /></div>
+        {["SADU Review", "Junior Philippine CS Society", "Student Council Federation"].map((thread, index) => (
+          <button key={thread} className={index === 0 ? "thread-item active" : "thread-item"}><strong>{thread}</strong><span>{index === 0 ? "Please revise the budget breakdown." : "Joint event proposal attached."}</span></button>
+        ))}
+      </aside>
+      <section className="chat-panel panel">
+        <h2>SADU Review</h2>
+        <MiniThread application={application} expanded />
+        <div className="composer-row"><input value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" onClick={onSend}><SendHorizonal size={18} /></button></div>
+      </section>
+      <section className="partner-card">
+        <Sparkles size={18} />
+        <div><strong>TAMS Guide - Suggested Partners</strong><p>This event may fit collaboration with Junior Philippine Computer Society and FEU Engineering Society.</p></div>
+        <span>Junior Philippine CS Society +</span><span>Student Council Federation +</span><span>FEU Engineering Society +</span>
+      </section>
+    </section>
+  );
+}
+
+function GuideView({
+  application,
+  guideMode,
+  setGuideMode,
+  guideQuestion,
+  setGuideQuestion,
+  guideOutput,
+  onGenerateGuide,
+}: {
+  application: EventApplication;
+  guideMode: GuideMode;
+  setGuideMode: (mode: GuideMode) => void;
+  guideQuestion: string;
+  setGuideQuestion: (value: string) => void;
+  guideOutput: string[];
+  onGenerateGuide: () => void;
+}) {
+  const lines = guideOutput.length ? guideOutput : localGuideResponse(application, "summary", guideQuestion);
+
+  return (
+    <div className="screen-stack">
+      <section className="guide-hero">
+        <div><p className="guide-kicker"><ShieldCheck size={16} /> TAMS Hub Overview</p><h2>Streamlining FEU student organization workflows - from proposal to approval.</h2><p>TAMS Hub helps student organizations submit event requirements, track SADU approvals, communicate in one place, and reduce incomplete filings through TAMS Access and TAMS Guide.</p></div>
+        <MascotLogo large />
+      </section>
+
+      <section className="feature-grid">
+        <Feature icon={<ShieldCheck />} title="TAMS Access" text="Multi-factor authentication with NFC card, OTP, and FEU SSO placeholders." />
+        <Feature icon={<FilePlus2 />} title="Event Filing" text="Structured event proposal forms with AI-guided completeness checks." />
+        <Feature icon={<Bot />} title="TAMS Guide" text="Summaries, missing field checks, revision drafts, and filing answers." />
+        <Feature icon={<CalendarDays />} title="Real-Time Tracking" text="Visual timeline from draft to final SADU approval." />
+        <Feature icon={<MessageSquare />} title="Collaboration Board" text="Direct communication between organizations, advisers, and SADU." />
+        <Feature icon={<BadgeCheck />} title="SDG Alignment" text="Supports transparent campus workflows and student leadership." />
+      </section>
+
+      <section className="guide-workbench panel">
+        <div className="guide-controls">
+          <select value={guideMode} onChange={(event) => setGuideMode(event.target.value as GuideMode)}>
+            <option value="checklist">Requirement checklist</option>
+            <option value="missing">Missing fields</option>
+            <option value="summary">SADU summary</option>
+            <option value="revision">Revision draft</option>
+            <option value="question">Filing question</option>
+          </select>
+          {guideMode === "question" && <textarea value={guideQuestion} onChange={(event) => setGuideQuestion(event.target.value)} />}
+          <button className="primary-button" onClick={onGenerateGuide}><Sparkles size={18} /> Generate Guidance</button>
+        </div>
+        <div className="guide-output">{lines.map((line) => <p key={line}>{line}</p>)}</div>
+        <p className="fine-print">AI guidance only. Final approval decisions remain with SADU and human reviewers.</p>
+      </section>
+    </div>
+  );
+}
+
+function WorkflowActions({
+  role,
+  status,
+  onReview,
+  onRevision,
+  onResubmit,
+  onApprove,
+  onReject,
+}: {
+  role: Role;
+  status: EventStatus;
+  onReview: () => void;
+  onRevision: () => void;
+  onResubmit: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  if (role === "SADU Associate") {
+    return <div className="action-row"><button className="secondary-button" onClick={onReview}>Mark Under Review</button><button className="gold-button" onClick={onRevision}>Request Revision</button><button className="danger-button" onClick={onReject}>Reject</button><button className="primary-button" onClick={onApprove}>Approve</button></div>;
+  }
+  if (role === "Student Officer" && status === "Revision Requested") {
+    return <button className="primary-button full" onClick={onResubmit}><UploadCloud size={16} /> Upload Revised Documents</button>;
+  }
+  return <p className="fine-print">Actions shown here depend on the verified TAMS Access role.</p>;
+}
+
+function MiniThread({ application, expanded = false }: { application: EventApplication; expanded?: boolean }) {
+  const messages = application.messages.length ? application.messages : [{ id: "empty", author: "TAMS Hub", role: "SADU Associate" as Role, body: "No messages yet.", createdAt: new Date().toISOString() }];
+  return (
+    <div className={expanded ? "chat-thread expanded" : "chat-thread"}>
+      {messages.map((message, index) => (
+        <div key={message.id} className={index % 2 ? "chat-bubble own" : "chat-bubble"}>
+          <strong>{message.author}</strong>
+          <p>{message.body}</p>
+          <span>{formatShortDate(message.createdAt)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MascotLogo({ large = false }: { large?: boolean }) {
+  return (
+    <div className={large ? "mascot-logo large" : "mascot-logo"} aria-label="TAMS Hub mascot">
+      <span className="horn left" />
+      <span className="horn right" />
+      <span className="face">T</span>
+    </div>
+  );
+}
+
+function Metric({ value, label }: { value: string; label: string }) {
+  return <div className="hero-metric"><strong>{value}</strong><span>{label}</span></div>;
+}
+
+function StatCard({ icon, value, label, tone }: { icon: ReactNode; value: number | string; label: string; tone: string }) {
+  return <div className="stat-card"><span className={`stat-icon ${tone}`}>{icon}</span><strong>{value}</strong><p>{label}</p></div>;
+}
+
+function Feature({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
+  return <article className="feature-card"><span>{icon}</span><h3>{title}</h3><p>{text}</p></article>;
+}
+
+function Field({ label, children, wide = false }: { label: string; children: ReactNode; wide?: boolean }) {
+  return <label className={wide ? "field wide" : "field"}><span>{label}</span>{children}</label>;
 }
 
 function localGuideResponse(application: EventApplication, mode: GuideMode, question: string) {
@@ -644,31 +829,27 @@ function localGuideResponse(application: EventApplication, mode: GuideMode, ques
   if (mode === "question") {
     return [
       `Question: ${question}`,
-      "Complete the required templates, run the TAMS Guide pre-check, keep adviser/SADU messages in the thread, and wait for SADU's human decision.",
+      "Complete required templates, run the TAMS Guide pre-check, keep adviser and SADU messages in the thread, and wait for SADU's human decision.",
     ];
   }
   return [makeAiSummary(application)];
 }
 
-function dashboardTitle(role: Role) {
-  if (role === "Student Officer") return "Student Officer Dashboard";
-  if (role === "SADU Associate") return "SADU Review Queue";
-  if (role === "Faculty Adviser") return "Faculty Adviser View";
-  return "Admin Console";
+function sectionTitle(section: Section) {
+  if (section === "file") return "File New Event";
+  if (section === "applications") return "Application Status";
+  if (section === "messages") return "Messages & Collaboration";
+  if (section === "guide") return "TAMS Guide & Overview";
+  return "Dashboard";
 }
 
-function roleNote(role: Role) {
-  if (role === "Student Officer") return "Create event filings, complete templates, submit to SADU, and answer revision requests.";
-  if (role === "SADU Associate") return "Review submissions, read AI summaries, request revisions, approve, reject, and message organizations.";
-  if (role === "Faculty Adviser") return "Monitor organization applications and add endorsement or coordination comments.";
-  return "View users, roles, organizations, and prototype template availability.";
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-PH", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
+function shortStatus(status: EventStatus) {
+  if (status === "Revision Requested") return "Needs Revision";
+  if (status === "Submitted to SADU" || status === "Under Review" || status === "Resubmitted") return "For Review";
+  if (status === "SADU Approved") return "Approved";
+  return status;
 }
