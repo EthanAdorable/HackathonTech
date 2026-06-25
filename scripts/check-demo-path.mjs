@@ -80,7 +80,7 @@ assert.match(appComponent, /"dashboard", label: "Dashboard", icon: <LayoutGrid s
 assert.match(appComponent, /"applications", label: "My Applications", icon: <ClipboardList size=\{18\} \/>/, "Sidebar applications icon should match the reference utility set");
 assert.match(appComponent, /"guide", label: "TAMS Guide", icon: <BriefcaseBusiness size=\{18\} \/>/, "Sidebar guide icon should match the reference utility set");
 assert.match(appComponent, /aria-current=\{item\.id === activeSection \? "page" : undefined\}/, "Sidebar nav should expose the current section");
-assert.match(appComponent, /"Student Officer": <FilePlus2 size=\{16\} \/>/, "Role picker icons should use the workflow icon language");
+assert.match(appComponent, /"Student Officer": <UsersRound size=\{16\} \/>/, "Student organization role picker should use an organization-style icon");
 assert.match(appComponent, /<Feature icon=\{<BriefcaseBusiness \/>\} title="TAMS Guide"/, "Guide overview feature icon should match the reference utility icon language");
 assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls should use a consistent eye icon");
 assert.match(appComponent, /partner-chip active/, "Suggested partner chips should include consistent icons and plus affordances");

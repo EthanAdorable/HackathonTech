@@ -72,7 +72,7 @@ const sectionItems: { id: Section; label: string; icon: ReactNode }[] = [
 ];
 
 const roleIcons: Record<Role, ReactNode> = {
-  "Student Officer": <FilePlus2 size={16} />,
+  "Student Officer": <UsersRound size={16} />,
   "SADU Associate": <ShieldCheck size={16} />,
   "Faculty Adviser": <ClipboardCheck size={16} />,
   Admin: <Settings2 size={16} />,
