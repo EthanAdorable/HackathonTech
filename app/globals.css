@@ -165,6 +165,11 @@ p {
   color: #ffffff;
 }
 
+.access-hero .mascot-logo {
+  width: 72px;
+  height: 72px;
+}
+
 .access-hero h1 {
   max-width: 560px;
   margin: 34px 0 16px;
@@ -250,6 +255,11 @@ p {
 .access-heading {
   gap: 18px;
   margin-bottom: 8px;
+}
+
+.access-heading .mascot-logo {
+  width: 78px;
+  height: 78px;
 }
 
 .access-heading h2 {

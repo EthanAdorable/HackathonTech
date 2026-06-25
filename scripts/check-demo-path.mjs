@@ -31,6 +31,7 @@ assert.ok(
 );
 
 const appComponent = readFileSync(new URL("../components/tams-hub-app.tsx", import.meta.url), "utf8");
+const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 const convexApplications = readFileSync(new URL("../convex/applications.ts", import.meta.url), "utf8");
 const authRoute = readFileSync(new URL("../app/api/auth/[...nextauth]/route.ts", import.meta.url), "utf8");
 const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf8");
@@ -51,6 +52,7 @@ assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Pri
 assert.match(appComponent, /Student Org Officer/, "UI role labels should match the reference screens");
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
 assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");
+assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
