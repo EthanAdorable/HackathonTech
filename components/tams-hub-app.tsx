@@ -509,7 +509,10 @@ function Topbar({
     <header className="topbar">
       <h1>{title}</h1>
       <div className="top-actions">
-        <Bell size={19} />
+        <button className="notification-button" aria-label="View notifications">
+          <Bell size={18} aria-hidden="true" />
+          <span className="notification-dot" aria-hidden="true" />
+        </button>
         <div className="avatar">{activeUser.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
         <strong>{activeUser.name}</strong>
         <span className="role-badge">{roleDisplayName(activeUser.role)}</span>

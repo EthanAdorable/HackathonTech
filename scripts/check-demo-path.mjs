@@ -53,6 +53,8 @@ assert.match(appComponent, /Student Org Officer/, "UI role labels should match t
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
 assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
+assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
+assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
