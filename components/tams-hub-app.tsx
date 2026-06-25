@@ -1092,7 +1092,14 @@ function GuideView({
             <option value="revision">Revision draft</option>
             <option value="question">Filing question</option>
           </select>
-          {guideMode === "question" && <textarea value={guideQuestion} onChange={(event) => setGuideQuestion(event.target.value)} />}
+          {guideMode === "question" && (
+            <textarea
+              aria-label="TAMS Guide filing question"
+              placeholder="Ask about filing requirements, revisions, templates, or SADU review steps..."
+              value={guideQuestion}
+              onChange={(event) => setGuideQuestion(event.target.value)}
+            />
+          )}
           <button className="primary-button" onClick={onGenerateGuide}><Sparkles size={18} /> Generate Guidance</button>
         </div>
         <div className="guide-output">{lines.map((line) => <p key={line}>{line}</p>)}</div>

@@ -65,6 +65,7 @@ assert.match(appComponent, /threadSearch/, "Messages search box should filter vi
 assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
 assert.match(appComponent, /notificationsOpen/, "Topbar notification bell should open prototype alerts");
 assert.match(globalCss, /\.notification-popover/, "Topbar notification alerts should be styled as a popover");
+assert.match(appComponent, /TAMS Guide filing question/, "Guide question mode should expose an accessible prompt");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
