@@ -115,9 +115,12 @@ corepack pnpm install && corepack pnpm build
 ```bash
 corepack pnpm dev
 corepack pnpm build
+corepack pnpm demo:check
 corepack pnpm start
 corepack pnpm services:check
 ```
+
+`demo:check` verifies the seeded roles, required templates, revision loop, SADU approval transition, and TAMS Guide helper outputs.
 
 When checking a running deployment, set `TAMS_HUB_HEALTH_URL` to the app URL so `services:check` probes `/api/health`.
 

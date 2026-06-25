@@ -1,0 +1,66 @@
+import assert from "node:assert/strict";
+import {
+  getApplicationCompletion,
+  makeAiSummary,
+  makeChecklist,
+  makeRevisionDraft,
+  seedApplications,
+  templateDefinitions,
+  users,
+} from "../lib/tams-data.ts";
+import { addMessage, transitionApplication } from "../lib/workflow.ts";
+
+const roles = new Set(users.map((user) => user.role));
+assert.deepEqual([...roles].sort(), ["Admin", "Faculty Adviser", "SADU Associate", "Student Officer"].sort());
+assert.equal(templateDefinitions.length, 7, "all required event templates should be present");
+
+const byStatus = new Map(seedApplications.map((application) => [application.status, application]));
+assert.ok(byStatus.get("Draft"), "seed data should include a draft application");
+assert.ok(byStatus.get("Submitted to SADU"), "seed data should include a submitted application");
+assert.ok(byStatus.get("Revision Requested"), "seed data should include a revision-requested application");
+assert.ok(byStatus.get("SADU Approved"), "seed data should include an approved application");
+
+const submitted = byStatus.get("Submitted to SADU");
+assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
+
+let review = transitionApplication(submitted, "Under Review", "SADU opened the application for review.");
+assert.equal(review.status, "Under Review");
+assert.ok(review.timeline.some((entry) => entry.status === "Under Review"));
+
+const revisionBody = makeRevisionDraft(review);
+assert.match(revisionBody, /guidance only/i);
+review = transitionApplication(addMessage(review, "SADU Associate", "SADU Associate", revisionBody), "Revision Requested", "SADU requested revisions.");
+assert.equal(review.status, "Revision Requested");
+assert.ok(review.messages.some((message) => message.body === revisionBody));
+
+const revised = {
+  ...review,
+  templates: review.templates.map((template) =>
+    template.templateId === "publicity"
+      ? {
+          ...template,
+          values: {
+            channels: "Facebook page, campus screens, and adviser-approved class announcements.",
+            postingDate: "2026-07-22",
+            materials: "Poster, caption, publication calendar, and approval screenshots.",
+          },
+        }
+      : template,
+  ),
+};
+assert.equal(getApplicationCompletion(revised).missing.length, 0, "revised demo application should clear required missing fields");
+
+const resubmitted = transitionApplication(revised, "Resubmitted", "Student resubmitted after revision.");
+const approved = transitionApplication(
+  addMessage(resubmitted, "SADU Associate", "SADU Associate", "Approved. Final decision recorded by SADU reviewer."),
+  "SADU Approved",
+  "SADU approved the application.",
+);
+assert.equal(approved.status, "SADU Approved");
+assert.ok(approved.timeline.some((entry) => entry.status === "Resubmitted"));
+assert.ok(approved.timeline.some((entry) => entry.status === "SADU Approved"));
+
+assert.ok(makeChecklist(approved).length >= 4, "TAMS Guide checklist should return useful guidance");
+assert.match(makeAiSummary(approved), /SADU should verify final readiness/i);
+
+console.log("Demo path check passed: roles, templates, revision loop, approval, and guide helpers are coherent.");
