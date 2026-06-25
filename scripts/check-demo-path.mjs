@@ -55,6 +55,7 @@ assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should ha
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
 assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
 assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");
+assert.match(appComponent, /topbar-identity/, "Topbar user identity should be grouped like the reference header");
 assert.match(globalCss, /\.sidebar \.brand \.mascot-logo/, "Sidebar mascot should match the larger reference app chrome");
 assert.match(appComponent, /"Student Officer": <FilePlus2 size=\{16\} \/>/, "Role picker icons should use the workflow icon language");
 assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls should use a consistent eye icon");

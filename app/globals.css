@@ -596,6 +596,20 @@ p {
   font-size: 13px;
 }
 
+.topbar-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 1px solid var(--line);
+  padding-left: 12px;
+}
+
+.topbar-identity strong {
+  color: #172b24;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .notification-wrap {
   position: relative;
 }

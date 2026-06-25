@@ -531,9 +531,11 @@ function Topbar({
             </div>
           )}
         </div>
-        <div className="avatar">{activeUser.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
-        <strong>{activeUser.name}</strong>
-        <span className="role-badge">{roleDisplayName(activeUser.role)}</span>
+        <div className="topbar-identity">
+          <div className="avatar">{activeUser.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
+          <strong>{activeUser.name}</strong>
+          <span className="role-badge">{roleDisplayName(activeUser.role)}</span>
+        </div>
         {showNewEvent && <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>}
       </div>
     </header>
