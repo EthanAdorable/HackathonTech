@@ -144,6 +144,7 @@ assert.match(serviceRunbook, /separate external projects/, "Service runbook shou
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
 assert.match(serviceRunbook, /setup:railway -- --workspace <workspace> --dry-run/, "Railway runbook should require explicit workspace selection in setup examples");
 assert.match(readFileSync("README.md", "utf8"), /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
+assert.match(readFileSync("README.md", "utf8"), /setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run/, "README should show explicit Railway project targeting for dry-runs");
 assert.match(convexSetup, /const project = .*"tams-hub-prototype"/, "Convex setup should default to the dedicated prototype project");
 assert.match(convexSetup, /Missing Convex \$\{label\} value/, "Convex setup should reject missing project, team, or deployment argument values");
 assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway setup should default to the dedicated prototype project");
