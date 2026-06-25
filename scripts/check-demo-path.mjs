@@ -122,6 +122,8 @@ assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CH
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
 assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
+assert.match(serviceRunbook, /setup:railway -- --workspace <workspace> --dry-run/, "Railway runbook should require explicit workspace selection in setup examples");
+assert.match(readFileSync("README.md", "utf8"), /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
 assert.match(convexSetup, /const project = .*"tams-hub-prototype"/, "Convex setup should default to the dedicated prototype project");
 assert.match(convexSetup, /Missing Convex \$\{label\} value/, "Convex setup should reject missing project, team, or deployment argument values");
 assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway setup should default to the dedicated prototype project");

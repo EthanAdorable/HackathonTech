@@ -123,14 +123,14 @@ corepack pnpm start
 corepack pnpm services:check
 corepack pnpm setup:convex -- --team <team-slug> --dry-run
 corepack pnpm convex:codegen
-corepack pnpm setup:railway -- --dry-run
+corepack pnpm setup:railway -- --workspace <workspace> --dry-run
 ```
 
 `demo:check` verifies the seeded roles, required templates, revision loop, SADU approval transition, and TAMS Guide helper outputs.
 
 When checking a running deployment, set `TAMS_HUB_HEALTH_URL` to the app URL so `services:check` probes `/api/health`. Set `TAMS_DEPLOY_CHECK=1` to fail on deploy-unsafe auth values such as localhost `NEXTAUTH_URL` or the local prototype `NEXTAUTH_SECRET`. The script reports account setup gaps as `WAIT` and optional fallbacks as `INFO`; only failed health checks or deploy-mode env errors return a failure exit code.
 
-`setup:convex` and `setup:railway` are guarded provisioning helpers for the dedicated external projects. Use `--dry-run` first; the real commands should only run after the Convex team and Railway account/workspace choices are confirmed.
+`setup:convex` and `setup:railway` are guarded provisioning helpers for the dedicated external projects. Use `--dry-run` first; the real commands should only run after the Convex team and Railway account/workspace choices are confirmed. Omit `--workspace` only after Railway CLI is authenticated to the intended workspace.
 
 ## Current Limitations
 
