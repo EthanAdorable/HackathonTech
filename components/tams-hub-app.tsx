@@ -89,6 +89,14 @@ const statusTone: Record<EventStatus, string> = {
   Archived: "neutral",
 };
 
+const guideModeLabels: Record<GuideMode, string> = {
+  checklist: "Requirement Checklist",
+  missing: "Missing Fields",
+  summary: "SADU Summary",
+  revision: "Revision Draft",
+  question: "Filing Answer",
+};
+
 export function TamsHubApp() {
   const [entered, setEntered] = useState(false);
   const [activeUserId, setActiveUserId] = useState("juan");
@@ -1102,7 +1110,18 @@ function GuideView({
           )}
           <button className="primary-button" onClick={onGenerateGuide}><Sparkles size={18} /> Generate Guidance</button>
         </div>
-        <div className="guide-output">{lines.map((line) => <p key={line}>{line}</p>)}</div>
+        <div className="guide-output">
+          <div className="guide-output-header">
+            <div>
+              <span><Bot size={14} /> {guideModeLabels[guideMode]}</span>
+              <strong>{application.title}</strong>
+            </div>
+            <small>Human review required</small>
+          </div>
+          <div className="guide-output-lines">
+            {lines.map((line) => <p key={line}>{line}</p>)}
+          </div>
+        </div>
         <p className="fine-print">AI guidance only. Final approval decisions remain with SADU and human reviewers.</p>
       </section>
     </div>

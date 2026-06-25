@@ -1890,14 +1890,63 @@ p {
 }
 
 .guide-output {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid #f0d487;
+  border-radius: 8px;
+  background: #fffbef;
+  padding: 12px;
 }
 
-.guide-output p {
+.guide-output-header,
+.guide-output-header span,
+.guide-output-lines {
+  display: grid;
+}
+
+.guide-output-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.guide-output-header span {
+  grid-auto-flow: column;
+  justify-content: start;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.guide-output-header strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.guide-output-header small {
+  border: 1px solid #d9b73f;
+  border-radius: 999px;
+  background: #fff8df;
+  padding: 5px 8px;
+  color: #735a05;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.guide-output-lines {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.guide-output-lines p {
   margin: 0;
   border-left: 3px solid var(--gold);
   border-radius: 0 8px 8px 0;
-  background: #fff8e5;
+  background: #ffffff;
   padding: 11px 13px;
   font-size: 13px;
 }
@@ -1971,7 +2020,8 @@ p {
   .requirement-grid,
   .progress-steps,
   .guide-controls,
-  .guide-output {
+  .guide-output-header,
+  .guide-output-lines {
     grid-template-columns: 1fr;
   }
 
