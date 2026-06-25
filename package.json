@@ -6,7 +6,9 @@
     "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
     "start": "node scripts/start.mjs",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "services:check": "node scripts/check-services.mjs",
+    "convex:dev-once": "convex dev --once"
   },
   "dependencies": {
     "convex": "^1.19.4",

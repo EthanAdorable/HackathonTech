@@ -36,7 +36,7 @@ Expected local artifacts:
 - `NEXT_PUBLIC_CONVEX_URL`
 - generated Convex files under `convex/_generated/`
 
-Seed the prototype data after deployment configuration:
+Seed the prototype data after deployment configuration. Run this once per fresh deployment; the current seed command appends demo rows.
 
 ```powershell
 corepack pnpm convex run seed:seedDemoData
@@ -45,6 +45,7 @@ corepack pnpm convex run seed:seedDemoData
 Evidence checks:
 
 ```powershell
+corepack pnpm services:check
 corepack pnpm convex login status
 corepack pnpm convex data
 corepack pnpm convex run applications:list '{}'
@@ -89,6 +90,7 @@ railway up --detach -m "Initial TAMS Hub deployment"
 Evidence checks:
 
 ```powershell
+corepack pnpm services:check
 railway status --json
 railway service status --all --json
 railway variable list --json

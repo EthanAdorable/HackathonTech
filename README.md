@@ -37,6 +37,7 @@ NEXTAUTH_SECRET=replace-with-a-local-secret
 NEXTAUTH_URL=http://127.0.0.1:3000
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
+CONVEX_DEPLOYMENT=
 NEXT_PUBLIC_CONVEX_URL=
 ```
 
@@ -114,6 +115,7 @@ corepack pnpm install && corepack pnpm build
 corepack pnpm dev
 corepack pnpm build
 corepack pnpm start
+corepack pnpm services:check
 ```
 
 ## Current Limitations
