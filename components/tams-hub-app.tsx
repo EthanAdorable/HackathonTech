@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   Bell,
   Bot,
+  BriefcaseBusiness,
   Database,
   CalendarDays,
   CheckCircle2,
@@ -67,7 +68,7 @@ const sectionItems: { id: Section; label: string; icon: ReactNode }[] = [
   { id: "file", label: "File Event", icon: <FileText size={18} /> },
   { id: "applications", label: "My Applications", icon: <ClipboardList size={18} /> },
   { id: "messages", label: "Messages", icon: <MessageSquare size={18} /> },
-  { id: "guide", label: "TAMS Guide", icon: <Sparkles size={18} /> },
+  { id: "guide", label: "TAMS Guide", icon: <BriefcaseBusiness size={18} /> },
 ];
 
 const roleIcons: Record<Role, ReactNode> = {
@@ -1148,7 +1149,7 @@ function GuideView({
       <section className="feature-grid">
         <Feature icon={<ShieldCheck />} title="TAMS Access" text="Multi-factor authentication with NFC card, OTP, and FEU SSO placeholders." />
         <Feature icon={<FilePlus2 />} title="Event Filing" text="Structured event proposal forms with AI-guided completeness checks." />
-        <Feature icon={<Bot />} title="TAMS Guide" text="Summaries, missing field checks, revision drafts, and filing answers." />
+        <Feature icon={<BriefcaseBusiness />} title="TAMS Guide" text="Summaries, missing field checks, revision drafts, and filing answers." />
         <Feature icon={<CalendarDays />} title="Real-Time Tracking" text="Visual timeline from draft to final SADU approval." />
         <Feature icon={<MessageSquare />} title="Collaboration Board" text="Direct communication between organizations, advisers, and SADU." />
         <Feature icon={<BadgeCheck />} title="SDG Alignment" text="Supports transparent campus workflows and student leadership." />
