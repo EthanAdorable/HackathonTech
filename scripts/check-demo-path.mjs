@@ -58,6 +58,7 @@ assert.match(appComponent, /Inconsistency Detected/, "File event guide should sh
 assert.match(appComponent, /required document\(s\) missing/, "File event guide should show a separate missing-documents notice");
 assert.match(appComponent, /className="warning-box" role="alert"/, "File event inconsistency warning should be announced as an alert");
 assert.match(appComponent, /className="guide-says" role="status" aria-live="polite"/, "File event guide output should be announced politely");
+assert.match(globalCss, /\.requirement-tile > svg/, "Upload requirement icons should use reference-style icon chips");
 assert.match(appComponent, /Student Org Officer/, "UI role labels should match the reference screens");
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
 assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");

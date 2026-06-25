@@ -1150,7 +1150,11 @@ p {
   font-size: 11px;
 }
 
-.requirement-tile svg {
+.requirement-tile > svg {
+  box-sizing: content-box;
+  padding: 7px;
+  border-radius: 8px;
+  background: #e7f2ec;
   color: var(--green-700);
 }
 
