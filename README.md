@@ -72,7 +72,7 @@ The visible role switcher simulates TAMS Access with OTP and NFC/card-tap verifi
 - SADU requests revision; the message thread receives a revision draft and the status changes.
 - Student Officer updates missing fields and resubmits.
 - SADU approves or rejects; status and timeline update across roles.
-- Faculty Adviser can view organization applications and add notes through the message flow.
+- Faculty Adviser can view organization applications and add an endorsement note to the review thread.
 - Admin can inspect all applications and toggle template availability in prototype form.
 - Admin dashboard shows service readiness for Convex/Railway and can reset local demo data.
 

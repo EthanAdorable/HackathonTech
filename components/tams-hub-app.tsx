@@ -240,6 +240,17 @@ export function TamsHubApp() {
     updateApplication(transitionApplication(withMessage, "Rejected", "SADU rejected the application."));
   }
 
+  function endorseApplication() {
+    updateApplication(
+      addMessage(
+        selectedApp,
+        activeUser.name,
+        activeUser.role,
+        "Faculty adviser note: Reviewed for organization coordination. Endorsement placeholder recorded for SADU visibility.",
+      ),
+    );
+  }
+
   if (!entered) {
     return <AccessScreen activeUserId={activeUserId} setActiveUserId={setActiveUserId} onEnter={() => setEntered(true)} />;
   }
@@ -295,6 +306,7 @@ export function TamsHubApp() {
             onResubmit={() => setStatus("Resubmitted", "Student resubmitted after revision.")}
             onApprove={approveApplication}
             onReject={rejectApplication}
+            onEndorse={endorseApplication}
           />
         )}
 
@@ -746,6 +758,7 @@ function ApplicationsView({
   onResubmit,
   onApprove,
   onReject,
+  onEndorse,
 }: {
   application: EventApplication;
   applications: EventApplication[];
@@ -757,6 +770,7 @@ function ApplicationsView({
   onResubmit: () => void;
   onApprove: () => void;
   onReject: () => void;
+  onEndorse: () => void;
 }) {
   return (
     <div className="screen-stack">
@@ -785,7 +799,7 @@ function ApplicationsView({
             ))}
             {!getApplicationCompletion(application).missing.length && <div className="required-action ok"><CheckCircle2 size={18} /><div><strong>No missing prototype fields</strong><p>Ready for human review.</p></div></div>}
           </div>
-          <WorkflowActions role={activeUser.role} status={application.status} onReview={onReview} onRevision={onRevision} onResubmit={onResubmit} onApprove={onApprove} onReject={onReject} />
+          <WorkflowActions role={activeUser.role} status={application.status} onReview={onReview} onRevision={onRevision} onResubmit={onResubmit} onApprove={onApprove} onReject={onReject} onEndorse={onEndorse} />
         </div>
 
         <div className="panel">
@@ -917,6 +931,7 @@ function WorkflowActions({
   onResubmit,
   onApprove,
   onReject,
+  onEndorse,
 }: {
   role: Role;
   status: EventStatus;
@@ -925,12 +940,16 @@ function WorkflowActions({
   onResubmit: () => void;
   onApprove: () => void;
   onReject: () => void;
+  onEndorse: () => void;
 }) {
   if (role === "SADU Associate") {
     return <div className="action-row"><button className="secondary-button" onClick={onReview}>Mark Under Review</button><button className="gold-button" onClick={onRevision}>Request Revision</button><button className="danger-button" onClick={onReject}>Reject</button><button className="primary-button" onClick={onApprove}>Approve</button></div>;
   }
   if (role === "Student Officer" && status === "Revision Requested") {
     return <button className="primary-button full" onClick={onResubmit}><UploadCloud size={16} /> Upload Revised Documents</button>;
+  }
+  if (role === "Faculty Adviser") {
+    return <button className="primary-button full" onClick={onEndorse}><ClipboardCheck size={16} /> Add Endorsement Note</button>;
   }
   return <p className="fine-print">Actions shown here depend on the verified TAMS Access role.</p>;
 }
