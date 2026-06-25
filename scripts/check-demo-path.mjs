@@ -48,6 +48,8 @@ assert.match(appComponent, /disabled=\{!canStartReview\}/, "SADU review action s
 assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resubmission should require completed fields");
 assert.match(appComponent, /revisionApplication && onSelect\(revisionApplication\.id\)/, "Dashboard guide alert should open the revision application");
 assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
+assert.match(appComponent, /Student Org Officer/, "UI role labels should match the reference screens");
+assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");

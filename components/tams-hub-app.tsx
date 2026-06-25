@@ -425,11 +425,11 @@ function AccessScreen({
                 {users.map((user) => (
                   <button key={user.id} className={user.id === activeUserId ? "role-chip active" : "role-chip"} onClick={() => setActiveUserId(user.id)}>
                     {roleIcons[user.role]}
-                    {user.role}
+                    {roleDisplayName(user.role)}
                   </button>
                 ))}
               </div>
-              <button className="gold-button full" onClick={onEnter}>Enter as {activeUser.role}</button>
+              <button className="gold-button full" onClick={onEnter}>Enter as {roleDisplayName(activeUser.role)}</button>
             </div>
           </>
         )}
@@ -480,7 +480,7 @@ function Sidebar({
         <MascotLogo />
         <div><strong>TAMS Hub</strong><span>FEU Campus Workflow</span></div>
       </div>
-      <div className="logged-card"><span>Logged in as</span><strong>{activeUser.role}</strong></div>
+      <div className="logged-card"><span>Logged in as</span><strong>{roleDisplayName(activeUser.role)}</strong></div>
       <nav className="nav-list" aria-label="Main navigation">
         {sectionItems.map((item) => (
           <button key={item.id} className={item.id === activeSection ? "nav-button active" : "nav-button"} onClick={() => setSection(item.id)}>
@@ -512,7 +512,7 @@ function Topbar({
         <Bell size={19} />
         <div className="avatar">{activeUser.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
         <strong>{activeUser.name}</strong>
-        <span className="role-badge">{activeUser.role}</span>
+        <span className="role-badge">{roleDisplayName(activeUser.role)}</span>
         {showNewEvent && <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>}
       </div>
     </header>
@@ -545,7 +545,7 @@ function DashboardView({
     <div className="screen-stack">
       <div className="dashboard-welcome">
         <div>
-          <h2>Welcome, FEU Alabang {activeUser.role}</h2>
+          <h2>Welcome, FEU Alabang {roleWelcomeName(activeUser.role)}</h2>
           <p>Thursday, June 19, 2025 - Semester 2, A.Y. 2024-2025</p>
         </div>
         {activeUser.role === "Student Officer" && <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>}
@@ -639,7 +639,7 @@ function AdminOperationsPanel({
           {users.map((user) => (
             <div className="admin-row" key={user.id}>
               <div><strong>{user.name}</strong><span>{user.title}</span></div>
-              <span className="role-badge">{user.role}</span>
+              <span className="role-badge">{roleDisplayName(user.role)}</span>
             </div>
           ))}
         </div>
@@ -1175,6 +1175,18 @@ function sectionTitle(section: Section) {
   if (section === "messages") return "Messages & Collaboration";
   if (section === "guide") return "TAMS Guide & Overview";
   return "Dashboard";
+}
+
+function roleDisplayName(role: Role) {
+  if (role === "Student Officer") return "Student Org Officer";
+  if (role === "Faculty Adviser") return "Organization Adviser";
+  if (role === "Admin") return "Campus Administrator";
+  return role;
+}
+
+function roleWelcomeName(role: Role) {
+  if (role === "Student Officer") return "Student Council Officer";
+  return roleDisplayName(role);
 }
 
 function formatShortDate(value: string) {
