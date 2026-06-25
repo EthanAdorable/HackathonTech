@@ -1250,13 +1250,26 @@ p {
 }
 
 .progress-steps {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   text-align: center;
 }
 
+.progress-steps::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: calc(100% / 12);
+  right: calc(100% / 12);
+  height: 2px;
+  background: #dbe7df;
+}
+
 .progress-step {
+  position: relative;
+  z-index: 1;
   display: grid;
   justify-items: center;
   gap: 6px;
@@ -1507,6 +1520,7 @@ p {
 }
 
 .guide-hero {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 26px;
@@ -1518,6 +1532,35 @@ p {
     linear-gradient(145deg, #0a703f, #064026);
   color: #ffffff;
   padding: 28px 36px;
+}
+
+.guide-hero > div:first-child {
+  position: relative;
+  z-index: 1;
+}
+
+.guide-hero-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 250px;
+  min-height: 150px;
+}
+
+.guide-hero-mark > svg {
+  position: absolute;
+  right: -8px;
+  color: rgba(255, 255, 255, 0.11);
+  width: 130px;
+  height: 130px;
+  stroke-width: 1.25;
+}
+
+.guide-hero-mark .mascot-logo {
+  position: relative;
+  z-index: 1;
+  width: 154px;
+  height: 154px;
 }
 
 .guide-hero h2 {
@@ -1739,6 +1782,25 @@ p {
   .guide-controls,
   .guide-output {
     grid-template-columns: 1fr;
+  }
+
+  .progress-steps::before {
+    display: none;
+  }
+
+  .guide-hero {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+
+  .guide-hero-mark {
+    width: 100%;
+    min-height: 120px;
+  }
+
+  .guide-hero-mark .mascot-logo {
+    width: 118px;
+    height: 118px;
   }
 
   .nav-list {

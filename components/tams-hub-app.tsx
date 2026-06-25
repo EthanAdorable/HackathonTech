@@ -936,7 +936,10 @@ function GuideView({
     <div className="screen-stack">
       <section className="guide-hero">
         <div><p className="guide-kicker"><ShieldCheck size={16} /> TAMS Hub Overview</p><h2>Streamlining FEU student organization workflows - from proposal to approval.</h2><p>TAMS Hub helps student organizations submit event requirements, track SADU approvals, communicate in one place, and reduce incomplete filings through TAMS Access and TAMS Guide.</p></div>
-        <MascotLogo large />
+        <div className="guide-hero-mark">
+          <ShieldCheck size={130} />
+          <MascotLogo large />
+        </div>
       </section>
 
       <section className="feature-grid">
