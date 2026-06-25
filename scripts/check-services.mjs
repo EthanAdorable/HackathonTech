@@ -85,6 +85,23 @@ function deployEnvWarnings() {
   return warnings;
 }
 
+function projectTargetSummary() {
+  const convexProject = envValue("TAMS_CONVEX_PROJECT") || "tams-hub-prototype";
+  const railwayProject = envValue("TAMS_RAILWAY_PROJECT") || "tams-hub-prototype";
+  const railwayProjectId = envValue("TAMS_RAILWAY_PROJECT_ID") || envValue("RAILWAY_PROJECT_ID");
+  const missing = deployCheck && !railwayProjectId ? ["TAMS_RAILWAY_PROJECT_ID"] : [];
+
+  return {
+    status: missing.length ? "fail" : railwayProjectId ? "ok" : "wait",
+    output: [
+      `Convex project: ${convexProject}`,
+      `Railway project: ${railwayProject}`,
+      `Railway project ID: ${railwayProjectId ? "set" : "missing"}`,
+      ...(missing.length ? [`missing: ${missing.join(", ")}`] : []),
+    ].join("; "),
+  };
+}
+
 function isLoopbackUrl(value) {
   try {
     const hostname = new URL(value).hostname.toLowerCase();
@@ -117,6 +134,7 @@ run("Convex login", "corepack", ["pnpm", "convex", "login", "status"]);
 run("Railway CLI", "railway", ["--version"]);
 run("Railway auth", "railway", ["whoami", "--json"]);
 checks.push({ label: "Local env", ...envSummary() });
+checks.push({ label: "Dedicated project target", ...projectTargetSummary() });
 checks.push({ label: "App health", ...(await healthSummary()) });
 checks.push({
   label: "OpenAI env",
