@@ -50,6 +50,7 @@ import {
 import { addMessage, transitionApplication } from "@/lib/workflow";
 
 const storageKey = "tams-hub-prototype-state";
+const defaultApplicationId = seedApplications.find((application) => application.status === "Revision Requested")?.id ?? seedApplications[0].id;
 
 type ServiceStatus = {
   convexConfigured: boolean;
@@ -94,7 +95,7 @@ export function TamsHubApp() {
   const [activeUserId, setActiveUserId] = useState("juan");
   const [section, setSection] = useState<Section>("dashboard");
   const [applications, setApplications] = useState<EventApplication[]>(seedApplications);
-  const [selectedAppId, setSelectedAppId] = useState(seedApplications[2].id);
+  const [selectedAppId, setSelectedAppId] = useState(defaultApplicationId);
   const [guideMode, setGuideMode] = useState<GuideMode>("checklist");
   const [guideQuestion, setGuideQuestion] = useState("What should be completed before SADU review?");
   const [guideOutput, setGuideOutput] = useState<string[]>([]);
@@ -152,7 +153,7 @@ export function TamsHubApp() {
   function resetDemoData() {
     window.localStorage.removeItem(storageKey);
     setApplications(seedApplications);
-    setSelectedAppId(seedApplications[2].id);
+    setSelectedAppId(defaultApplicationId);
     setGuideOutput([]);
     setMessageDraft("");
   }
@@ -538,7 +539,7 @@ function DashboardView({
               <tr key={app.id} onClick={() => onSelect(app.id)}>
                 <td>{app.title}</td>
                 <td>{app.eventType}</td>
-                <td>{formatShortDate(app.timeline[0]?.createdAt ?? app.eventDate)}</td>
+                <td>{formatShortDate(getSubmittedDate(app))}</td>
                 <td><span className={`status-pill ${statusTone[app.status]}`}>{shortStatus(app.status)}</span></td>
                 <td className="action-text">{app.status === "Revision Requested" ? "Revise budget" : app.status === "Draft" ? "Complete form" : app.status.includes("Submitted") ? "Awaiting SADU" : "-"}</td>
               </tr>
@@ -561,6 +562,10 @@ function getDashboardStats(role: Role, applications: EventApplication[], queueCo
     approved: applications.filter((app) => app.status === "SADU Approved").length,
     messages: applications.reduce((sum, app) => sum + app.messages.length, 0),
   };
+}
+
+function getSubmittedDate(application: EventApplication) {
+  return application.timeline.find((entry) => entry.status === "Submitted to SADU")?.createdAt ?? application.timeline[0]?.createdAt ?? application.eventDate;
 }
 
 function AdminOperationsPanel() {

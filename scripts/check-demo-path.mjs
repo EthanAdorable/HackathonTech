@@ -41,7 +41,7 @@ const revised = {
           ...template,
           values: {
             channels: "Facebook page, campus screens, and adviser-approved class announcements.",
-            postingDate: "2026-07-22",
+            postingDate: "2025-07-22",
             materials: "Poster, caption, publication calendar, and approval screenshots.",
           },
         }

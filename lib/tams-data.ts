@@ -191,8 +191,6 @@ export const templateDefinitions: TemplateDefinition[] = [
   },
 ];
 
-const now = "2026-06-25T15:45:00.000Z";
-
 function makeTemplates(overrides: Record<string, Record<string, string>> = {}): TemplateEntry[] {
   return templateDefinitions.map((template) => ({
     templateId: template.id,
@@ -202,49 +200,6 @@ function makeTemplates(overrides: Record<string, Record<string, string>> = {}): 
 }
 
 export const seedApplications: EventApplication[] = [
-  {
-    id: "app-draft",
-    title: "Org Anniversary Night",
-    organization: "Junior Philippine Computer Society",
-    eventType: "Social Event",
-    venue: "FEU Alabang Auditorium",
-    eventDate: "2025-07-12",
-    expectedParticipants: 150,
-    ownerId: "juan",
-    adviserId: "adviser",
-    status: "Draft",
-    riskLevel: "Low",
-    templates: makeTemplates({
-      proposal: { overview: "Anniversary gathering for organization members and alumni.", objectives: "Celebrate milestones and recognize active student leaders." },
-    }),
-    messages: [],
-    timeline: [{ id: "t1", status: "Draft", note: "Application created by Juan Reyes.", createdAt: now }],
-  },
-  {
-    id: "app-submitted",
-    title: "Leadership Summit Vol.3",
-    organization: "Junior Philippine Computer Society",
-    eventType: "Seminar",
-    venue: "FEU Alabang AVR",
-    eventDate: "2025-07-03",
-    expectedParticipants: 120,
-    ownerId: "juan",
-    adviserId: "adviser",
-    status: "Submitted to SADU",
-    riskLevel: "Medium",
-    templates: makeTemplates({
-      proposal: { overview: "Leadership development seminar for officers and committee heads.", objectives: "Build project management and student leadership skills.", targetAudience: "Student organization officers", successMeasure: "At least 100 attendees and post-event survey responses." },
-      budget: { totalBudget: "15000", fundingSource: "Organization funds", expenseBreakdown: "Honorarium, certificates, snacks, publicity." },
-      venue: { preferredVenue: "FEU Alabang AVR", setupNeeds: "Theater seating, registration desk", techNeeds: "Projector, two microphones" },
-      program: { callTime: "8:00 AM", programFlow: "Registration, keynote, panel, open forum, closing.", officerAssignments: "Juan: documentation; Treasurer: registration; President: host." },
-      publicity: { channels: "Facebook page, org GC, campus bulletin", postingDate: "2026-07-22", materials: "Poster, caption, pubmat set" },
-    }),
-    messages: [{ id: "m1", author: "Juan Reyes", role: "Student Officer", body: "Submitting for initial SADU review.", createdAt: now }],
-    timeline: [
-      { id: "t1", status: "Draft", note: "Application created.", createdAt: "2026-06-24T09:00:00.000Z" },
-      { id: "t2", status: "Submitted to SADU", note: "Submitted to SADU queue.", createdAt: now },
-    ],
-  },
   {
     id: "app-revision",
     title: "Tech Career Fair 2025",
@@ -275,6 +230,31 @@ export const seedApplications: EventApplication[] = [
     ],
   },
   {
+    id: "app-submitted",
+    title: "Leadership Summit Vol.3",
+    organization: "Junior Philippine Computer Society",
+    eventType: "Seminar",
+    venue: "FEU Alabang AVR",
+    eventDate: "2025-07-03",
+    expectedParticipants: 120,
+    ownerId: "juan",
+    adviserId: "adviser",
+    status: "Submitted to SADU",
+    riskLevel: "Medium",
+    templates: makeTemplates({
+      proposal: { overview: "Leadership development seminar for officers and committee heads.", objectives: "Build project management and student leadership skills.", targetAudience: "Student organization officers", successMeasure: "At least 100 attendees and post-event survey responses." },
+      budget: { totalBudget: "15000", fundingSource: "Organization funds", expenseBreakdown: "Honorarium, certificates, snacks, publicity." },
+      venue: { preferredVenue: "FEU Alabang AVR", setupNeeds: "Theater seating, registration desk", techNeeds: "Projector, two microphones" },
+      program: { callTime: "8:00 AM", programFlow: "Registration, keynote, panel, open forum, closing.", officerAssignments: "Juan: documentation; Treasurer: registration; President: host." },
+      publicity: { channels: "Facebook page, org GC, campus bulletin", postingDate: "2025-07-22", materials: "Poster, caption, pubmat set" },
+    }),
+    messages: [{ id: "m1", author: "Juan Reyes", role: "Student Officer", body: "Submitting for initial SADU review.", createdAt: "2025-06-14T15:45:00.000Z" }],
+    timeline: [
+      { id: "t1", status: "Draft", note: "Application created.", createdAt: "2025-06-12T09:00:00.000Z" },
+      { id: "t2", status: "Submitted to SADU", note: "Submitted to SADU queue.", createdAt: "2025-06-14T15:45:00.000Z" },
+    ],
+  },
+  {
     id: "app-approved",
     title: "FEU Hackathon 2025",
     organization: "Junior Philippine Computer Society",
@@ -291,12 +271,55 @@ export const seedApplications: EventApplication[] = [
       budget: { totalBudget: "12000", fundingSource: "Organization funds", expenseBreakdown: "Snacks, printing, tokens." },
       venue: { preferredVenue: "FEU Alabang Innovation Lab", setupNeeds: "Team tables, judges table, registration area", techNeeds: "Projector, Wi-Fi, and extension cords" },
       program: { callTime: "8:00 AM", programFlow: "Registration, opening, build sprint, judging, awarding.", officerAssignments: "All executive officers assigned." },
-      publicity: { channels: "FB page and membership channels", postingDate: "2026-06-28", materials: "Event poster and reminders" },
+      publicity: { channels: "FB page and membership channels", postingDate: "2025-06-28", materials: "Event poster and reminders" },
     }),
-    messages: [{ id: "m1", author: "SADU Associate", role: "SADU Associate", body: "Approved. Coordinate final logistics with facilities.", createdAt: "2026-06-25T11:30:00.000Z" }],
+    messages: [{ id: "m1", author: "SADU Associate", role: "SADU Associate", body: "Approved. Coordinate final logistics with facilities.", createdAt: "2025-06-19T11:30:00.000Z" }],
     timeline: [
-      { id: "t1", status: "Submitted to SADU", note: "Application submitted.", createdAt: "2026-06-22T13:00:00.000Z" },
-      { id: "t2", status: "SADU Approved", note: "Approved by SADU.", createdAt: "2026-06-25T11:30:00.000Z" },
+      { id: "t1", status: "Submitted to SADU", note: "Application submitted.", createdAt: "2025-06-10T13:00:00.000Z" },
+      { id: "t2", status: "SADU Approved", note: "Approved by SADU.", createdAt: "2025-06-19T11:30:00.000Z" },
+    ],
+  },
+  {
+    id: "app-draft",
+    title: "Org Anniversary Night",
+    organization: "Junior Philippine Computer Society",
+    eventType: "Social Event",
+    venue: "FEU Alabang Auditorium",
+    eventDate: "2025-07-12",
+    expectedParticipants: 150,
+    ownerId: "juan",
+    adviserId: "adviser",
+    status: "Draft",
+    riskLevel: "Low",
+    templates: makeTemplates({
+      proposal: { overview: "Anniversary gathering for organization members and alumni.", objectives: "Celebrate milestones and recognize active student leaders." },
+    }),
+    messages: [],
+    timeline: [{ id: "t1", status: "Draft", note: "Application created by Juan Reyes.", createdAt: "2025-06-05T15:45:00.000Z" }],
+  },
+  {
+    id: "app-python",
+    title: "Python Workshop Series",
+    organization: "Junior Philippine Computer Society",
+    eventType: "Workshop",
+    venue: "Computer Lab 3",
+    eventDate: "2025-07-30",
+    expectedParticipants: 45,
+    ownerId: "juan",
+    adviserId: "adviser",
+    status: "SADU Approved",
+    riskLevel: "Low",
+    templates: makeTemplates({
+      proposal: { overview: "Introductory coding clinic for new JPCS members.", objectives: "Help participants prepare for hackathon work.", targetAudience: "New JPCS members", successMeasure: "Workshop completion and practice submissions." },
+      budget: { totalBudget: "6000", fundingSource: "Organization funds", expenseBreakdown: "Lab materials, certificates, snacks." },
+      venue: { preferredVenue: "Computer Lab 3", setupNeeds: "Workstations and projector", techNeeds: "Python environment installed" },
+      program: { callTime: "1:00 PM", programFlow: "Setup, fundamentals, exercises, sharing, closing.", officerAssignments: "Tech committee leads hands-on stations." },
+      publicity: { channels: "FB page, org GC, class announcements", postingDate: "2025-06-21", materials: "Poster and registration link" },
+    }),
+    messages: [{ id: "m1", author: "SADU Associate", role: "SADU Associate", body: "Approved. Please coordinate lab access before the workshop dates.", createdAt: "2025-06-18T11:30:00.000Z" }],
+    timeline: [
+      { id: "t1", status: "Submitted to SADU", note: "Application submitted.", createdAt: "2025-05-30T13:00:00.000Z" },
+      { id: "t2", status: "SADU Approved", note: "Approved by SADU.", createdAt: "2025-06-18T11:30:00.000Z" },
     ],
   },
 ];
