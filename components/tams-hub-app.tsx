@@ -104,6 +104,14 @@ export function TamsHubApp() {
 
   const activeUser = users.find((user) => user.id === activeUserId) ?? users[0];
   const selectedApp = applications.find((application) => application.id === selectedAppId) ?? applications[0];
+  const templateAvailability = useMemo(() => {
+    return Object.fromEntries(
+      templateDefinitions.map((template) => [
+        template.id,
+        applications.some((application) => application.templates.find((entry) => entry.templateId === template.id)?.enabled),
+      ]),
+    );
+  }, [applications]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(storageKey);
@@ -158,6 +166,18 @@ export function TamsHubApp() {
     setMessageDraft("");
   }
 
+  function toggleTemplateAvailability(templateId: string) {
+    const nextEnabled = !templateAvailability[templateId];
+    setApplications((current) =>
+      current.map((application) => ({
+        ...application,
+        templates: application.templates.map((template) =>
+          template.templateId === templateId ? { ...template, enabled: nextEnabled } : template,
+        ),
+      })),
+    );
+  }
+
   function updateTemplateValue(templateId: string, fieldId: string, value: string) {
     updateApplication({
       ...selectedApp,
@@ -182,7 +202,7 @@ export function TamsHubApp() {
       adviserId: "adviser",
       status: "Draft",
       riskLevel: "Low",
-      templates: templateDefinitions.map((template) => ({ templateId: template.id, values: {}, enabled: true })),
+      templates: templateDefinitions.map((template) => ({ templateId: template.id, values: {}, enabled: templateAvailability[template.id] ?? true })),
       messages: [],
       timeline: [
         {
@@ -200,6 +220,19 @@ export function TamsHubApp() {
 
   function setStatus(status: EventStatus, note: string) {
     updateApplication(transitionApplication(selectedApp, status, note));
+  }
+
+  function resubmitApplication() {
+    const currentCompletion = getApplicationCompletion(selectedApp);
+    if (currentCompletion.missing.length) {
+      setGuideOutput([
+        "Revision upload paused until required prototype fields are complete.",
+        ...currentCompletion.missing.slice(0, 4),
+      ]);
+      setSection("file");
+      return;
+    }
+    setStatus("Resubmitted", "Student resubmitted after revision.");
   }
 
   async function generateGuide() {
@@ -275,6 +308,8 @@ export function TamsHubApp() {
             queueCount={queueCount}
             onNewEvent={createApplication}
             onResetDemo={resetDemoData}
+            templateAvailability={templateAvailability}
+            onToggleTemplate={toggleTemplateAvailability}
             onSelect={(id) => {
               setSelectedAppId(id);
               setSection("applications");
@@ -304,7 +339,7 @@ export function TamsHubApp() {
             onSelect={setSelectedAppId}
             onReview={() => setStatus("Under Review", "SADU opened the application for review.")}
             onRevision={requestRevision}
-            onResubmit={() => setStatus("Resubmitted", "Student resubmitted after revision.")}
+            onResubmit={resubmitApplication}
             onApprove={approveApplication}
             onReject={rejectApplication}
             onEndorse={endorseApplication}
@@ -490,6 +525,8 @@ function DashboardView({
   queueCount,
   onNewEvent,
   onResetDemo,
+  templateAvailability,
+  onToggleTemplate,
   onSelect,
 }: {
   activeUser: (typeof users)[number];
@@ -497,6 +534,8 @@ function DashboardView({
   queueCount: number;
   onNewEvent: () => void;
   onResetDemo: () => void;
+  templateAvailability: Record<string, boolean>;
+  onToggleTemplate: (templateId: string) => void;
   onSelect: (id: string) => void;
 }) {
   const stats = getDashboardStats(activeUser.role, applications, queueCount);
@@ -525,7 +564,7 @@ function DashboardView({
       </section>
 
       {activeUser.role === "Admin" && <ServiceReadinessPanel onResetDemo={onResetDemo} />}
-      {activeUser.role === "Admin" && <AdminOperationsPanel />}
+      {activeUser.role === "Admin" && <AdminOperationsPanel templateAvailability={templateAvailability} onToggleTemplate={onToggleTemplate} />}
 
       <section className="table-card">
         <div className="table-header">
@@ -568,18 +607,29 @@ function getSubmittedDate(application: EventApplication) {
   return application.timeline.find((entry) => entry.status === "Submitted to SADU")?.createdAt ?? application.timeline[0]?.createdAt ?? application.eventDate;
 }
 
-function AdminOperationsPanel() {
+function AdminOperationsPanel({
+  templateAvailability,
+  onToggleTemplate,
+}: {
+  templateAvailability: Record<string, boolean>;
+  onToggleTemplate: (templateId: string) => void;
+}) {
   return (
     <section className="admin-grid">
       <article className="admin-card">
         <div className="admin-card-heading"><Settings2 size={18} /><div><strong>Template Availability</strong><p>Prototype controls for the required event filing templates.</p></div></div>
         <div className="admin-list">
-          {templateDefinitions.map((template) => (
-            <div className="admin-row" key={template.id}>
-              <div><strong>{template.name}</strong><span>{template.fields.filter((field) => field.required).length} required fields</span></div>
-              <span className="status-pill green">Available</span>
-            </div>
-          ))}
+          {templateDefinitions.map((template) => {
+            const available = templateAvailability[template.id] ?? true;
+            return (
+              <div className="admin-row" key={template.id}>
+                <div><strong>{template.name}</strong><span>{template.fields.filter((field) => field.required).length} required fields</span></div>
+                <button className={available ? "toggle-button active" : "toggle-button"} onClick={() => onToggleTemplate(template.id)}>
+                  {available ? "Available" : "Disabled"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </article>
       <article className="admin-card">
@@ -703,10 +753,12 @@ function FileEventView({
           <div className="requirement-grid">
             {mainTemplates.map((template) => {
               const status = getTemplateCompletion(application, template.id);
+              const entry = application.templates.find((item) => item.templateId === template.id);
+              const enabled = entry?.enabled ?? true;
               return (
                 <div className="requirement-tile" key={template.id}>
                   <UploadCloud size={18} />
-                  <div><strong>{template.name.replace(" Template", "")}</strong><span>{status.complete ? "Ready" : "Required"}</span></div>
+                  <div><strong>{template.name.replace(" Template", "")}</strong><span>{enabled ? (status.complete ? "Ready" : "Required") : "Unavailable"}</span></div>
                 </div>
               );
             })}
@@ -718,26 +770,29 @@ function FileEventView({
           <div className="template-stack">
             {templateDefinitions.map((template) => {
               const entry = application.templates.find((item) => item.templateId === template.id);
+              const enabled = entry?.enabled ?? true;
               const templateCompletion = getTemplateCompletion(application, template.id);
               return (
-                <details key={template.id} className="template-card" open={templateCompletion.missing.length > 0}>
+                <details key={template.id} className={enabled ? "template-card" : "template-card unavailable"} open={enabled && templateCompletion.missing.length > 0}>
                   <summary>
                     <span><strong>{template.name}</strong><small>{template.description}</small></span>
-                    <span className={templateCompletion.complete ? "ready-tag" : "missing-tag"}>{templateCompletion.completed}/{templateCompletion.required || template.fields.length}</span>
+                    <span className={enabled ? (templateCompletion.complete ? "ready-tag" : "missing-tag") : "status-pill neutral"}>
+                      {enabled ? `${templateCompletion.completed}/${templateCompletion.required || template.fields.length}` : "Unavailable"}
+                    </span>
                   </summary>
                   <div className="field-grid">
                     {template.fields.map((field) => (
                       <label key={field.id} className="field">
                         <span>{field.label}{field.required ? " *" : ""}</span>
                         {field.type === "textarea" ? (
-                          <textarea value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
+                          <textarea disabled={!enabled} value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
                         ) : field.type === "select" ? (
-                          <select value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)}>
+                          <select disabled={!enabled} value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)}>
                             <option value="">Select</option>
                             {field.options?.map((option) => <option key={option}>{option}</option>)}
                           </select>
                         ) : (
-                          <input type={field.type} value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
+                          <input disabled={!enabled} type={field.type} value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
                         )}
                       </label>
                     ))}
@@ -873,11 +928,13 @@ function ReviewerInsightsPanel({ application, completionPercent }: { application
         <div className="template-mini-list">
           {templateDefinitions.map((template) => {
             const status = getTemplateCompletion(application, template.id);
+            const entry = application.templates.find((item) => item.templateId === template.id);
+            const enabled = entry?.enabled ?? true;
             return (
               <div key={template.id} className="template-mini-row">
-                <span className={status.complete ? "mini-dot ready" : "mini-dot waiting"} />
+                <span className={enabled && status.complete ? "mini-dot ready" : "mini-dot waiting"} />
                 <strong>{template.name.replace(" Template", "")}</strong>
-                <small>{status.complete ? "Ready" : `${status.missing.length} missing`}</small>
+                <small>{enabled ? (status.complete ? "Ready" : `${status.missing.length} missing`) : "Unavailable"}</small>
               </div>
             );
           })}
@@ -1023,7 +1080,19 @@ function WorkflowActions({
   onEndorse: () => void;
 }) {
   if (role === "SADU Associate") {
-    return <div className="action-row"><button className="secondary-button" onClick={onReview}>Mark Under Review</button><button className="gold-button" onClick={onRevision}>Request Revision</button><button className="danger-button" onClick={onReject}>Reject</button><button className="primary-button" onClick={onApprove}>Approve</button></div>;
+    const canStartReview = status === "Submitted to SADU" || status === "Resubmitted";
+    const canDecide = canStartReview || status === "Under Review";
+    return (
+      <div className="action-stack">
+        <div className="action-row">
+          <button className="secondary-button" disabled={!canStartReview} onClick={onReview}>Mark Under Review</button>
+          <button className="gold-button" disabled={!canDecide} onClick={onRevision}>Request Revision</button>
+          <button className="danger-button" disabled={!canDecide} onClick={onReject}>Reject</button>
+          <button className="primary-button" disabled={!canDecide} onClick={onApprove}>Approve</button>
+        </div>
+        {!canDecide && <p className="fine-print">SADU actions unlock after the application is submitted or resubmitted.</p>}
+      </div>
+    );
   }
   if (role === "Student Officer" && status === "Revision Requested") {
     return <button className="primary-button full" onClick={onResubmit}><UploadCloud size={16} /> Upload Revised Documents</button>;

@@ -817,6 +817,23 @@ p {
   font-size: 12px;
 }
 
+.toggle-button {
+  border: 1px solid #d9e3dd;
+  border-radius: 999px;
+  background: #f3f6f4;
+  color: #60736b;
+  min-width: 92px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.toggle-button.active {
+  border-color: #b7dfc7;
+  background: #dff6e9;
+  color: var(--green-700);
+}
+
 .table-card {
   overflow: hidden;
 }
@@ -899,6 +916,14 @@ p {
 .danger-button {
   background: #ffe7e7;
   color: var(--red);
+}
+
+.primary-button:disabled,
+.gold-button:disabled,
+.secondary-button:disabled,
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .send-button {
@@ -1123,6 +1148,10 @@ p {
   border-radius: 8px;
   background: #fbfcfb;
   padding: 13px;
+}
+
+.template-card.unavailable {
+  background: #f5f7f6;
 }
 
 .template-card summary {
@@ -1373,6 +1402,11 @@ p {
   flex-wrap: wrap;
   gap: 9px;
   margin-top: 13px;
+}
+
+.action-stack {
+  display: grid;
+  gap: 7px;
 }
 
 .application-card {

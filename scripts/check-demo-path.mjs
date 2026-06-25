@@ -43,6 +43,9 @@ assert.match(authRoute, /NextAuth\(authOptions\)/, "NextAuth route should use th
 assert.match(authConfig, /CredentialsProvider/, "NextAuth credentials provider should be wired for TAMS Access");
 assert.match(authConfig, /session\.user\.role = token\.role/, "NextAuth session should expose the demo user role");
 assert.match(authConfig, /session\.user\.title = token\.title/, "NextAuth session should expose the demo user title");
+assert.match(appComponent, /function toggleTemplateAvailability/, "Admin template availability toggles should be interactive");
+assert.match(appComponent, /disabled=\{!canStartReview\}/, "SADU review action should be gated by submitted states");
+assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resubmission should require completed fields");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
