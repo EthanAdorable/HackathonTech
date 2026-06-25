@@ -33,6 +33,10 @@ async function addWorkflowMessage(ctx: any, applicationId: any, author: string, 
   });
 }
 
+function withUiId(document: any) {
+  return { id: document._id, ...document };
+}
+
 export const list = query({
   args: {
     role: v.optional(v.string()),
@@ -93,7 +97,12 @@ export const listWithDetails = query({
             .collect(),
         ]);
 
-        return { ...application, templates, messages, timeline };
+        return {
+          ...withUiId(application),
+          templates,
+          messages: messages.map(withUiId),
+          timeline: timeline.map(withUiId),
+        };
       }),
     );
   },
@@ -122,7 +131,12 @@ export const get = query({
         .collect(),
     ]);
 
-    return { ...application, templates, messages, timeline };
+    return {
+      ...withUiId(application),
+      templates,
+      messages: messages.map(withUiId),
+      timeline: timeline.map(withUiId),
+    };
   },
 });
 

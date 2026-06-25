@@ -166,6 +166,9 @@ assert.match(convexSetup, /Generate Convex client types/, "Convex setup should g
 assert.match(convexSetup, /Convex setup dry-run complete/, "Convex setup dry-run should make clear that no cloud changes were made");
 assert.ok(existsSync("convex/_generated/api.js"), "Convex generated runtime API should be committed");
 assert.ok(existsSync("convex/_generated/dataModel.d.ts"), "Convex generated data model types should be committed");
+assert.match(convexApplications, /function withUiId/, "Convex detailed queries should normalize document IDs for the UI model");
+assert.match(convexApplications, /messages: messages\.map\(withUiId\)/, "Convex detailed queries should expose message ids for React keys");
+assert.match(convexApplications, /timeline: timeline\.map\(withUiId\)/, "Convex detailed queries should expose timeline ids for workflow rendering");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
