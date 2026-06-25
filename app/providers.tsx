@@ -1,6 +1,7 @@
 "use client";
 
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { SessionProvider } from "next-auth/react";
 import { useMemo, type ReactNode } from "react";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -10,8 +11,12 @@ export function Providers({ children }: { children: ReactNode }) {
   }, [convexUrl]);
 
   if (!convex) {
-    return <>{children}</>;
+    return <SessionProvider>{children}</SessionProvider>;
   }
 
-  return <ConvexProvider client={convex}>{children}</ConvexProvider>;
+  return (
+    <SessionProvider>
+      <ConvexProvider client={convex}>{children}</ConvexProvider>
+    </SessionProvider>
+  );
 }

@@ -32,11 +32,17 @@ assert.ok(
 
 const appComponent = readFileSync(new URL("../components/tams-hub-app.tsx", import.meta.url), "utf8");
 const convexApplications = readFileSync(new URL("../convex/applications.ts", import.meta.url), "utf8");
+const authRoute = readFileSync(new URL("../app/api/auth/[...nextauth]/route.ts", import.meta.url), "utf8");
+const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf8");
 assert.match(
   appComponent,
   /return \{ pending: 3, needsAction: 2, approved: 7, messages: 4 \};/,
   "student dashboard summary metrics should stay aligned with the reference screen",
 );
+assert.match(authRoute, /NextAuth\(authOptions\)/, "NextAuth route should use the shared auth options");
+assert.match(authConfig, /CredentialsProvider/, "NextAuth credentials provider should be wired for TAMS Access");
+assert.match(authConfig, /session\.user\.role = token\.role/, "NextAuth session should expose the demo user role");
+assert.match(authConfig, /session\.user\.title = token\.title/, "NextAuth session should expose the demo user title");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
