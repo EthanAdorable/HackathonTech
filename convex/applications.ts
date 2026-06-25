@@ -44,18 +44,21 @@ export const list = query({
   },
   handler: async (ctx, args) => {
     if (args.role === "Student Officer" && args.userId) {
-      return await ctx.db
+      const applications = await ctx.db
         .query("applications")
         .withIndex("by_owner", (q: any) => q.eq("ownerId", args.userId as string))
         .collect();
+      return applications.map(withUiId);
     }
     if (args.role === "Faculty Adviser" && args.userId) {
-      return await ctx.db
+      const applications = await ctx.db
         .query("applications")
         .withIndex("by_adviser", (q: any) => q.eq("adviserId", args.userId as string))
         .collect();
+      return applications.map(withUiId);
     }
-    return await ctx.db.query("applications").collect();
+    const applications = await ctx.db.query("applications").collect();
+    return applications.map(withUiId);
   },
 });
 

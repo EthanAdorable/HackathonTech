@@ -167,6 +167,7 @@ assert.match(convexSetup, /Convex setup dry-run complete/, "Convex setup dry-run
 assert.ok(existsSync("convex/_generated/api.js"), "Convex generated runtime API should be committed");
 assert.ok(existsSync("convex/_generated/dataModel.d.ts"), "Convex generated data model types should be committed");
 assert.match(convexApplications, /function withUiId/, "Convex detailed queries should normalize document IDs for the UI model");
+assert.match(convexApplications, /return applications\.map\(withUiId\)/, "Convex list query should expose application ids for UI selection");
 assert.match(convexApplications, /messages: messages\.map\(withUiId\)/, "Convex detailed queries should expose message ids for React keys");
 assert.match(convexApplications, /timeline: timeline\.map\(withUiId\)/, "Convex detailed queries should expose timeline ids for workflow rendering");
 
