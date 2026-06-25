@@ -51,6 +51,16 @@ corepack pnpm convex data
 corepack pnpm convex run applications:list '{}'
 ```
 
+Workflow mutations prepared for frontend wiring after project configuration:
+
+- `applications:updateTemplate`
+- `applications:updateStatus`
+- `applications:requestRevision`
+- `applications:resubmit`
+- `applications:approve`
+- `applications:reject`
+- `applications:addEndorsement`
+
 ## Railway Setup
 
 Log in through the selected GitHub account:

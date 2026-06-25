@@ -14,6 +14,25 @@ const status = v.union(
   v.literal("Archived"),
 );
 
+async function addTimeline(ctx: any, applicationId: any, nextStatus: string, note: string) {
+  await ctx.db.insert("timeline", {
+    applicationId,
+    status: nextStatus,
+    note,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+async function addWorkflowMessage(ctx: any, applicationId: any, author: string, role: string, body: string) {
+  await ctx.db.insert("messages", {
+    applicationId,
+    author,
+    role,
+    body,
+    createdAt: new Date().toISOString(),
+  });
+}
+
 export const list = query({
   args: {
     role: v.optional(v.string()),
@@ -168,12 +187,7 @@ export const updateStatus = mutation({
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.applicationId, { status: args.status });
-    await ctx.db.insert("timeline", {
-      applicationId: args.applicationId,
-      status: args.status,
-      note: args.note,
-      createdAt: new Date().toISOString(),
-    });
+    await addTimeline(ctx, args.applicationId, args.status, args.note);
   },
 });
 
@@ -185,13 +199,89 @@ export const addMessage = mutation({
     body: v.string(),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("messages", {
-      applicationId: args.applicationId,
-      author: args.author,
-      role: args.role,
-      body: args.body,
-      createdAt: new Date().toISOString(),
-    });
+    await addWorkflowMessage(ctx, args.applicationId, args.author, args.role, args.body);
+  },
+});
+
+export const requestRevision = mutation({
+  args: {
+    applicationId: v.id("applications"),
+    author: v.string(),
+    role: v.string(),
+    body: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await addWorkflowMessage(ctx, args.applicationId, args.author, args.role, args.body);
+    await ctx.db.patch(args.applicationId, { status: "Revision Requested" });
+    await addTimeline(ctx, args.applicationId, "Revision Requested", "SADU requested revisions.");
+  },
+});
+
+export const resubmit = mutation({
+  args: {
+    applicationId: v.id("applications"),
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.applicationId, { status: "Resubmitted" });
+    await addTimeline(ctx, args.applicationId, "Resubmitted", args.note ?? "Student resubmitted after revision.");
+  },
+});
+
+export const approve = mutation({
+  args: {
+    applicationId: v.id("applications"),
+    author: v.string(),
+    role: v.string(),
+    body: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await addWorkflowMessage(
+      ctx,
+      args.applicationId,
+      args.author,
+      args.role,
+      args.body ?? "Approved. Final decision recorded by SADU reviewer.",
+    );
+    await ctx.db.patch(args.applicationId, { status: "SADU Approved" });
+    await addTimeline(ctx, args.applicationId, "SADU Approved", "SADU approved the application.");
+  },
+});
+
+export const reject = mutation({
+  args: {
+    applicationId: v.id("applications"),
+    author: v.string(),
+    role: v.string(),
+    body: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await addWorkflowMessage(
+      ctx,
+      args.applicationId,
+      args.author,
+      args.role,
+      args.body ?? "Rejected by SADU after human review. Please coordinate before filing again.",
+    );
+    await ctx.db.patch(args.applicationId, { status: "Rejected" });
+    await addTimeline(ctx, args.applicationId, "Rejected", "SADU rejected the application.");
+  },
+});
+
+export const addEndorsement = mutation({
+  args: {
+    applicationId: v.id("applications"),
+    author: v.string(),
+    body: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await addWorkflowMessage(
+      ctx,
+      args.applicationId,
+      args.author,
+      "Faculty Adviser",
+      args.body ?? "Faculty adviser note: Reviewed for organization coordination. Endorsement placeholder recorded for SADU visibility.",
+    );
   },
 });
 
@@ -208,12 +298,7 @@ export const updateTemplate = mutation({
     const application = await ctx.db.get(template.applicationId);
     if (application?.status === "Draft") {
       await ctx.db.patch(template.applicationId, { status: "Template Completion" });
-      await ctx.db.insert("timeline", {
-        applicationId: template.applicationId,
-        status: "Template Completion",
-        note: "Template fields updated.",
-        createdAt: new Date().toISOString(),
-      });
+      await addTimeline(ctx, template.applicationId, "Template Completion", "Template fields updated.");
     }
   },
 });
