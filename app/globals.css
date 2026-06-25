@@ -596,6 +596,10 @@ p {
   font-size: 13px;
 }
 
+.notification-wrap {
+  position: relative;
+}
+
 .notification-button {
   position: relative;
   display: grid;
@@ -621,6 +625,36 @@ p {
   border: 1px solid #ffffff;
   border-radius: 999px;
   background: var(--gold);
+}
+
+.notification-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  width: 270px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+
+.notification-popover strong {
+  color: #172b24;
+  font-size: 13px;
+}
+
+.notification-popover span {
+  display: block;
+  border-radius: 8px;
+  background: #f5f8f6;
+  color: #314a41;
+  padding: 8px 9px;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .avatar {

@@ -504,14 +504,25 @@ function Topbar({
   onNewEvent: () => void;
   showNewEvent: boolean;
 }) {
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   return (
     <header className="topbar">
       <h1>{title}</h1>
       <div className="top-actions">
-        <button className="notification-button" aria-label="View notifications">
-          <Bell size={18} aria-hidden="true" />
-          <span className="notification-dot" aria-hidden="true" />
-        </button>
+        <div className="notification-wrap">
+          <button className="notification-button" aria-label="View notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((current) => !current)}>
+            <Bell size={18} aria-hidden="true" />
+            <span className="notification-dot" aria-hidden="true" />
+          </button>
+          {notificationsOpen && (
+            <div className="notification-popover">
+              <strong>Notifications</strong>
+              <span>Tech Career Fair needs revised budget details.</span>
+              <span>Convex and Railway setup are waiting for account choices.</span>
+            </div>
+          )}
+        </div>
         <div className="avatar">{activeUser.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
         <strong>{activeUser.name}</strong>
         <span className="role-badge">{roleDisplayName(activeUser.role)}</span>
