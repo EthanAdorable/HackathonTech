@@ -1237,7 +1237,7 @@ p {
 
 .progress-steps {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   text-align: center;
 }
@@ -1256,6 +1256,15 @@ p {
   border: 2px solid #d3ded7;
   border-radius: 999px;
   background: #ffffff;
+}
+
+.progress-step svg {
+  color: #ffffff;
+}
+
+.progress-step.active > span {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 5px rgba(226, 164, 0, 0.18);
 }
 
 .progress-step.done > span {

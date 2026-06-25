@@ -785,9 +785,8 @@ function ApplicationsView({
         <div className="status-header"><strong>Application Progress</strong><span>{completionPercent}%</span></div>
         <div className="progress-track"><span style={{ width: `${completionPercent}%` }} /></div>
         <div className="progress-steps">
-          {["Draft", "Submitted to SADU", "Under Review", "Revision Requested", "SADU Approved"].map((status) => {
-            const hit = application.timeline.find((entry) => entry.status === status);
-            return <div key={status} className={hit ? "progress-step done" : "progress-step"}><span /><strong>{status}</strong><small>{hit ? formatShortDate(hit.createdAt) : "-"}</small></div>;
+          {getProgressMilestones(application).map((milestone) => {
+            return <div key={milestone.label} className={milestone.done ? "progress-step done" : milestone.active ? "progress-step active" : "progress-step"}><span>{milestone.done ? <CheckCircle2 size={13} /> : null}</span><strong>{milestone.label}</strong><small>{milestone.date ? formatShortDate(milestone.date) : "-"}</small></div>;
           })}
         </div>
       </section>
@@ -823,6 +822,21 @@ function ApplicationsView({
       </section>
     </div>
   );
+}
+
+function getProgressMilestones(application: EventApplication) {
+  const lookup = new Map(application.timeline.map((entry) => [entry.status, entry]));
+  const finalEntry = lookup.get("SADU Approved") ?? lookup.get("Rejected") ?? lookup.get("Archived");
+  const adviserEntry = application.messages.find((message) => message.role === "Faculty Adviser");
+
+  return [
+    { label: "Draft Created", done: true, active: application.status === "Draft", date: lookup.get("Draft")?.createdAt },
+    { label: "Submitted to SADU", done: Boolean(lookup.get("Submitted to SADU") || lookup.get("Under Review") || lookup.get("Revision Requested") || lookup.get("Resubmitted") || finalEntry), active: application.status === "Submitted to SADU", date: lookup.get("Submitted to SADU")?.createdAt },
+    { label: "Under Review", done: Boolean(lookup.get("Under Review") || lookup.get("Revision Requested") || lookup.get("Resubmitted") || finalEntry), active: application.status === "Under Review", date: lookup.get("Under Review")?.createdAt },
+    { label: "Revision Requested", done: Boolean(lookup.get("Revision Requested") || lookup.get("Resubmitted") || finalEntry), active: application.status === "Revision Requested", date: lookup.get("Revision Requested")?.createdAt },
+    { label: "Adviser Endorsement", done: Boolean(adviserEntry || finalEntry), active: false, date: adviserEntry?.createdAt },
+    { label: "Final Decision", done: Boolean(finalEntry), active: application.status === "SADU Approved" || application.status === "Rejected" || application.status === "Archived", date: finalEntry?.createdAt },
+  ];
 }
 
 function ReviewerInsightsPanel({ application, completionPercent }: { application: EventApplication; completionPercent: number }) {
