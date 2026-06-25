@@ -135,6 +135,12 @@ assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway se
 assert.match(railwaySetup, /Missing Railway \$\{label\} value/, "Railway setup should reject missing project or workspace argument values");
 assert.match(railwaySetup, /function isHttpUrl/, "Railway setup should validate public callback URLs before setting NEXTAUTH_URL");
 assert.match(railwaySetup, /absolute http\(s\) URL/, "Railway setup should reject missing or malformed app URLs");
+assert.match(railwaySetup, /providedProjectId/, "Railway setup should accept an explicit dedicated project ID");
+assert.match(railwaySetup, /const railwayContextArgs = \[/, "Railway setup should build explicit context args for project-scoped commands");
+assert.match(railwaySetup, /"variable", "set", pair, \.\.\.railwayContextArgs/, "Railway variable setup should target the dedicated project explicitly");
+assert.match(railwaySetup, /"domain", \.\.\.railwayContextArgs/, "Railway domain setup should target the dedicated project explicitly");
+assert.match(railwaySetup, /"up", \.\.\.railwayContextArgs/, "Railway deployment should target the dedicated project explicitly");
+assert.match(railwaySetup, /isPrototypeSecret/, "Railway setup should avoid copying local prototype auth secrets into deployment");
 assert.match(railwaySetup, /TAMS_DEMO_AUTH_ENABLED:\s*"false"/, "Railway setup should disable demo auth for public deployments");
 assert.match(railwayConfig, /corepack pnpm start/, "Railway should start through the production start wrapper");
 assert.match(startScript, /"--hostname", "0\.0\.0\.0"/, "Production start wrapper should bind to Railway's network interface");

@@ -82,7 +82,15 @@ corepack pnpm setup:railway -- --workspace <workspace>
 
 Omit `--workspace` only after confirming the Railway CLI is authenticated to the intended account/workspace.
 
+If the dedicated Railway project already exists, pass its project ID explicitly so every variable, domain, and deploy command targets the correct project:
+
+```powershell
+corepack pnpm setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run
+corepack pnpm setup:railway -- --project-id <railway-project-id> --environment production --service <service-name>
+```
+
 The setup script will not copy a local `NEXTAUTH_URL` such as `http://127.0.0.1:3000` into Railway. After Railway assigns a public URL, pass it with `--app-url` or set `TAMS_RAILWAY_APP_URL`.
+The setup script also skips local prototype `NEXTAUTH_SECRET` placeholders; set a production secret before deployment.
 
 Set the initial variables after Convex provides a URL:
 
@@ -102,16 +110,16 @@ railway variable set OPENAI_API_KEY=<optional-key>
 Create a Railway-provided domain, then deploy with the public auth callback URL:
 
 ```powershell
-corepack pnpm setup:railway -- --workspace <workspace> --domain
+corepack pnpm setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --domain
 railway domain
-corepack pnpm setup:railway -- --workspace <workspace> --app-url https://<railway-domain> --deploy
+corepack pnpm setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --app-url https://<railway-domain> --deploy
 ```
 
 You can also set the public URL through an environment variable:
 
 ```powershell
 $env:TAMS_RAILWAY_APP_URL="https://<railway-domain>"
-corepack pnpm setup:railway -- --workspace <workspace> --deploy
+corepack pnpm setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --deploy
 ```
 
 Evidence checks:

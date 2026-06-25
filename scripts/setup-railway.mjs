@@ -11,14 +11,17 @@ const args = new Map(
 );
 
 const project = args.get("project") || process.env.TAMS_RAILWAY_PROJECT || "tams-hub-prototype";
+const providedProjectId = args.get("project-id") || process.env.TAMS_RAILWAY_PROJECT_ID || "";
 const workspace = args.get("workspace") || process.env.TAMS_RAILWAY_WORKSPACE;
+const environment = args.get("environment") || process.env.TAMS_RAILWAY_ENVIRONMENT || "";
+const service = args.get("service") || process.env.TAMS_RAILWAY_SERVICE || "";
 const appUrl = args.get("app-url") || process.env.TAMS_RAILWAY_APP_URL || "";
 const deploy = args.has("deploy");
 const createDomain = args.has("domain");
 const dryRun = args.has("dry-run");
 
 if (args.has("help") || args.has("h")) {
-  console.log(`Usage: node scripts/setup-railway.mjs [--workspace <workspace>] [--project tams-hub-prototype] [--app-url https://...] [--domain] [--deploy] [--dry-run]
+  console.log(`Usage: node scripts/setup-railway.mjs [--workspace <workspace>] [--project tams-hub-prototype] [--project-id <id>] [--environment <env>] [--service <service>] [--app-url https://...] [--domain] [--deploy] [--dry-run]
 
 Creates the dedicated Railway project after Railway login is complete, sets
 runtime variables from local env values with secret output redacted, and
@@ -29,7 +32,11 @@ Environment read from process env or .env.local:
   NEXTAUTH_URL or TAMS_RAILWAY_APP_URL / --app-url for Railway auth callbacks
   OPENAI_MODEL
   NEXT_PUBLIC_CONVEX_URL
-  OPENAI_API_KEY (optional, set only when present)`);
+  OPENAI_API_KEY (optional, set only when present)
+
+Use --project-id to target an existing dedicated Railway project. Without it,
+the helper creates a project named ${project} and uses the returned project ID
+for all variable, domain, and deploy commands.`);
   process.exit(0);
 }
 
@@ -37,7 +44,10 @@ const localEnv = readLocalEnv();
 
 for (const [label, value] of [
   ["project", project],
+  ["project-id", providedProjectId],
   ["workspace", workspace],
+  ["environment", environment],
+  ["service", service],
 ]) {
   if (value === "true") {
     console.error(`Missing Railway ${label} value. Re-run with --${label} <value>.`);
@@ -81,6 +91,10 @@ function isHttpUrl(value) {
   }
 }
 
+function isPrototypeSecret(value) {
+  return value === "replace-with-a-local-secret" || value === "local-tams-hub-prototype-secret";
+}
+
 let nextAuthUrl = appUrl || envValue("NEXTAUTH_URL");
 if (nextAuthUrl && !isHttpUrl(nextAuthUrl)) {
   console.error("Invalid Railway NEXTAUTH_URL/app URL. Pass an absolute http(s) URL, such as --app-url https://<railway-domain>.");
@@ -120,13 +134,39 @@ function run(label, command, commandArgs, options = {}) {
 }
 
 run("Check Railway auth", "railway", ["whoami", "--json"]);
-run("Create/link dedicated Railway project", "railway", [
-  "init",
-  "--name",
-  project,
-  ...(workspace ? ["--workspace", workspace] : []),
-  "--json",
-]);
+
+let railwayProjectId = providedProjectId;
+if (railwayProjectId) {
+  run("Link dedicated Railway project", "railway", [
+    "link",
+    "--project",
+    railwayProjectId,
+    ...(workspace ? ["--workspace", workspace] : []),
+    ...(environment ? ["--environment", environment] : []),
+    ...(service ? ["--service", service] : []),
+    "--json",
+  ]);
+} else {
+  const initResult = run("Create/link dedicated Railway project", "railway", [
+    "init",
+    "--name",
+    project,
+    ...(workspace ? ["--workspace", workspace] : []),
+    "--json",
+  ], { capture: true });
+  railwayProjectId = dryRun ? "<created-project-id>" : extractProjectId(initResult.output);
+  if (!railwayProjectId) {
+    console.error("Could not determine the Railway project ID from `railway init --json`. Re-run with --project-id <id>.");
+    process.exit(1);
+  }
+}
+
+const railwayContextArgs = [
+  "--project",
+  railwayProjectId,
+  ...(environment ? ["--environment", environment] : []),
+  ...(service ? ["--service", service] : []),
+];
 
 const variables = {
   NEXTAUTH_SECRET: envValue("NEXTAUTH_SECRET"),
@@ -142,20 +182,58 @@ for (const [key, value] of Object.entries(variables)) {
     console.log(`[SKIP] ${key} is empty locally; set it later with railway variable set ${key}=...`);
     continue;
   }
+  if (key === "NEXTAUTH_SECRET" && isPrototypeSecret(value)) {
+    if (deploy) {
+      console.error("Refusing to deploy with the local prototype NEXTAUTH_SECRET. Set a production secret and rerun.");
+      process.exit(1);
+    }
+    console.log("[SKIP] NEXTAUTH_SECRET uses a local prototype value; set a production secret before Railway deployment.");
+    continue;
+  }
   const pair = `${key}=${value}`;
-  run(`Set ${key}`, "railway", ["variable", "set", pair, "--skip-deploys", "--json"], {
+  run(`Set ${key}`, "railway", ["variable", "set", pair, ...railwayContextArgs, "--skip-deploys", "--json"], {
     secretArgs: new Set([pair]),
   });
 }
 
 if (createDomain) {
-  run("Create Railway-provided domain", "railway", ["domain", "--json"]);
+  run("Create Railway-provided domain", "railway", ["domain", ...railwayContextArgs, "--json"]);
 }
 
 if (deploy) {
-  run("Deploy to Railway", "railway", ["up", "--detach", "-y", "-m", "Deploy TAMS Hub prototype"]);
+  run("Deploy to Railway", "railway", ["up", ...railwayContextArgs, "--detach", "-y", "-m", "Deploy TAMS Hub prototype"]);
 } else {
   console.log("[INFO] Skipped deployment. Re-run with --deploy after variables and domain are ready.");
 }
 
 console.log("Railway setup script finished. Run corepack pnpm services:check with TAMS_HUB_HEALTH_URL after deployment.");
+
+function extractProjectId(output) {
+  const trimmed = output.trim();
+  if (!trimmed) return "";
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    return findProjectId(parsed);
+  } catch {
+    const match = trimmed.match(/\bproject(?:Id)?["'\s:=]+([A-Za-z0-9_-]+)/i);
+    return match?.[1] ?? "";
+  }
+}
+
+function findProjectId(value) {
+  if (!value || typeof value !== "object") return "";
+  if ("projectId" in value && typeof value.projectId === "string") return value.projectId;
+  if ("project" in value) {
+    const projectValue = value.project;
+    if (typeof projectValue === "string") return projectValue;
+    if (projectValue && typeof projectValue === "object" && typeof projectValue.id === "string") return projectValue.id;
+  }
+  if ("id" in value && typeof value.id === "string") return value.id;
+
+  for (const child of Object.values(value)) {
+    const found = findProjectId(child);
+    if (found) return found;
+  }
+  return "";
+}
