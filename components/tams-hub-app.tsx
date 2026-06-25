@@ -1060,7 +1060,7 @@ function MessagesView({
         <h2>{selectedThread.title}</h2>
         <p className="thread-summary">{selectedThread.preview}</p>
         <MiniThread application={application} expanded />
-        <div className="composer-row"><input value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" onClick={onSend}><SendHorizonal size={18} /></button></div>
+        <div className="composer-row"><input value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
       </section>
       <section className="partner-card">
         <Sparkles size={18} />
