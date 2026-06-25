@@ -88,6 +88,7 @@ assert.match(appComponent, /id="notification-popover" role="region" aria-label="
 assert.match(appComponent, /showNewEvent=\{activeUser\.role === "Student Officer" && section !== "dashboard"\}/, "Topbar file-event CTA should appear on deeper student officer screens");
 assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");
 assert.match(appComponent, /topbar-identity/, "Topbar user identity should be grouped like the reference header");
+assert.match(globalCss, /\.topbar-identity \.role-badge\s*\{[\s\S]*text-overflow: ellipsis/, "Topbar role badge should truncate inside compact headers");
 assert.match(globalCss, /\.sidebar \.brand \.mascot-logo/, "Sidebar mascot should match the larger reference app chrome");
 assert.match(appComponent, /"dashboard", label: "Dashboard", icon: <LayoutGrid size=\{18\} \/>/, "Sidebar dashboard icon should match the reference utility set");
 assert.match(appComponent, /"applications", label: "My Applications", icon: <ClipboardList size=\{18\} \/>/, "Sidebar applications icon should match the reference utility set");

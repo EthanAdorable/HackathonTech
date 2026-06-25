@@ -744,6 +744,13 @@ p {
   color: var(--green-700);
 }
 
+.topbar-identity .role-badge {
+  min-width: 0;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .screen-stack,
 .file-layout,
 .messages-layout {
