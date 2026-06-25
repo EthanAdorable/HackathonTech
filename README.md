@@ -122,6 +122,7 @@ corepack pnpm demo:check
 corepack pnpm start
 corepack pnpm services:check
 corepack pnpm setup:convex -- --team <team-slug> --dry-run
+corepack pnpm convex:codegen
 corepack pnpm setup:railway -- --dry-run
 ```
 

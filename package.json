@@ -11,6 +11,7 @@
     "services:check": "node scripts/check-services.mjs",
     "setup:convex": "node scripts/setup-convex.mjs",
     "setup:railway": "node scripts/setup-railway.mjs",
+    "convex:codegen": "convex codegen --typecheck enable",
     "convex:dev-once": "convex dev --once"
   },
   "dependencies": {

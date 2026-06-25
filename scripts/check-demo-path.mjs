@@ -35,6 +35,8 @@ const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "
 const convexApplications = readFileSync(new URL("../convex/applications.ts", import.meta.url), "utf8");
 const authRoute = readFileSync(new URL("../app/api/auth/[...nextauth]/route.ts", import.meta.url), "utf8");
 const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf8");
+const packageJson = readFileSync(new URL("../package.json", import.meta.url), "utf8");
+const convexSetup = readFileSync(new URL("../scripts/setup-convex.mjs", import.meta.url), "utf8");
 assert.match(
   appComponent,
   /return \{ pending: 3, needsAction: 2, approved: 7, messages: 4 \};/,
@@ -78,6 +80,8 @@ assert.match(appComponent, /guideModeLabels/, "Guide output should identify the 
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
+assert.match(packageJson, /"convex:codegen": "convex codegen --typecheck enable"/, "Convex codegen should be available as a checked script");
+assert.match(convexSetup, /Generate Convex client types/, "Convex setup should generate official client types after deployment selection");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
