@@ -1416,6 +1416,81 @@ p {
   font-size: 13px;
 }
 
+.sdg-section {
+  display: grid;
+  gap: 14px;
+}
+
+.sdg-section h2 {
+  margin-bottom: 4px;
+  font-size: 20px;
+}
+
+.sdg-section p {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+
+.sdg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sdg-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.sdg-number {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.sdg-number.red {
+  background: #d52d45;
+}
+
+.sdg-number.orange {
+  background: #ef7d22;
+}
+
+.sdg-number.blue {
+  background: #1477b8;
+}
+
+.sdg-number.navy {
+  background: #1b4965;
+}
+
+.sdg-card strong {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.sdg-card small {
+  border-radius: 999px;
+  background: #d52d45;
+  color: #ffffff;
+  padding: 4px 8px;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .guide-workbench {
   display: grid;
   gap: 13px;
@@ -1506,6 +1581,7 @@ p {
   .service-grid,
   .admin-grid,
   .feature-grid,
+  .sdg-grid,
   .form-grid,
   .field-grid,
   .requirement-grid,

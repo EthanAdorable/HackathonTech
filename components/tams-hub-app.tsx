@@ -877,6 +877,19 @@ function GuideView({
         <Feature icon={<BadgeCheck />} title="SDG Alignment" text="Supports transparent campus workflows and student leadership." />
       </section>
 
+      <section className="sdg-section">
+        <div>
+          <h2>SDG Alignment</h2>
+          <p>TAMS Hub improves student leadership workflows, campus digital infrastructure, transparent approvals, and collaboration among FEU stakeholders.</p>
+        </div>
+        <div className="sdg-grid">
+          <SdgCard number="4" label="Quality Education" tone="red" tag="Primary" />
+          <SdgCard number="9" label="Industry, Innovation and Infrastructure" tone="orange" />
+          <SdgCard number="16" label="Peace, Justice and Strong Institutions" tone="blue" />
+          <SdgCard number="17" label="Partnerships for the Goals" tone="navy" />
+        </div>
+      </section>
+
       <section className="guide-workbench panel">
         <div className="guide-controls">
           <select value={guideMode} onChange={(event) => setGuideMode(event.target.value as GuideMode)}>
@@ -955,6 +968,16 @@ function StatCard({ icon, value, label, tone }: { icon: ReactNode; value: number
 
 function Feature({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return <article className="feature-card"><span>{icon}</span><h3>{title}</h3><p>{text}</p></article>;
+}
+
+function SdgCard({ number, label, tone, tag }: { number: string; label: string; tone: string; tag?: string }) {
+  return (
+    <article className="sdg-card">
+      <span className={`sdg-number ${tone}`}>{number}</span>
+      <strong>{label}</strong>
+      {tag && <small>{tag}</small>}
+    </article>
+  );
 }
 
 function Field({ label, children, wide = false }: { label: string; children: ReactNode; wide?: boolean }) {
