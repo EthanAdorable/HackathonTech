@@ -607,7 +607,17 @@ function DashboardView({
           <thead><tr><th>Event Name</th><th>Event Type</th><th>Submitted</th><th>Status</th><th>Required Action</th></tr></thead>
           <tbody>
             {displayedApplications.map((app) => (
-              <tr key={app.id} onClick={() => onSelect(app.id)}>
+              <tr
+                key={app.id}
+                tabIndex={0}
+                onClick={() => onSelect(app.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelect(app.id);
+                  }
+                }}
+              >
                 <td>{app.title}</td>
                 <td>{app.eventType}</td>
                 <td>{formatShortDate(getSubmittedDate(app))}</td>

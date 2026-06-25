@@ -57,6 +57,8 @@ assert.match(appComponent, /required document\(s\) missing/, "File event guide s
 assert.match(appComponent, /Student Org Officer/, "UI role labels should match the reference screens");
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
 assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");
+assert.match(appComponent, /onKeyDown=\{\(event\) =>/, "Dashboard table rows should support keyboard selection");
+assert.match(globalCss, /tbody tr:focus-visible/, "Dashboard table rows should show focus affordance");
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
 assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
 assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");

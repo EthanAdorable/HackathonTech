@@ -102,8 +102,18 @@ tr {
   transition: background 160ms ease;
 }
 
+tbody tr {
+  cursor: pointer;
+}
+
 tbody tr:hover {
   background: #f5f8f4;
+}
+
+tbody tr:focus-visible {
+  outline: 2px solid rgba(15, 122, 70, 0.35);
+  outline-offset: -2px;
+  background: #eef7f1;
 }
 
 h1,
