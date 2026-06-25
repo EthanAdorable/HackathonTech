@@ -61,6 +61,7 @@ assert.match(appComponent, /Student Org Officer/, "UI role labels should match t
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
 assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");
 assert.match(appComponent, /aria-pressed=\{onlyActionItems\}/, "Dashboard filter button should expose pressed state");
+assert.match(appComponent, /aria-label=\{`Open \$\{app\.title\}`\}/, "Dashboard table rows should expose their open action");
 assert.match(appComponent, /onKeyDown=\{\(event\) =>/, "Dashboard table rows should support keyboard selection");
 assert.match(globalCss, /tbody tr:focus-visible/, "Dashboard table rows should show focus affordance");
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");

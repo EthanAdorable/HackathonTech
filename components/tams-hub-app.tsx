@@ -625,7 +625,9 @@ function DashboardView({
             {displayedApplications.map((app) => (
               <tr
                 key={app.id}
+                role="button"
                 tabIndex={0}
+                aria-label={`Open ${app.title}`}
                 onClick={() => onSelect(app.id)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
