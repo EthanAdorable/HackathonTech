@@ -38,6 +38,10 @@ const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf
 const packageJson = readFileSync(new URL("../package.json", import.meta.url), "utf8");
 const nextConfig = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
 const convexSetup = readFileSync(new URL("../scripts/setup-convex.mjs", import.meta.url), "utf8");
+const railwaySetup = readFileSync(new URL("../scripts/setup-railway.mjs", import.meta.url), "utf8");
+const serviceRunbook = readFileSync(new URL("../docs/service-setup.md", import.meta.url), "utf8");
+const railwayConfig = readFileSync(new URL("../railway.json", import.meta.url), "utf8");
+const startScript = readFileSync(new URL("../scripts/start.mjs", import.meta.url), "utf8");
 assert.match(
   appComponent,
   /return \{ pending: 3, needsAction: 2, approved: 7, messages: 4 \};/,
@@ -112,7 +116,14 @@ assert.match(appComponent, /className="guide-output" role="status" aria-live="po
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
 assert.match(readFileSync("scripts/check-services.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
-assert.match(readFileSync("scripts/setup-railway.mjs", "utf8"), /TAMS_DEMO_AUTH_ENABLED:\s*"false"/, "Railway setup should disable demo auth for public deployments");
+assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
+assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
+assert.match(convexSetup, /const project = .*"tams-hub-prototype"/, "Convex setup should default to the dedicated prototype project");
+assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway setup should default to the dedicated prototype project");
+assert.match(railwaySetup, /TAMS_DEMO_AUTH_ENABLED:\s*"false"/, "Railway setup should disable demo auth for public deployments");
+assert.match(railwayConfig, /corepack pnpm start/, "Railway should start through the production start wrapper");
+assert.match(startScript, /"--hostname", "0\.0\.0\.0"/, "Production start wrapper should bind to Railway's network interface");
+assert.match(startScript, /process\.env\.PORT/, "Production start wrapper should honor Railway's injected port");
 assert.match(packageJson, /"convex:codegen": "convex codegen --typecheck enable"/, "Convex codegen should be available as a checked script");
 assert.match(convexSetup, /Generate Convex client types/, "Convex setup should generate official client types after deployment selection");
 assert.match(convexSetup, /Convex setup dry-run complete/, "Convex setup dry-run should make clear that no cloud changes were made");
