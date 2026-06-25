@@ -431,7 +431,12 @@ function AccessScreen({
               <p className="label">Preview as role</p>
               <div className="role-choice-grid">
                 {users.map((user) => (
-                  <button key={user.id} className={user.id === activeUserId ? "role-chip active" : "role-chip"} onClick={() => setActiveUserId(user.id)}>
+                  <button
+                    key={user.id}
+                    className={user.id === activeUserId ? "role-chip active" : "role-chip"}
+                    aria-pressed={user.id === activeUserId}
+                    onClick={() => setActiveUserId(user.id)}
+                  >
                     {roleIcons[user.role]}
                     {roleDisplayName(user.role)}
                   </button>
