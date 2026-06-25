@@ -103,6 +103,7 @@ assert.match(appComponent, /aria-label="Message"/, "Message composer input shoul
 assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
 assert.match(appComponent, /visibleThreads\.find\(\(thread\) => thread\.title === selectedThreadTitle\)/, "Messages selected thread should stay aligned with filtered conversations");
 assert.match(appComponent, /empty-chat-state/, "Messages should show an empty chat state when search hides every thread");
+assert.match(appComponent, /className="empty-chat-state" role="status" aria-live="polite"/, "Messages empty chat state should be announced politely");
 assert.doesNotMatch(appComponent, /visibleThreads\[0\] \?\?[\s\S]*threads\[0\]/, "Messages search should not fall back to an invisible thread");
 assert.match(appComponent, /aria-pressed=\{thread\.title === selectedThread\.title\}/, "Message thread buttons should expose selected state");
 assert.match(appComponent, /className="message-thread-header"/, "Messages chat panel should use a reference-style thread header band");

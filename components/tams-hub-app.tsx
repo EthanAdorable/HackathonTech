@@ -1103,7 +1103,7 @@ function MessagesView({
             <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
           </>
         ) : (
-          <div className="empty-chat-state"><Search size={22} /><strong>No conversation selected</strong><p>Clear the search to return to the collaboration thread.</p></div>
+          <div className="empty-chat-state" role="status" aria-live="polite"><Search size={22} aria-hidden="true" /><strong>No conversation selected</strong><p>Clear the search to return to the collaboration thread.</p></div>
         )}
       </section>
       <section className="partner-card">
