@@ -59,6 +59,7 @@ assert.match(globalCss, /\.sidebar \.brand \.mascot-logo/, "Sidebar mascot shoul
 assert.match(appComponent, /"Student Officer": <FilePlus2 size=\{16\} \/>/, "Role picker icons should use the workflow icon language");
 assert.match(appComponent, /<Eye size=\{15\} \/> View All/, "View controls should use a consistent eye icon");
 assert.match(appComponent, /className="partner-chip"/, "Suggested partner chips should include consistent icons and plus affordances");
+assert.match(appComponent, /Final Approval/, "Application progress tracker should match the reference milestone labels");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
