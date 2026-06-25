@@ -264,7 +264,7 @@ export function TamsHubApp() {
           title={sectionTitle(section)}
           activeUser={activeUser}
           onNewEvent={createApplication}
-          showNewEvent={activeUser.role === "Student Officer" && section !== "file"}
+          showNewEvent={activeUser.role === "Student Officer" && section !== "file" && section !== "dashboard"}
         />
 
         {section === "dashboard" && (
@@ -503,7 +503,7 @@ function DashboardView({
       <div className="dashboard-welcome">
         <div>
           <h2>Welcome, FEU Alabang {activeUser.role}</h2>
-          <p>Friday, June 26, 2026 - Semester 2, A.Y. 2024-2025</p>
+          <p>Thursday, June 19, 2025 - Semester 2, A.Y. 2024-2025</p>
         </div>
         {activeUser.role === "Student Officer" && <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>}
       </div>
@@ -666,7 +666,7 @@ function FileEventView({
         <div className="panel">
           <h3>Event Information</h3>
           <div className="form-grid">
-            <Field label="Event Title"><input value={application.title} readOnly /></Field>
+            <Field label="Event Title" wide><input value={application.title} readOnly /></Field>
             <Field label="Organization"><input value={application.organization} readOnly /></Field>
             <Field label="Event Type"><input value={application.eventType} readOnly /></Field>
             <Field label="Date & Time"><input value={application.eventDate} readOnly /></Field>
@@ -775,7 +775,7 @@ function ApplicationsView({
   return (
     <div className="screen-stack">
       <div className="application-title-row">
-        <div><h2>{application.title}</h2><p>Application ID: {application.id.toUpperCase()} · {application.eventType} · {application.organization}</p></div>
+        <div><h2>{application.title}</h2><p>Application ID: {application.id.toUpperCase()}{" \u00b7 "}{application.eventType}{" \u00b7 "}{application.organization}</p></div>
         <span className={`status-pill ${statusTone[application.status]}`}>{application.status}</span>
       </div>
 
@@ -888,8 +888,15 @@ function MessagesView({
     <section className="messages-layout">
       <aside className="thread-list panel">
         <div className="search-box"><Search size={16} /><input placeholder="Search messages..." /></div>
-        {["SADU Review", "Junior Philippine CS Society", "Student Council Federation"].map((thread, index) => (
-          <button key={thread} className={index === 0 ? "thread-item active" : "thread-item"}><strong>{thread}</strong><span>{index === 0 ? "Please revise the budget breakdown." : "Joint event proposal attached."}</span></button>
+        {[
+          { title: "SADU Review", preview: "Please revise the budget breakdown.", count: "2", time: "2h ago" },
+          { title: "Junior Philippine CS Society", preview: "Are you open to co-organizing the seminar?", count: "1", time: "1d ago" },
+          { title: "Student Council Federation", preview: "Joint event proposal attached.", count: "", time: "3d ago" },
+        ].map((thread, index) => (
+          <button key={thread.title} className={index === 0 ? "thread-item active" : "thread-item"}>
+            <span className="thread-meta"><strong>{thread.title}</strong><span>{thread.count && <em>{thread.count}</em>}{thread.time}</span></span>
+            <small>{thread.preview}</small>
+          </button>
         ))}
       </aside>
       <section className="chat-panel panel">
