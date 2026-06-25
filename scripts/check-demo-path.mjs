@@ -46,6 +46,8 @@ assert.match(authConfig, /session\.user\.title = token\.title/, "NextAuth sessio
 assert.match(appComponent, /function toggleTemplateAvailability/, "Admin template availability toggles should be interactive");
 assert.match(appComponent, /disabled=\{!canStartReview\}/, "SADU review action should be gated by submitted states");
 assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resubmission should require completed fields");
+assert.match(appComponent, /revisionApplication && onSelect\(revisionApplication\.id\)/, "Dashboard guide alert should open the revision application");
+assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");

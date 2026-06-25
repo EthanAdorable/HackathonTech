@@ -921,7 +921,8 @@ p {
 .primary-button:disabled,
 .gold-button:disabled,
 .secondary-button:disabled,
-.danger-button:disabled {
+.danger-button:disabled,
+.ghost-button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
 }

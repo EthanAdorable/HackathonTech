@@ -539,6 +539,7 @@ function DashboardView({
   onSelect: (id: string) => void;
 }) {
   const stats = getDashboardStats(activeUser.role, applications, queueCount);
+  const revisionApplication = applications.find((app) => app.status === "Revision Requested") ?? applications[0];
 
   return (
     <div className="screen-stack">
@@ -560,7 +561,7 @@ function DashboardView({
       <section className="guide-alert">
         <Sparkles size={18} />
         <div><strong>TAMS Guide Alert</strong><p>Tech Career Fair 2025 needs revised budget and participant clarification. Deadline in 6 days.</p></div>
-        <button className="gold-button">View</button>
+        <button className="gold-button" disabled={!revisionApplication} onClick={() => revisionApplication && onSelect(revisionApplication.id)}><Search size={15} /> View</button>
       </section>
 
       {activeUser.role === "Admin" && <ServiceReadinessPanel onResetDemo={onResetDemo} />}
@@ -569,7 +570,7 @@ function DashboardView({
       <section className="table-card">
         <div className="table-header">
           <h2>Recent Applications</h2>
-          <div><button className="ghost-button"><Filter size={15} /> Filter</button><button className="ghost-button">View All</button></div>
+          <div><button className="ghost-button"><Filter size={15} /> Filter</button><button className="ghost-button" disabled={!applications.length} onClick={() => applications[0] && onSelect(applications[0].id)}><FolderKanban size={15} /> View All</button></div>
         </div>
         <table>
           <thead><tr><th>Event Name</th><th>Event Type</th><th>Submitted</th><th>Status</th><th>Required Action</th></tr></thead>
@@ -701,7 +702,7 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
           <strong>Demo Data</strong>
           <p>Restore local prototype data after a review or revision demo.</p>
         </div>
-        <button className="secondary-button" onClick={onResetDemo}>Reset</button>
+        <button className="secondary-button" onClick={onResetDemo}><RotateCcw size={16} /> Reset</button>
       </article>
     </section>
   );
@@ -816,7 +817,7 @@ function FileEventView({
         <div className="warning-box"><AlertTriangle size={16} /><div><strong>Completeness Check</strong><p>{completionPercent}% of required prototype templates are complete.</p></div></div>
         <button className="gold-button full" onClick={() => { onPrecheck(); onGenerateGuide(); }}><Sparkles size={16} /> Run AI Completeness Check</button>
         <div className="guide-says"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
-        <button className="primary-button full" disabled={completionPercent < 70} onClick={onSubmit}>Submit to SADU</button>
+        <button className="primary-button full" disabled={completionPercent < 70} onClick={onSubmit}><SendHorizonal size={16} /> Submit to SADU</button>
       </aside>
     </section>
   );
@@ -1085,10 +1086,10 @@ function WorkflowActions({
     return (
       <div className="action-stack">
         <div className="action-row">
-          <button className="secondary-button" disabled={!canStartReview} onClick={onReview}>Mark Under Review</button>
-          <button className="gold-button" disabled={!canDecide} onClick={onRevision}>Request Revision</button>
-          <button className="danger-button" disabled={!canDecide} onClick={onReject}>Reject</button>
-          <button className="primary-button" disabled={!canDecide} onClick={onApprove}>Approve</button>
+          <button className="secondary-button" disabled={!canStartReview} onClick={onReview}><Clock3 size={16} /> Mark Under Review</button>
+          <button className="gold-button" disabled={!canDecide} onClick={onRevision}><AlertTriangle size={16} /> Request Revision</button>
+          <button className="danger-button" disabled={!canDecide} onClick={onReject}><CircleAlert size={16} /> Reject</button>
+          <button className="primary-button" disabled={!canDecide} onClick={onApprove}><CheckCircle2 size={16} /> Approve</button>
         </div>
         {!canDecide && <p className="fine-print">SADU actions unlock after the application is submitted or resubmitted.</p>}
       </div>
