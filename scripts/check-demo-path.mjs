@@ -63,6 +63,8 @@ assert.match(globalCss, /tbody tr:focus-visible/, "Dashboard table rows should s
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
 assert.match(appComponent, /aria-pressed=\{user\.id === activeUserId\}/, "Access role preview chips should expose selected state");
 assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
+assert.match(appComponent, /aria-controls=\{notificationsOpen \? "notification-popover" : undefined\}/, "Notification trigger should reference the open popover");
+assert.match(appComponent, /id="notification-popover" role="region" aria-label="Notifications"/, "Notification popover should expose a named region");
 assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");
 assert.match(appComponent, /topbar-identity/, "Topbar user identity should be grouped like the reference header");
 assert.match(globalCss, /\.sidebar \.brand \.mascot-logo/, "Sidebar mascot should match the larger reference app chrome");

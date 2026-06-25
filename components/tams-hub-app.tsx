@@ -530,12 +530,18 @@ function Topbar({
       <h1>{title}</h1>
       <div className="top-actions">
         <div className="notification-wrap">
-          <button className="notification-button" aria-label="View notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((current) => !current)}>
+          <button
+            className="notification-button"
+            aria-label="View notifications"
+            aria-expanded={notificationsOpen}
+            aria-controls={notificationsOpen ? "notification-popover" : undefined}
+            onClick={() => setNotificationsOpen((current) => !current)}
+          >
             <Bell size={18} aria-hidden="true" />
             <span className="notification-dot" aria-hidden="true" />
           </button>
           {notificationsOpen && (
-            <div className="notification-popover">
+            <div className="notification-popover" id="notification-popover" role="region" aria-label="Notifications">
               <strong>Notifications</strong>
               <span>Tech Career Fair needs revised budget details.</span>
               <span>Convex and Railway setup are waiting for account choices.</span>
