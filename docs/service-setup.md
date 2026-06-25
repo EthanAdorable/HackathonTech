@@ -36,7 +36,7 @@ Expected local artifacts:
 - `NEXT_PUBLIC_CONVEX_URL`
 - generated Convex files under `convex/_generated/`
 
-Seed the prototype data after deployment configuration. Run this once per fresh deployment; the current seed command appends demo rows.
+Seed the prototype data after deployment configuration. The seed command resets the prototype tables before inserting the demo rows, so it is safe to rerun during setup.
 
 ```powershell
 corepack pnpm convex run seed:seedDemoData
