@@ -24,11 +24,13 @@ import {
   Plus,
   Search,
   SendHorizonal,
+  Settings2,
   ShieldCheck,
   Smartphone,
   Sparkles,
   UploadCloud,
   UserRound,
+  UsersRound,
   RotateCcw,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -508,6 +510,7 @@ function DashboardView({
       </section>
 
       {activeUser.role === "Admin" && <ServiceReadinessPanel onResetDemo={onResetDemo} />}
+      {activeUser.role === "Admin" && <AdminOperationsPanel />}
 
       <section className="table-card">
         <div className="table-header">
@@ -530,6 +533,35 @@ function DashboardView({
         </table>
       </section>
     </div>
+  );
+}
+
+function AdminOperationsPanel() {
+  return (
+    <section className="admin-grid">
+      <article className="admin-card">
+        <div className="admin-card-heading"><Settings2 size={18} /><div><strong>Template Availability</strong><p>Prototype controls for the required event filing templates.</p></div></div>
+        <div className="admin-list">
+          {templateDefinitions.map((template) => (
+            <div className="admin-row" key={template.id}>
+              <div><strong>{template.name}</strong><span>{template.fields.filter((field) => field.required).length} required fields</span></div>
+              <span className="status-pill green">Available</span>
+            </div>
+          ))}
+        </div>
+      </article>
+      <article className="admin-card">
+        <div className="admin-card-heading"><UsersRound size={18} /><div><strong>Users & Roles</strong><p>Demo accounts aligned with TAMS Access permissions.</p></div></div>
+        <div className="admin-list">
+          {users.map((user) => (
+            <div className="admin-row" key={user.id}>
+              <div><strong>{user.name}</strong><span>{user.title}</span></div>
+              <span className="role-badge">{user.role}</span>
+            </div>
+          ))}
+        </div>
+      </article>
+    </section>
   );
 }
 

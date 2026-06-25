@@ -737,6 +737,68 @@ p {
   color: #b06c00;
 }
 
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 18px;
+}
+
+.admin-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.admin-card-heading {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.admin-card-heading > svg {
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: #e5f3eb;
+  color: var(--green-700);
+  padding: 7px;
+  box-sizing: content-box;
+}
+
+.admin-card-heading p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.admin-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+  padding: 10px 12px;
+}
+
+.admin-row strong,
+.admin-row span:not(.status-pill):not(.role-badge) {
+  display: block;
+}
+
+.admin-row span:not(.status-pill):not(.role-badge) {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .table-card {
   overflow: hidden;
 }
@@ -1442,6 +1504,7 @@ p {
   .hero-metrics,
   .stats-grid,
   .service-grid,
+  .admin-grid,
   .feature-grid,
   .form-grid,
   .field-grid,
