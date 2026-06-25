@@ -65,9 +65,9 @@ The visible role switcher simulates TAMS Access with OTP and NFC/card-tap verifi
 ## Demo Path QA
 
 - Student Officer role opens a dashboard with JPCS applications.
-- Student creates a new event with `New event`.
+- Student creates a new event with `File New Event`.
 - Student fills required template fields in the completion editor.
-- Student runs `Run pre-check`; the timeline records `AI Pre-check`.
+- Student runs `Run AI Completeness Check`; the timeline records `AI Pre-check`.
 - TAMS Guide can generate a checklist, missing fields, summary, revision draft, and filing answer.
 - Student submits to SADU once the prototype completion threshold is met.
 - SADU Associate role sees the queue and opens submitted or resubmitted applications.
