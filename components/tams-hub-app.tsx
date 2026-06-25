@@ -977,6 +977,7 @@ function MessagesView({
   onSend: () => void;
 }) {
   const [threadSearch, setThreadSearch] = useState("");
+  const [selectedThreadTitle, setSelectedThreadTitle] = useState("SADU Review");
   const threads = [
     { title: "SADU Review", preview: "Please revise the budget breakdown.", count: "2", time: "2h ago" },
     { title: "Junior Philippine CS Society", preview: "Are you open to co-organizing the seminar?", count: "1", time: "1d ago" },
@@ -985,13 +986,14 @@ function MessagesView({
   const visibleThreads = threads.filter((thread) =>
     `${thread.title} ${thread.preview}`.toLowerCase().includes(threadSearch.trim().toLowerCase()),
   );
+  const selectedThread = threads.find((thread) => thread.title === selectedThreadTitle) ?? threads[0];
 
   return (
     <section className="messages-layout">
       <aside className="thread-list panel">
         <div className="search-box"><Search size={16} /><input value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder="Search messages..." /></div>
-        {visibleThreads.map((thread, index) => (
-          <button key={thread.title} className={index === 0 ? "thread-item active" : "thread-item"}>
+        {visibleThreads.map((thread) => (
+          <button key={thread.title} className={thread.title === selectedThread.title ? "thread-item active" : "thread-item"} onClick={() => setSelectedThreadTitle(thread.title)}>
             <span className="thread-meta"><strong>{thread.title}</strong><span>{thread.count && <em>{thread.count}</em>}{thread.time}</span></span>
             <small>{thread.preview}</small>
           </button>
@@ -999,7 +1001,8 @@ function MessagesView({
         {!visibleThreads.length && <p className="empty-thread">No matching conversations.</p>}
       </aside>
       <section className="chat-panel panel">
-        <h2>SADU Review</h2>
+        <h2>{selectedThread.title}</h2>
+        <p className="thread-summary">{selectedThread.preview}</p>
         <MiniThread application={application} expanded />
         <div className="composer-row"><input value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Type a message..." /><button className="send-button" onClick={onSend}><SendHorizonal size={18} /></button></div>
       </section>

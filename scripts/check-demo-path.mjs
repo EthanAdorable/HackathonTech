@@ -62,6 +62,7 @@ assert.match(appComponent, /className="partner-chip"/, "Suggested partner chips 
 assert.match(appComponent, /Final Approval/, "Application progress tracker should match the reference milestone labels");
 assert.match(appComponent, /formatMilestoneDate/, "Application progress tracker should use compact reference-style dates");
 assert.match(appComponent, /threadSearch/, "Messages search box should filter visible conversations");
+assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
