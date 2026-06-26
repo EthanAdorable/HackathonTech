@@ -146,7 +146,6 @@ async function applicationsForActor(ctx: any, accessActor: any) {
 function requiredTemplateGaps(templates: any[]) {
   const requiredFieldsByTemplate: Record<string, string[]> = {
     proposal: ["overview", "objectives", "targetAudience", "successMeasure"],
-    budget: ["totalBudget", "fundingSource", "expenseBreakdown"],
     venue: ["preferredVenue", "setupNeeds"],
     program: ["callTime", "programFlow", "officerAssignments"],
     publicity: ["channels", "postingDate", "materials"],
@@ -212,17 +211,6 @@ const defaultRequirementDefinitionsByTemplate: Record<
       required: true,
       visibleToReviewer: true,
       accepts: ["application/pdf"],
-      maxSizeBytes: 10 * 1024 * 1024,
-    },
-  ],
-  budget: [
-    {
-      requirementKey: "budget-breakdown",
-      label: "Budget breakdown",
-      description: "Line-item cost estimate, funding source, and procurement notes.",
-      required: true,
-      visibleToReviewer: true,
-      accepts: ["application/pdf", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv"],
       maxSizeBytes: 10 * 1024 * 1024,
     },
   ],

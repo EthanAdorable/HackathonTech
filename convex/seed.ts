@@ -155,13 +155,6 @@ function defaultRequirementForTemplate(templateId: string) {
       required: true,
       accepts: ["application/pdf"],
     },
-    budget: {
-      requirementKey: "budget-breakdown",
-      label: "Budget breakdown",
-      description: "Line-item cost estimate, funding source, and procurement notes.",
-      required: true,
-      accepts: ["application/pdf", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv"],
-    },
     venue: {
       requirementKey: "venue-request-form",
       label: "Venue request form",

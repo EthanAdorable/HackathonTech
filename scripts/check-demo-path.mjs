@@ -13,10 +13,11 @@ import { addMessage, transitionApplication } from "../lib/workflow.ts";
 
 const roles = new Set(users.map((user) => user.role));
 assert.deepEqual([...roles].sort(), ["Admin", "Faculty Adviser", "SADU Associate", "Student Officer"].sort());
-assert.equal(templateDefinitions.length, 10, "all required event templates and APP/APF/VERF slots should be present");
+assert.equal(templateDefinitions.length, 9, "all required event templates and APP/APF/VERF slots should be present");
 for (const templateId of ["app", "apf", "verf"]) {
   assert.ok(templateDefinitions.some((template) => template.id === templateId), `${templateId.toUpperCase()} upload slot should be present`);
 }
+assert.ok(!templateDefinitions.some((template) => template.id === "budget"), "Budget Request should not be a standalone filing requirement");
 
 const byStatus = new Map(seedApplications.map((application) => [application.status, application]));
 assert.ok(byStatus.get("Draft"), "seed data should include a draft application");
@@ -86,7 +87,8 @@ assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Pri
 assert.match(appComponent, /Revision Inconsistency/, "File event guide should show a reference-style revision alert");
 assert.match(appComponent, /application\.status === "Revision Requested"/, "File event revision alert should only appear for applications with requested revisions");
 assert.match(appComponent, /revisionGuideDetail\(applicationCompletion\.missing, application\.messages\)/, "File event revision warning should derive detail from template gaps and thread messages");
-assert.match(appComponent, /formatBudgetEstimate\(budgetValues\.totalBudget\)/, "File event budget summary should derive from the selected budget template");
+assert.doesNotMatch(appComponent, /Budget Estimate \(PHP\)/, "File event screen should not show a standalone Budget Request field");
+assert.doesNotMatch(appComponent, /budgetValues/, "File event screen should not derive UI from a standalone budget template");
 assert.match(appComponent, /value=\{proposalValues\.objectives \?\? ""\}/, "File event objectives summary should derive from the selected proposal template");
 assert.doesNotMatch(appComponent, /SADU flagged the budget breakdown and participant count/, "File event revision warning should not use fixed budget and participant copy");
 assert.doesNotMatch(appComponent, /value="25,000\.00"/, "File event budget summary should not use a fixed sample amount");
@@ -368,16 +370,6 @@ const revised = {
     generatedAt: "2025-06-18T09:05:00.000Z",
   },
   templates: review.templates.map((template) =>
-    template.templateId === "budget"
-      ? {
-          ...template,
-          values: {
-            ...template.values,
-            expenseBreakdown: "Venue logistics, booth materials, speaker tokens, and publication materials.",
-          },
-          attachments: demoAttachment("budget-revision", "revised-budget-breakdown.pdf"),
-        }
-      : 
     template.templateId === "publicity"
       ? {
           ...template,

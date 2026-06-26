@@ -12,12 +12,12 @@ type PolicyRule = {
 export const saduGuidePolicy = {
   sourceLabel: "SADU guideline rules v1",
   humanReviewBoundary: "Guidance only. Final approval decisions remain with SADU and human reviewers.",
-  requiredTemplates: ["proposal", "budget", "venue", "program", "publicity"],
+  requiredTemplates: ["app", "apf", "verf", "proposal", "venue", "program", "publicity"],
   rules: [
     {
       id: "complete-core-templates",
       label: "Core filing templates",
-      checklist: () => "Attach complete proposal, budget, venue, program, and publicity templates.",
+      checklist: () => "Attach complete APP, APF, VERF, proposal, venue, program, and publicity requirements.",
     },
     {
       id: "confirm-venue",
@@ -57,14 +57,6 @@ const requiredFieldLabelsByTemplate: Record<string, { templateName: string; fiel
       objectives: "Objectives",
       targetAudience: "Target audience",
       successMeasure: "Success measure",
-    },
-  },
-  budget: {
-    templateName: "Budget Request Template",
-    fields: {
-      totalBudget: "Total budget",
-      fundingSource: "Funding source",
-      expenseBreakdown: "Expense breakdown",
     },
   },
   venue: {
@@ -122,13 +114,8 @@ export function findPolicyIssues(application: EventApplication) {
   const completion = getPolicyCompletion(application);
   const missing = completion.missing;
   const issues = [...missing];
-  const proposal = application.templates.find((template) => template.templateId === "proposal")?.values ?? {};
-  const budget = application.templates.find((template) => template.templateId === "budget")?.values ?? {};
   const venue = application.templates.find((template) => template.templateId === "venue")?.values ?? {};
 
-  if (proposal.targetAudience && application.expectedParticipants >= 100 && !budget.expenseBreakdown) {
-    issues.push("Budget Request Template: Expense breakdown should support the stated participant count.");
-  }
   if (venue.preferredVenue && venue.preferredVenue !== application.venue) {
     issues.push(`Venue/Facility Request Template: Preferred venue (${venue.preferredVenue}) differs from event venue (${application.venue}).`);
   }

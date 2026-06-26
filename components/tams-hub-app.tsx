@@ -1553,7 +1553,6 @@ function FileEventView({
   }).length;
   const revisionAlert = application.status === "Revision Requested";
   const proposalValues = application.templates.find((template) => template.templateId === "proposal")?.values ?? {};
-  const budgetValues = application.templates.find((template) => template.templateId === "budget")?.values ?? {};
   const revisionDetail = revisionAlert ? revisionGuideDetail(applicationCompletion.missing, application.messages) : "";
   const canEditDetails = activeUser.role === "Student Officer" && ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"].includes(application.status);
   const canManageUploads = canEditDetails;
@@ -1573,7 +1572,6 @@ function FileEventView({
             <Field label="Venue"><input value={application.venue} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ venue: event.target.value })} /></Field>
             <Field label="Expected Participants"><input type="number" min="1" value={application.expectedParticipants} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ expectedParticipants: Math.max(1, Number(event.target.value) || 1) })} /></Field>
             <Field label="Adviser Name"><input value={activeUser.role === "Faculty Adviser" ? activeUser.name : "Prof. Maria Santos"} readOnly /></Field>
-            <Field label="Budget Estimate (PHP)"><input value={formatBudgetEstimate(budgetValues.totalBudget)} readOnly /></Field>
             <Field label="Event Objectives" wide><textarea value={proposalValues.objectives ?? ""} readOnly placeholder={"Describe the purpose, goals, and expected outcomes of this event\u2026"} /></Field>
           </div>
         </div>
@@ -1890,12 +1888,6 @@ function getRequiredActionCards(application: EventApplication) {
   }
 
   return [];
-}
-
-function formatBudgetEstimate(value?: string) {
-  const amount = Number(String(value ?? "").replace(/,/g, ""));
-  if (!Number.isFinite(amount) || amount <= 0) return "Not set";
-  return new Intl.NumberFormat("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 }
 
 function revisionGuideDetail(missingItems: string[], messages: EventApplication["messages"]) {

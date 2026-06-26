@@ -68,7 +68,7 @@ test("access policy enforces owner, adviser, SADU, and admin boundaries", () => 
 test("workflow rejects incomplete resubmission and unendorsed SADU submission", () => {
   const incomplete = tryTransitionApplication(revisionApplication, "Resubmitted", "Student resubmitted.", student);
   assert.equal(incomplete.ok, false);
-  assert.match(incomplete.errors.join(" "), /Budget Request Template|Publicity/);
+  assert.match(incomplete.errors.join(" "), /Publicity/);
 
   const draft = seedApplications.find((application) => application.status === "Draft");
   const submitted = tryTransitionApplication(draft, "Submitted to SADU", "Submit to SADU.", student);
@@ -151,7 +151,7 @@ test("role-specific UI scopes creation, admin, review, and adviser affordances",
 test("submission readiness includes required attachments", () => {
   const readiness = getSubmissionReadiness(revisionApplication);
   assert.equal(readiness.ready, false);
-  assert.ok(readiness.missing.some((item) => item.includes("Budget worksheet or quotation file")));
+  assert.ok(!readiness.missing.some((item) => item.includes("Budget worksheet or quotation file")));
   assert.ok(readiness.missing.some((item) => item.includes("Draft publication material")));
 });
 

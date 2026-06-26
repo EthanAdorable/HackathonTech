@@ -266,17 +266,6 @@ export const templateDefinitions: TemplateDefinition[] = [
     ],
   },
   {
-    id: "budget",
-    name: "Budget Request Template",
-    description: "Estimated cost, funding source, and procurement notes.",
-    attachmentRequirement: { label: "Budget worksheet or quotation file", required: true, reviewerVisible: true },
-    fields: [
-      { id: "totalBudget", label: "Total budget", type: "number", required: true },
-      { id: "fundingSource", label: "Funding source", type: "text", required: true },
-      { id: "expenseBreakdown", label: "Expense breakdown", type: "textarea", required: true },
-    ],
-  },
-  {
     id: "venue",
     name: "Venue/Facility Request Template",
     description: "Facility request, room setup, and support needs.",
@@ -417,7 +406,6 @@ export const seedApplications: EventApplication[] = [
     riskLevel: "Medium",
     templates: makeTemplates({
       proposal: { overview: "Career expo connecting FEU Alabang students with industry partners.", objectives: "Expose students to internship and employment pathways.", targetAudience: "IT, CS, and engineering students", successMeasure: "At least 150 participants and employer feedback forms." },
-      budget: { totalBudget: "25000", fundingSource: "Organization funds and partner sponsorships" },
       venue: { preferredVenue: "FEU Alabang Auditorium", setupNeeds: "Registration desk, booths, and stage seating" },
       program: { callTime: "8:00 AM", programFlow: "Registration, employer talks, booth rotation, networking, closing.", officerAssignments: "Secretary: attendance; Treasurer: partner kits." },
     }, {
@@ -456,7 +444,6 @@ export const seedApplications: EventApplication[] = [
     riskLevel: "Medium",
     templates: makeTemplates({
       proposal: { overview: "Leadership development seminar for officers and committee heads.", objectives: "Build project management and student leadership skills.", targetAudience: "Student organization officers", successMeasure: "At least 100 attendees and post-event survey responses." },
-      budget: { totalBudget: "15000", fundingSource: "Organization funds", expenseBreakdown: "Honorarium, certificates, snacks, publicity." },
       venue: { preferredVenue: "FEU Alabang AVR", setupNeeds: "Theater seating, registration desk", techNeeds: "Projector, two microphones" },
       program: { callTime: "8:00 AM", programFlow: "Registration, keynote, panel, open forum, closing.", officerAssignments: "Juan: documentation; Treasurer: registration; President: host." },
       publicity: { channels: "Facebook page, org GC, campus bulletin", postingDate: "2025-07-22", materials: "Poster, caption, pubmat set" },
@@ -465,7 +452,6 @@ export const seedApplications: EventApplication[] = [
       apf: [attachment("apf", "leadership-summit-apf.pdf", 356_000, "2025-06-14T15:30:00.000Z")],
       verf: [attachment("verf", "leadership-summit-verf.jpg", 580_000, "2025-06-14T15:31:00.000Z")],
       proposal: [attachment("proposal", "leadership-summit-proposal.pdf", 512_000, "2025-06-14T15:32:00.000Z")],
-      budget: [attachment("budget", "leadership-summit-budget.xlsx", 96_000, "2025-06-14T15:34:00.000Z")],
       venue: [attachment("venue", "avr-facility-request.pdf", 244_000, "2025-06-14T15:35:00.000Z")],
       program: [attachment("program", "leadership-summit-program.pdf", 176_000, "2025-06-14T15:37:00.000Z")],
       publicity: [attachment("publicity", "leadership-summit-pubmat-draft.pdf", 690_000, "2025-06-14T15:40:00.000Z")],
@@ -493,7 +479,6 @@ export const seedApplications: EventApplication[] = [
     riskLevel: "Low",
     templates: makeTemplates({
       proposal: { overview: "Campus hackathon for student teams building prototype solutions.", objectives: "Promote innovation, collaboration, and applied software development.", targetAudience: "FEU Alabang students", successMeasure: "At least 20 teams submit demos." },
-      budget: { totalBudget: "12000", fundingSource: "Organization funds", expenseBreakdown: "Snacks, printing, tokens." },
       venue: { preferredVenue: "FEU Alabang Innovation Lab", setupNeeds: "Team tables, judges table, registration area", techNeeds: "Projector, Wi-Fi, and extension cords" },
       program: { callTime: "8:00 AM", programFlow: "Registration, opening, build sprint, judging, awarding.", officerAssignments: "All executive officers assigned." },
       publicity: { channels: "FB page and membership channels", postingDate: "2025-06-28", materials: "Event poster and reminders" },
@@ -502,7 +487,6 @@ export const seedApplications: EventApplication[] = [
       apf: [attachment("apf", "hackathon-apf.pdf", 356_000, "2025-06-10T12:16:00.000Z", "Juan Reyes", 1, "accepted")],
       verf: [attachment("verf", "hackathon-verf.jpg", 580_000, "2025-06-10T12:17:00.000Z", "Juan Reyes", 1, "accepted")],
       proposal: [attachment("proposal", "hackathon-proposal.pdf", 530_000, "2025-06-10T12:18:00.000Z", "Juan Reyes", 1, "accepted")],
-      budget: [attachment("budget", "hackathon-budget.xlsx", 88_000, "2025-06-10T12:20:00.000Z", "Juan Reyes", 1, "accepted")],
       venue: [attachment("venue", "innovation-lab-request.pdf", 221_000, "2025-06-10T12:22:00.000Z", "Juan Reyes", 1, "accepted")],
       program: [attachment("program", "hackathon-program-flow.pdf", 194_000, "2025-06-10T12:24:00.000Z", "Juan Reyes", 1, "accepted")],
       publicity: [attachment("publicity", "hackathon-pubmat.pdf", 740_000, "2025-06-10T12:27:00.000Z", "Juan Reyes", 1, "accepted")],
@@ -551,7 +535,6 @@ export const seedApplications: EventApplication[] = [
     riskLevel: "Low",
     templates: makeTemplates({
       proposal: { overview: "Introductory coding clinic for new JPCS members.", objectives: "Help participants prepare for hackathon work.", targetAudience: "New JPCS members", successMeasure: "Workshop completion and practice submissions." },
-      budget: { totalBudget: "6000", fundingSource: "Organization funds", expenseBreakdown: "Lab materials, certificates, snacks." },
       venue: { preferredVenue: "Computer Lab 3", setupNeeds: "Workstations and projector", techNeeds: "Python environment installed" },
       program: { callTime: "1:00 PM", programFlow: "Setup, fundamentals, exercises, sharing, closing.", officerAssignments: "Tech committee leads hands-on stations." },
       publicity: { channels: "FB page, org GC, class announcements", postingDate: "2025-06-21", materials: "Poster and registration link" },
@@ -560,7 +543,6 @@ export const seedApplications: EventApplication[] = [
       apf: [attachment("apf", "python-workshop-apf.pdf", 356_000, "2025-05-30T12:16:00.000Z", "Juan Reyes", 1, "accepted")],
       verf: [attachment("verf", "python-workshop-verf.jpg", 580_000, "2025-05-30T12:17:00.000Z", "Juan Reyes", 1, "accepted")],
       proposal: [attachment("proposal", "python-workshop-proposal.pdf", 420_000, "2025-05-30T12:18:00.000Z", "Juan Reyes", 1, "accepted")],
-      budget: [attachment("budget", "python-workshop-budget.xlsx", 74_000, "2025-05-30T12:19:00.000Z", "Juan Reyes", 1, "accepted")],
       venue: [attachment("venue", "computer-lab-request.pdf", 202_000, "2025-05-30T12:22:00.000Z", "Juan Reyes", 1, "accepted")],
       program: [attachment("program", "python-workshop-program.pdf", 168_000, "2025-05-30T12:24:00.000Z", "Juan Reyes", 1, "accepted")],
       publicity: [attachment("publicity", "python-workshop-pubmat.pdf", 612_000, "2025-05-30T12:26:00.000Z", "Juan Reyes", 1, "accepted")],
