@@ -550,11 +550,18 @@ p {
   width: 43px;
   height: 43px;
   flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(6, 45, 30, 0.12);
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 4px;
+  box-shadow: 0 6px 18px rgba(6, 45, 30, 0.16);
 }
 
 .mascot-logo.large {
   width: 156px;
   height: 156px;
+  padding: 10px;
 }
 
 .mascot-logo img {

@@ -6,9 +6,12 @@ export const metadata: Metadata = {
   title: "TAMS Hub Prototype",
   description: "AI-assisted campus workflow prototype for FEU Alabang student organizations.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/tams-hub-logo-badge.png", type: "image/png", sizes: "512x512" },
+    ],
     shortcut: "/favicon.ico",
-    apple: "/tams-hub-logo.png",
+    apple: "/tams-hub-logo-badge.png",
   },
 };
 
