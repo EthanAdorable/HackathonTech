@@ -215,7 +215,7 @@ assert.match(globalCss, /\.guide-history-item strong\s*\{[\s\S]*text-overflow: e
 assert.match(convexApplicationsRoute, /ConvexHttpClient/, "Frontend hydration route should read from the configured Convex deployment");
 assert.match(convexApplicationsRoute, /api\.applications\.listWithDetails/, "Frontend hydration route should load detailed Convex applications");
 assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should try to hydrate application data from Convex");
-assert.match(appComponent, /data\.source === "convex" && data\.applications\.length/, "App should prefer populated Convex application data");
+assert.match(appComponent, /data\.source === "convex" \? data\.applications : null/, "App should treat empty Convex application data as a valid fresh slate");
 assert.match(appComponent, /window\.localStorage\.getItem\(storageKey\)/, "App should keep local storage fallback for prototype edits");
 assert.match(appComponent, /tams-hub-prototype-state-v3/, "App should use a fresh storage key after filing requirement changes");
 assert.match(appComponent, /legacyStorageKeys[\s\S]*window\.localStorage\.removeItem\(key\)/, "App should clear legacy browser state that may contain removed filing requirements");

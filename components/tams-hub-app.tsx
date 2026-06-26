@@ -59,6 +59,26 @@ import { localRequirementUploadAdapter } from "./requirement-upload-adapter";
 const legacyStorageKeys = ["tams-hub-prototype-state", "tams-hub-prototype-state-v2"];
 const storageKey = "tams-hub-prototype-state-v3";
 const defaultApplicationId = seedApplications.find((application) => application.status === "Revision Requested")?.id ?? seedApplications[0].id;
+const emptyApplication: EventApplication = {
+  id: "blank-slate",
+  title: "No application selected",
+  organization: "",
+  eventType: "",
+  venue: "",
+  eventDate: "",
+  expectedParticipants: 0,
+  ownerId: "",
+  adviserId: "",
+  status: "Draft",
+  riskLevel: "Low",
+  templates: [],
+  adviserEndorsement: {
+    required: false,
+    state: "Not Required",
+  },
+  messages: [],
+  timeline: [],
+};
 
 type ServiceStatus = {
   authReadyForDeploy: boolean;
@@ -183,7 +203,8 @@ export function TamsHubApp() {
       title: sessionUser.title ?? "TAMS Access user",
     };
   }, [session]);
-  const selectedApp = applications.find((application) => application.id === selectedAppId) ?? applications[0];
+  const selectedApp = applications.find((application) => application.id === selectedAppId) ?? applications[0] ?? emptyApplication;
+  const hasSelectedApplication = selectedApp.id !== emptyApplication.id;
   const templateAvailability = useMemo(() => {
     return Object.fromEntries(
       templateDefinitions.map((template) => [
@@ -197,7 +218,7 @@ export function TamsHubApp() {
     const response = await fetch("/api/convex-applications");
     if (!response.ok) throw new Error("Convex applications route unavailable");
     const data = (await response.json()) as ConvexApplicationsResponse;
-    return data.source === "convex" && data.applications.length ? data.applications : null;
+    return data.source === "convex" ? data.applications : null;
   }, []);
 
   const loadConvexUsers = useCallback(async () => {
@@ -245,7 +266,7 @@ export function TamsHubApp() {
         const convexApplications = await loadConvexApplications();
         if (active && convexApplications) {
           setApplications(convexApplications);
-          setSelectedAppId(convexApplications.find((app) => app.status === "Revision Requested")?.id ?? convexApplications[0].id);
+          setSelectedAppId(convexApplications.find((app) => app.status === "Revision Requested")?.id ?? convexApplications[0]?.id ?? "");
           setApplicationSource("convex");
           setHydrated(true);
           return;
@@ -286,8 +307,13 @@ export function TamsHubApp() {
   }, [applicationSource, applications, hydrated]);
 
   useEffect(() => {
-    if (hydrated && hasVerifiedSessionUser) void loadGuideLogs(selectedApp.id);
-  }, [hasVerifiedSessionUser, hydrated, loadGuideLogs, selectedApp.id]);
+    if (!hydrated || !hasVerifiedSessionUser) return;
+    if (!hasSelectedApplication) {
+      setGuideLogs([]);
+      return;
+    }
+    void loadGuideLogs(selectedApp.id);
+  }, [hasSelectedApplication, hasVerifiedSessionUser, hydrated, loadGuideLogs, selectedApp.id]);
 
   const visibleApplications = useMemo(() => {
     if (!hasVerifiedSessionUser) return [];
@@ -303,6 +329,8 @@ export function TamsHubApp() {
   useEffect(() => {
     if (visibleApplications.length && !visibleApplications.some((application) => application.id === selectedAppId)) {
       setSelectedAppId(visibleApplications[0].id);
+    } else if (!visibleApplications.length && selectedAppId) {
+      setSelectedAppId("");
     }
   }, [selectedAppId, visibleApplications]);
 
@@ -931,6 +959,8 @@ export function TamsHubApp() {
     return <AccessScreen users={roleUsers} />;
   }
 
+  const showFreshSlate = section !== "dashboard" && !hasSelectedApplication;
+
   return (
     <GsapMotionScope motionKey={motionKey}>
       <main className="app-shell" id="main-content">
@@ -961,7 +991,9 @@ export function TamsHubApp() {
             />
           )}
 
-          {section === "file" && (
+          {showFreshSlate && <FreshSlateView activeUser={activeUser} onNewEvent={createApplication} />}
+
+          {section === "file" && hasSelectedApplication && (
             <FileEventView
               application={selectedApp}
               activeUser={activeUser}
@@ -980,7 +1012,7 @@ export function TamsHubApp() {
             />
           )}
 
-          {section === "applications" && (
+          {section === "applications" && hasSelectedApplication && (
             <ApplicationsView
               application={selectedApp}
               applications={visibleApplications}
@@ -999,7 +1031,7 @@ export function TamsHubApp() {
             />
           )}
 
-          {section === "messages" && (
+          {section === "messages" && hasSelectedApplication && (
             <MessagesView
               application={selectedApp}
               applications={visibleApplications}
@@ -1011,7 +1043,7 @@ export function TamsHubApp() {
             />
           )}
 
-          {section === "guide" && (
+          {section === "guide" && hasSelectedApplication && (
             <GuideView
               application={selectedApp}
               guideMode={guideMode}
@@ -1172,6 +1204,25 @@ function AccessShellMessage({ title, message }: { title: string; message: string
         </section>
       </main>
     </GsapMotionScope>
+  );
+}
+
+function FreshSlateView({ activeUser, onNewEvent }: { activeUser: DemoUser; onNewEvent: () => void }) {
+  const canFileEvent = activeUser.role === "Student Officer";
+
+  return (
+    <section className="fresh-slate-panel" aria-labelledby="fresh-slate-title">
+      <span className="fresh-slate-icon"><FilePlus2 size={24} aria-hidden="true" /></span>
+      <div>
+        <h2 id="fresh-slate-title">Fresh slate</h2>
+        <p>No filed applications are in this workspace.</p>
+      </div>
+      {canFileEvent ? (
+        <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>
+      ) : (
+        <span className="fresh-slate-note">Student officers can file the first testing application.</span>
+      )}
+    </section>
   );
 }
 

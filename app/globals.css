@@ -801,6 +801,47 @@ p {
   padding-bottom: 44px;
 }
 
+.fresh-slate-panel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin: 20px;
+  border: 1px dashed #cbd8d0;
+  border-radius: 8px;
+  background: #f8faf8;
+  padding: 22px;
+}
+
+.fresh-slate-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  background: #fff2d3;
+  color: #9a6a00;
+}
+
+.fresh-slate-panel h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.fresh-slate-panel p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.fresh-slate-note {
+  max-width: 220px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .topbar {
   position: sticky;
   top: 0;
@@ -3023,6 +3064,15 @@ textarea[aria-invalid="true"] {
 
   .guide-alert .gold-button {
     justify-self: start;
+  }
+
+  .fresh-slate-panel {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .fresh-slate-note {
+    max-width: none;
   }
 
   .progress-steps::before {
