@@ -4,7 +4,7 @@ import { seedApplications, users } from "../lib/tams-data";
 export const seedDemoData = mutation({
   args: {},
   handler: async (ctx) => {
-    for (const table of ["timeline", "messages", "templates", "applications", "users"] as const) {
+    for (const table of ["guideLogs", "timeline", "messages", "templates", "applications", "users"] as const) {
       const rows = await ctx.db.query(table).collect();
       for (const row of rows) {
         await ctx.db.delete(row._id);

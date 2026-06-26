@@ -33,6 +33,34 @@ async function addWorkflowMessage(ctx: any, applicationId: any, author: string, 
   });
 }
 
+function assertApplication(application: any) {
+  if (!application) throw new Error("Application not found.");
+  return application;
+}
+
+function assertStatus(application: any, allowed: string[], action: string) {
+  assertApplication(application);
+  if (!allowed.includes(application.status)) {
+    throw new Error(`${action} is not allowed from ${application.status}.`);
+  }
+}
+
+function requiredTemplateGaps(templates: any[]) {
+  const requiredFieldsByTemplate: Record<string, string[]> = {
+    proposal: ["overview", "objectives", "targetAudience", "successMeasure"],
+    budget: ["totalBudget", "fundingSource", "expenseBreakdown"],
+    venue: ["preferredVenue", "setupNeeds"],
+    program: ["callTime", "programFlow", "officerAssignments"],
+    publicity: ["channels", "postingDate", "materials"],
+  };
+
+  return templates.flatMap((template) => {
+    if (!template.enabled) return [];
+    const requiredFields = requiredFieldsByTemplate[template.templateId] ?? [];
+    return requiredFields.filter((field) => !String(template.values?.[field] ?? "").trim());
+  });
+}
+
 function withUiId(document: any) {
   return { ...document, id: document._id };
 }
@@ -216,8 +244,46 @@ export const updateStatus = mutation({
     note: v.string(),
   },
   handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    if (args.status === "AI Pre-check") {
+      assertStatus(application, ["Draft", "Template Completion", "AI Pre-check"], "Pre-check");
+    } else if (args.status === "Submitted to SADU") {
+      assertStatus(application, ["Template Completion", "AI Pre-check"], "Submission");
+    } else if (args.status === "Under Review") {
+      assertStatus(application, ["Submitted to SADU", "Resubmitted"], "SADU review");
+    } else if (["Revision Requested", "Resubmitted", "SADU Approved", "Rejected"].includes(args.status)) {
+      throw new Error(`Use the ${args.status} workflow action.`);
+    }
     await ctx.db.patch(args.applicationId, { status: args.status });
     await addTimeline(ctx, args.applicationId, args.status, args.note);
+  },
+});
+
+export const updateDetails = mutation({
+  args: {
+    applicationId: v.id("applications"),
+    title: v.string(),
+    organization: v.string(),
+    eventType: v.string(),
+    venue: v.string(),
+    eventDate: v.string(),
+    expectedParticipants: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertStatus(application, ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"], "Event detail editing");
+    await ctx.db.patch(args.applicationId, {
+      title: args.title,
+      organization: args.organization,
+      eventType: args.eventType,
+      venue: args.venue,
+      eventDate: args.eventDate,
+      expectedParticipants: args.expectedParticipants,
+      status: application.status === "Draft" ? "Template Completion" : application.status,
+    });
+    if (application.status === "Draft") {
+      await addTimeline(ctx, args.applicationId, "Template Completion", "Event details updated.");
+    }
   },
 });
 
@@ -241,6 +307,8 @@ export const requestRevision = mutation({
     body: v.string(),
   },
   handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertStatus(application, ["Under Review"], "Revision request");
     await addWorkflowMessage(ctx, args.applicationId, args.author, args.role, args.body);
     await ctx.db.patch(args.applicationId, { status: "Revision Requested" });
     await addTimeline(ctx, args.applicationId, "Revision Requested", "SADU requested revisions.");
@@ -253,6 +321,15 @@ export const resubmit = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertStatus(application, ["Revision Requested"], "Resubmission");
+    const templates = await ctx.db
+      .query("templates")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", args.applicationId))
+      .collect();
+    if (requiredTemplateGaps(templates).length) {
+      throw new Error("Resubmission requires all required prototype fields.");
+    }
     await ctx.db.patch(args.applicationId, { status: "Resubmitted" });
     await addTimeline(ctx, args.applicationId, "Resubmitted", args.note ?? "Student resubmitted after revision.");
   },
@@ -266,6 +343,8 @@ export const approve = mutation({
     body: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertStatus(application, ["Under Review"], "Approval");
     await addWorkflowMessage(
       ctx,
       args.applicationId,
@@ -286,6 +365,8 @@ export const reject = mutation({
     body: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertStatus(application, ["Under Review"], "Rejection");
     await addWorkflowMessage(
       ctx,
       args.applicationId,
@@ -305,6 +386,7 @@ export const addEndorsement = mutation({
     body: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    assertApplication(await ctx.db.get(args.applicationId));
     await addWorkflowMessage(
       ctx,
       args.applicationId,
@@ -324,7 +406,7 @@ export const updateTemplate = mutation({
     const template = await ctx.db.get(args.templateDocumentId);
     if (!template) return;
 
-    await ctx.db.patch(args.templateDocumentId, { values: args.values });
+    await ctx.db.patch(args.templateDocumentId, { values: { ...(template.values ?? {}), ...args.values } });
     const application = await ctx.db.get(template.applicationId);
     if (application?.status === "Draft") {
       await ctx.db.patch(template.applicationId, { status: "Template Completion" });
