@@ -55,11 +55,11 @@ function makeIncompleteRevisionFixture() {
     id: "test-incomplete-revision",
     status: "Revision Requested",
     templates: submittedApplication.templates.map((template) =>
-      template.templateId === "publicity" ? { ...template, values: {}, attachments: [] } : template,
+      template.templateId === "app" ? { ...template, attachments: [] } : template,
     ),
     messages: [
       ...submittedApplication.messages,
-      { id: "test-revision-message", author: "SADU Associate", role: "SADU Associate", body: "Please revise the publicity materials before resubmission.", createdAt: "2025-06-17T10:32:00.000Z" },
+      { id: "test-revision-message", author: "SADU Associate", role: "SADU Associate", body: "Please upload the revised APP FORM before resubmission.", createdAt: "2025-06-17T10:32:00.000Z" },
     ],
     timeline: [
       ...submittedApplication.timeline,
@@ -87,7 +87,7 @@ test("access policy enforces owner, adviser, SADU, and admin boundaries", () => 
 test("workflow rejects incomplete resubmission and unendorsed SADU submission", () => {
   const incomplete = tryTransitionApplication(makeIncompleteRevisionFixture(), "Resubmitted", "Student resubmitted.", student);
   assert.equal(incomplete.ok, false);
-  assert.match(incomplete.errors.join(" "), /Publicity/);
+  assert.match(incomplete.errors.join(" "), /APP FORM/);
 
   const draft = seedApplications.find((application) => application.status === "Draft");
   const submitted = tryTransitionApplication(draft, "Submitted to SADU", "Submit to SADU.", student);
@@ -171,7 +171,7 @@ test("submission readiness includes required attachments", () => {
   const readiness = getSubmissionReadiness(makeIncompleteRevisionFixture());
   assert.equal(readiness.ready, false);
   assert.ok(!readiness.missing.some((item) => item.includes("Budget worksheet or quotation file")));
-  assert.ok(readiness.missing.some((item) => item.includes("Draft publication material")));
+  assert.ok(readiness.missing.some((item) => item.includes("APP FORM")));
 });
 
 test("document verification rubrics cover every template and validate extraction JSON", () => {
@@ -250,7 +250,7 @@ test("verification aggregation blocks critical failures and allows warning-only 
   const ready = compileVerificationSummary({
     rubricVersionId: profile.rubricVersionId,
     documentCount: 1,
-    fileSignature: "proposal:hash:tams-placeholder-v1:event-document-extraction-v1:document-verification-prompt-v1",
+    fileSignature: "app:hash:app-apf-verf-rubric-v1:app-apf-verf-extraction-v1:app-apf-verf-prompt-v1",
     results: passed,
   });
   assert.equal(ready.readyForSadu, true);

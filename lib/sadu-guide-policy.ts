@@ -12,12 +12,18 @@ type PolicyRule = {
 export const saduGuidePolicy = {
   sourceLabel: "SADU guideline rules v1",
   humanReviewBoundary: "Guidance only. Final approval decisions remain with SADU and human reviewers.",
-  requiredTemplates: ["app", "apf", "verf", "proposal", "venue", "program", "publicity"],
+  requiredTemplates: ["app", "apf", "verf"],
+  optionalTemplates: ["speaker", "publicity"],
   rules: [
     {
       id: "complete-core-templates",
       label: "Core filing templates",
-      checklist: () => "Attach complete APP, APF, VERF, proposal, venue, program, and publicity requirements.",
+      checklist: () => "Attach complete APP FORM, APF FORM, and VERF FORM requirements.",
+    },
+    {
+      id: "optional-supporting-templates",
+      label: "Optional supporting requirements",
+      checklist: () => "Add Speaker guest request or Publicity Publication Post only when the event needs them.",
     },
     {
       id: "confirm-venue",
@@ -49,51 +55,17 @@ export const saduGuidePolicy = {
   ] satisfies PolicyRule[],
 };
 
-const requiredFieldLabelsByTemplate: Record<string, { templateName: string; fields: Record<string, string> }> = {
-  proposal: {
-    templateName: "Event Proposal Template",
-    fields: {
-      overview: "Event overview",
-      objectives: "Objectives",
-      targetAudience: "Target audience",
-      successMeasure: "Success measure",
-    },
-  },
-  venue: {
-    templateName: "Venue/Facility Request Template",
-    fields: {
-      preferredVenue: "Preferred venue",
-      setupNeeds: "Setup needs",
-    },
-  },
-  program: {
-    templateName: "Program Flow Template",
-    fields: {
-      callTime: "Call time",
-      programFlow: "Program flow",
-      officerAssignments: "Officer assignments",
-    },
-  },
-  publicity: {
-    templateName: "Publicity/Publication Request Template",
-    fields: {
-      channels: "Publication channels",
-      postingDate: "Target posting date",
-      materials: "Materials needed",
-    },
-  },
+const templateLabelsById: Record<string, string> = {
+  app: "APP FORM",
+  apf: "APF FORM",
+  verf: "VERF FORM",
+  speaker: "Speaker guest request",
+  publicity: "Publicity Publication Post",
 };
 
 function getPolicyCompletion(application: EventApplication) {
   const enabledTemplates = application.templates.filter((template) => template.enabled);
-  const missing = enabledTemplates.flatMap((template) => {
-    const definition = requiredFieldLabelsByTemplate[template.templateId];
-    if (!definition) return [];
-    const missingFields = Object.entries(definition.fields)
-      .filter(([fieldId]) => !String(template.values[fieldId] ?? "").trim())
-      .map(([, label]) => label);
-    return missingFields.length ? [`${definition.templateName}: ${missingFields.join(", ")}`] : [];
-  });
+  const missing: string[] = [];
   const complete = enabledTemplates.length - missing.length;
   return {
     complete,
@@ -113,21 +85,14 @@ export function makePolicyChecklist(application: EventApplication) {
 export function findPolicyIssues(application: EventApplication) {
   const completion = getPolicyCompletion(application);
   const missing = completion.missing;
-  const issues = [...missing];
-  const venue = application.templates.find((template) => template.templateId === "venue")?.values ?? {};
-
-  if (venue.preferredVenue && venue.preferredVenue !== application.venue) {
-    issues.push(`Venue/Facility Request Template: Preferred venue (${venue.preferredVenue}) differs from event venue (${application.venue}).`);
-  }
-
-  return issues;
+  return [...missing];
 }
 
 export function makePolicySummary(application: EventApplication) {
   const completion = getPolicyCompletion(application);
   const enabledTemplateNames = application.templates
     .filter((template) => template.enabled)
-    .map((template) => requiredFieldLabelsByTemplate[template.templateId]?.templateName ?? template.templateId);
+    .map((template) => templateLabelsById[template.templateId] ?? template.templateId);
 
   return `${application.title} is a ${application.eventType.toLowerCase()} for ${application.expectedParticipants} participants at ${application.venue} on ${application.eventDate}. Template completion is ${completion.percent}% across ${enabledTemplateNames.length} enabled templates. SADU should verify policy readiness and final approval.`;
 }

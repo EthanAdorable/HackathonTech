@@ -13,11 +13,20 @@ import { addMessage, transitionApplication } from "../lib/workflow.ts";
 
 const roles = new Set(users.map((user) => user.role));
 assert.deepEqual([...roles].sort(), ["Admin", "Faculty Adviser", "SADU Associate", "Student Officer"].sort());
-assert.equal(templateDefinitions.length, 9, "all required event templates and APP/APF/VERF slots should be present");
-for (const templateId of ["app", "apf", "verf"]) {
-  assert.ok(templateDefinitions.some((template) => template.id === templateId), `${templateId.toUpperCase()} upload slot should be present`);
-}
+assert.deepEqual(
+  templateDefinitions.map((template) => template.id),
+  ["app", "apf", "verf", "speaker", "publicity"],
+  "only APP/APF/VERF plus optional speaker and publicity requirements should be present",
+);
+assert.deepEqual(
+  templateDefinitions.filter((template) => template.attachmentRequirement?.required).map((template) => template.id),
+  ["app", "apf", "verf"],
+  "only APP/APF/VERF should be required for submission",
+);
 assert.ok(!templateDefinitions.some((template) => template.id === "budget"), "Budget Request should not be a standalone filing requirement");
+for (const removedTemplateId of ["proposal", "venue", "program", "postEvent"]) {
+  assert.ok(!templateDefinitions.some((template) => template.id === removedTemplateId), `${removedTemplateId} should not be a filing requirement`);
+}
 
 const byStatus = new Map(seedApplications.map((application) => [application.status, application]));
 assert.ok(byStatus.get("Draft"), "seed data should include a draft application");
@@ -90,7 +99,7 @@ assert.match(appComponent, /application\.status === "Revision Requested"/, "File
 assert.match(appComponent, /revisionGuideDetail\(applicationCompletion\.missing, application\.messages\)/, "File event revision warning should derive detail from template gaps and thread messages");
 assert.doesNotMatch(appComponent, /Budget Estimate \(PHP\)/, "File event screen should not show a standalone Budget Request field");
 assert.doesNotMatch(appComponent, /budgetValues/, "File event screen should not derive UI from a standalone budget template");
-assert.match(appComponent, /value=\{proposalValues\.objectives \?\? ""\}/, "File event objectives summary should derive from the selected proposal template");
+assert.doesNotMatch(appComponent, /proposalValues/, "File event screen should not derive UI from a removed proposal template");
 assert.doesNotMatch(appComponent, /SADU flagged the budget breakdown and participant count/, "File event revision warning should not use fixed budget and participant copy");
 assert.doesNotMatch(JSON.stringify(seedApplications), /budget breakdown|requested budget|revise the budget/i, "Seed revision evidence should not refer to removed standalone budget requirements");
 assert.doesNotMatch(appComponent, /value="25,000\.00"/, "File event budget summary should not use a fixed sample amount");
@@ -217,7 +226,8 @@ assert.match(convexApplicationsRoute, /api\.applications\.listWithDetails/, "Fro
 assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should try to hydrate application data from Convex");
 assert.match(appComponent, /data\.source === "convex" \? data\.applications : null/, "App should treat empty Convex application data as a valid fresh slate");
 assert.match(appComponent, /window\.localStorage\.getItem\(storageKey\)/, "App should keep local storage fallback for prototype edits");
-assert.match(appComponent, /tams-hub-prototype-state-v3/, "App should use a fresh storage key after filing requirement changes");
+assert.match(appComponent, /tams-hub-prototype-state-v4/, "App should use a fresh storage key after filing requirement changes");
+assert.match(appComponent, /tams-hub-prototype-state-v3/, "App should clear prior cached state that may contain removed filing requirements");
 assert.match(appComponent, /legacyStorageKeys[\s\S]*window\.localStorage\.removeItem\(key\)/, "App should clear legacy browser state that may contain removed filing requirements");
 assert.match(appComponent, /applicationSource === "local"/, "App should avoid writing Convex-hydrated data back into local storage");
 assert.match(convexUsersRoute, /api\.users\.list/, "Frontend user route should read role users from Convex");

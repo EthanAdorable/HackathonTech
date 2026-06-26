@@ -144,12 +144,7 @@ async function applicationsForActor(ctx: any, accessActor: any) {
 }
 
 function requiredTemplateGaps(templates: any[]) {
-  const requiredFieldsByTemplate: Record<string, string[]> = {
-    proposal: ["overview", "objectives", "targetAudience", "successMeasure"],
-    venue: ["preferredVenue", "setupNeeds"],
-    program: ["callTime", "programFlow", "officerAssignments"],
-    publicity: ["channels", "postingDate", "materials"],
-  };
+  const requiredFieldsByTemplate: Record<string, string[]> = {};
 
   return templates.flatMap((template) => {
     if (!template.enabled) return [];
@@ -173,7 +168,7 @@ const defaultRequirementDefinitionsByTemplate: Record<
   app: [
     {
       requirementKey: "completed-app",
-      label: "Completed APP",
+      label: "APP FORM",
       description: "Activity / Program Proposal with event, schedule, venue, budget, and approval evidence.",
       required: true,
       visibleToReviewer: true,
@@ -184,7 +179,7 @@ const defaultRequirementDefinitionsByTemplate: Record<
   apf: [
     {
       requirementKey: "completed-apf",
-      label: "Completed APF",
+      label: "APF FORM",
       description: "Activity Profile with programme, participants, budget, committees, and signatories.",
       required: true,
       visibleToReviewer: true,
@@ -195,7 +190,7 @@ const defaultRequirementDefinitionsByTemplate: Record<
   verf: [
     {
       requirementKey: "completed-verf",
-      label: "Completed VERF",
+      label: "VERF FORM",
       description: "Venue and Equipment Reservation Form as a PDF or scanned image.",
       required: true,
       visibleToReviewer: true,
@@ -203,45 +198,12 @@ const defaultRequirementDefinitionsByTemplate: Record<
       maxSizeBytes: 10 * 1024 * 1024,
     },
   ],
-  proposal: [
-    {
-      requirementKey: "signed-event-proposal",
-      label: "Signed event proposal",
-      description: "Final proposal endorsed by the organization officer and adviser.",
-      required: true,
-      visibleToReviewer: true,
-      accepts: ["application/pdf"],
-      maxSizeBytes: 10 * 1024 * 1024,
-    },
-  ],
-  venue: [
-    {
-      requirementKey: "venue-request-form",
-      label: "Venue request form",
-      description: "Facilities or room reservation request for the preferred venue.",
-      required: true,
-      visibleToReviewer: true,
-      accepts: ["application/pdf", "image/png", "image/jpeg"],
-      maxSizeBytes: 10 * 1024 * 1024,
-    },
-  ],
-  program: [
-    {
-      requirementKey: "program-flow",
-      label: "Program flow document",
-      description: "Run of show with call times, segments, and assigned officers.",
-      required: true,
-      visibleToReviewer: true,
-      accepts: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-      maxSizeBytes: 10 * 1024 * 1024,
-    },
-  ],
   publicity: [
     {
-      requirementKey: "publicity-materials",
-      label: "Publicity materials",
+      requirementKey: "publicity-publication-post",
+      label: "Publicity Publication Post",
       description: "Final or draft publication materials for review.",
-      required: true,
+      required: false,
       visibleToReviewer: true,
       accepts: ["application/pdf", "image/png", "image/jpeg"],
       maxSizeBytes: 10 * 1024 * 1024,
@@ -249,8 +211,8 @@ const defaultRequirementDefinitionsByTemplate: Record<
   ],
   speaker: [
     {
-      requirementKey: "speaker-invitation",
-      label: "Speaker invitation or confirmation",
+      requirementKey: "speaker-guest-request",
+      label: "Speaker guest request",
       description: "Invitation letter, confirmation, or equivalent coordination proof.",
       required: false,
       visibleToReviewer: true,
@@ -258,18 +220,8 @@ const defaultRequirementDefinitionsByTemplate: Record<
       maxSizeBytes: 10 * 1024 * 1024,
     },
   ],
-  postEvent: [
-    {
-      requirementKey: "post-event-documentation",
-      label: "Post-event documentation",
-      description: "Attendance, photos, completion report, or outcome documentation.",
-      required: false,
-      visibleToReviewer: true,
-      accepts: ["application/pdf", "image/png", "image/jpeg"],
-      maxSizeBytes: 10 * 1024 * 1024,
-    },
-  ],
 };
+const allowedTemplateIds = new Set(Object.keys(defaultRequirementDefinitionsByTemplate));
 
 async function insertDefaultRequirements(ctx: any, templateDocument: any) {
   const definitions = defaultRequirementDefinitionsByTemplate[templateDocument.templateId] ?? [];
@@ -604,6 +556,7 @@ export const create = mutation({
     });
 
     for (const template of args.templates) {
+      if (!allowedTemplateIds.has(template.templateId)) continue;
       const templateDocumentId = await ctx.db.insert("templates", {
         applicationId,
         templateId: template.templateId,

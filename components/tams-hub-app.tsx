@@ -56,8 +56,8 @@ import { addMessage, endorseApplication as endorseWorkflowApplication, tryTransi
 import { GsapMotionScope } from "./gsap-motion";
 import { localRequirementUploadAdapter } from "./requirement-upload-adapter";
 
-const legacyStorageKeys = ["tams-hub-prototype-state", "tams-hub-prototype-state-v2"];
-const storageKey = "tams-hub-prototype-state-v3";
+const legacyStorageKeys = ["tams-hub-prototype-state", "tams-hub-prototype-state-v2", "tams-hub-prototype-state-v3"];
+const storageKey = "tams-hub-prototype-state-v4";
 const defaultApplicationId = seedApplications.find((application) => application.status === "Revision Requested")?.id ?? seedApplications[0].id;
 const emptyApplication: EventApplication = {
   id: "blank-slate",
@@ -1494,13 +1494,13 @@ function AdminOperationsPanel({
   return (
     <section className="admin-grid">
       <article className="admin-card">
-        <div className="admin-card-heading"><Settings2 size={18} /><div><strong>Template Availability</strong><p>Prototype controls for the required event filing templates.</p></div></div>
+        <div className="admin-card-heading"><Settings2 size={18} /><div><strong>Template Availability</strong><p>Prototype controls for required and optional event filing requirements.</p></div></div>
         <div className="admin-list">
           {templateDefinitions.map((template) => {
             const available = templateAvailability[template.id] ?? true;
             return (
               <div className="admin-row" key={template.id}>
-                <div><strong>{template.name}</strong><span>{template.fields.filter((field) => field.required).length} required fields</span></div>
+                <div><strong>{template.name}</strong><span>{template.attachmentRequirement?.required ? "Required" : "Optional"}</span></div>
                 <button
                   className={available ? "toggle-button active" : "toggle-button"}
                   aria-pressed={available}
@@ -1663,7 +1663,6 @@ function FileEventView({
     return entry?.enabled && template.attachmentRequirement?.required && !(entry.attachments?.some((attachment) => attachment.reviewerVisible));
   }).length;
   const revisionAlert = application.status === "Revision Requested";
-  const proposalValues = application.templates.find((template) => template.templateId === "proposal")?.values ?? {};
   const revisionDetail = revisionAlert ? revisionGuideDetail(applicationCompletion.missing, application.messages) : "";
   const canEditDetails = activeUser.role === "Student Officer" && ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"].includes(application.status);
   const canManageUploads = canEditDetails;
@@ -1683,7 +1682,6 @@ function FileEventView({
             <Field label="Venue"><input value={application.venue} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ venue: event.target.value })} /></Field>
             <Field label="Expected Participants"><input type="number" min="1" value={application.expectedParticipants} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ expectedParticipants: Math.max(1, Number(event.target.value) || 1) })} /></Field>
             <Field label="Adviser Name"><input value={activeUser.role === "Faculty Adviser" ? activeUser.name : "Prof. Maria Santos"} readOnly /></Field>
-            <Field label="Event Objectives" wide><textarea value={proposalValues.objectives ?? ""} readOnly placeholder={"Describe the purpose, goals, and expected outcomes of this event\u2026"} /></Field>
           </div>
         </div>
 
@@ -1819,7 +1817,7 @@ function FileEventView({
         <div className="guide-card-title"><Sparkles size={18} /><strong>TAMS Guide</strong><span>AI Assistant</span></div>
         <p className="label">Suggested requirements</p>
         <ul className="guide-checklist">
-          {templateDefinitions.slice(0, 6).map((template) => {
+          {templateDefinitions.map((template) => {
             const status = getTemplateCompletion(application, template.id);
             return <li key={template.id} className={status.complete ? "ok" : "missing"}>{template.name.replace(" Template", "")}</li>;
           })}
