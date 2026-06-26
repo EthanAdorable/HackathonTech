@@ -95,7 +95,8 @@ assert.match(appComponent, /aria-pressed=\{user\.id === activeUserId\}/, "Access
 assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
 assert.match(appComponent, /aria-controls=\{notificationsOpen \? "notification-popover" : undefined\}/, "Notification trigger should reference the open popover");
 assert.match(appComponent, /id="notification-popover" role="region" aria-label="Notifications"/, "Notification popover should expose a named region");
-assert.match(appComponent, /showNewEvent=\{activeUser\.role === "Student Officer" && section !== "dashboard"\}/, "Topbar file-event CTA should appear on deeper student officer screens");
+assert.match(appComponent, /showNewEvent=\{activeUser\.role === "Student Officer"\}/, "Topbar file-event CTA should be the single student officer create command");
+assert.doesNotMatch(appComponent, /activeUser\.role === "Student Officer" && <button className="primary-button" onClick=\{onNewEvent\}/, "Dashboard welcome panel should not duplicate the topbar file-event CTA");
 assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");
 assert.match(appComponent, /topbar-identity/, "Topbar user identity should be grouped like the reference header");
 assert.match(globalCss, /\.topbar-identity \.role-badge\s*\{[\s\S]*text-overflow: ellipsis/, "Topbar role badge should truncate inside compact headers");

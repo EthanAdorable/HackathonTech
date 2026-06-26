@@ -510,7 +510,7 @@ export function TamsHubApp() {
           title={sectionTitle(section)}
           activeUser={activeUser}
           onNewEvent={createApplication}
-          showNewEvent={activeUser.role === "Student Officer" && section !== "dashboard"}
+          showNewEvent={activeUser.role === "Student Officer"}
         />
 
         {section === "dashboard" && (
@@ -519,7 +519,6 @@ export function TamsHubApp() {
             users={roleUsers}
             applications={visibleApplications}
             queueCount={queueCount}
-            onNewEvent={createApplication}
             onResetDemo={resetDemoData}
             templateAvailability={templateAvailability}
             onToggleTemplate={toggleTemplateAvailability}
@@ -774,7 +773,6 @@ function DashboardView({
   users: roleUsers,
   applications,
   queueCount,
-  onNewEvent,
   onResetDemo,
   templateAvailability,
   onToggleTemplate,
@@ -784,7 +782,6 @@ function DashboardView({
   users: DemoUser[];
   applications: EventApplication[];
   queueCount: number;
-  onNewEvent: () => void;
   onResetDemo: () => void;
   templateAvailability: Record<string, boolean>;
   onToggleTemplate: (templateId: string) => void;
@@ -805,7 +802,6 @@ function DashboardView({
           <h2>Welcome, FEU Alabang {roleWelcomeName(activeUser.role)}</h2>
           <p>{dashboardDate} - Semester 2, A.Y. 2024-2025</p>
         </div>
-        {activeUser.role === "Student Officer" && <button className="primary-button" onClick={onNewEvent}><Plus size={18} /> File New Event</button>}
       </div>
 
       <section className="stats-grid">
