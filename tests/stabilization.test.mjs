@@ -9,6 +9,7 @@ import {
 } from "../lib/document-verification.ts";
 import {
   activeExtractionSchemaVersion,
+  activePromptVersion,
   documentRubricProfiles,
   getRubricProfile,
 } from "../lib/rubrics.ts";
@@ -290,7 +291,7 @@ test("verification aggregation blocks critical failures and allows warning-only 
   const blocked = compileVerificationSummary({
     rubricVersionId: profile.rubricVersionId,
     documentCount: 1,
-    fileSignature: "app:hash:app-apf-verf-rubric-v1:app-apf-verf-extraction-v1:app-apf-verf-prompt-v1",
+    fileSignature: `app:hash:app-apf-verf-rubric-v1:app-apf-verf-extraction-v1:${activePromptVersion}`,
     results: failed,
     runStatuses: ["failed_ai_timeout"],
   });
@@ -323,7 +324,7 @@ test("verification aggregation blocks critical failures and allows warning-only 
   const ready = compileVerificationSummary({
     rubricVersionId: profile.rubricVersionId,
     documentCount: 1,
-    fileSignature: "app:hash:app-apf-verf-rubric-v1:app-apf-verf-extraction-v1:app-apf-verf-prompt-v1",
+    fileSignature: `app:hash:app-apf-verf-rubric-v1:app-apf-verf-extraction-v1:${activePromptVersion}`,
     results: passed,
   });
   assert.equal(ready.readyForSadu, true);

@@ -122,9 +122,9 @@ export async function POST(request: Request) {
       const profile = getRubricProfile(document.documentType);
       const cacheKey = makeVerificationCacheKey({
         sha256: document.sha256,
-        rubricVersionId: document.rubricVersionId,
-        extractionSchemaVersion: document.extractionSchemaVersion,
-        promptVersion: document.promptVersion,
+        rubricVersionId: activeRubricVersionId,
+        extractionSchemaVersion: activeExtractionSchemaVersion,
+        promptVersion: activePromptVersion,
       });
       const cached = await withTimeout(
         client.query(api.verification.getCachedExtraction, {
@@ -224,9 +224,9 @@ export async function POST(request: Request) {
             mimeType: document.mimeType,
             extraction,
             extractionError,
-            rubricVersionId: document.rubricVersionId,
-            extractionSchemaVersion: document.extractionSchemaVersion,
-            promptVersion: document.promptVersion,
+            rubricVersionId: activeRubricVersionId,
+            extractionSchemaVersion: activeExtractionSchemaVersion,
+            promptVersion: activePromptVersion,
           })
         : [
             {
@@ -344,9 +344,9 @@ function activeDocumentSignature(documents: ActiveDocument[]) {
     .map((document) => [
       document.documentType,
       document.sha256,
-      document.rubricVersionId,
-      document.extractionSchemaVersion,
-      document.promptVersion,
+      activeRubricVersionId,
+      activeExtractionSchemaVersion,
+      activePromptVersion,
     ].join(":"))
     .sort();
   return parts.length ? parts.join("|") : "no-files";
