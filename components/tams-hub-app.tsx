@@ -42,6 +42,7 @@ import {
   type EventStatus,
   type RequirementAttachment,
   type Role,
+  getAdviserEndorsement,
   getApplicationCompletion,
   getSubmissionReadiness,
   getTemplateCompletion,
@@ -829,11 +830,12 @@ export function TamsHubApp() {
   }
 
   function submitApplication() {
+    const adviserEndorsement = getAdviserEndorsement(selectedApp);
     const readinessBeforeEndorsement = getSubmissionReadiness({
       ...selectedApp,
-      adviserEndorsement: selectedApp.adviserEndorsement.required
-        ? { ...selectedApp.adviserEndorsement, state: "Endorsed", actorId: "pending", timestamp: new Date().toISOString() }
-        : selectedApp.adviserEndorsement,
+      adviserEndorsement: adviserEndorsement.required
+        ? { ...adviserEndorsement, state: "Endorsed", actorId: "pending", timestamp: new Date().toISOString() }
+        : adviserEndorsement,
     });
     const missingBeforeEndorsement = readinessBeforeEndorsement.missing.filter((item) => !item.includes("Faculty adviser endorsement"));
     if (missingBeforeEndorsement.length) {
@@ -842,7 +844,7 @@ export function TamsHubApp() {
       return;
     }
 
-    if (selectedApp.adviserEndorsement.required && selectedApp.adviserEndorsement.state !== "Endorsed") {
+    if (adviserEndorsement.required && adviserEndorsement.state !== "Endorsed") {
       setStatus("Pending Adviser Endorsement", "Student routed the application for adviser endorsement.");
       return;
     }
@@ -1951,7 +1953,7 @@ function ApplicationsView({
 function getProgressMilestones(application: EventApplication) {
   const lookup = new Map(application.timeline.map((entry) => [entry.status, entry]));
   const finalEntry = lookup.get("SADU Approved") ?? lookup.get("Rejected") ?? lookup.get("Archived");
-  const endorsement = application.adviserEndorsement;
+  const endorsement = getAdviserEndorsement(application);
   const adviserEndorsed = !endorsement.required || endorsement.state === "Endorsed";
 
   return [

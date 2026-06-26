@@ -511,8 +511,12 @@ export function isAiPrecheckComplete(application: EventApplication) {
   return application.timeline.some((entry) => entry.status === "AI Pre-check");
 }
 
+export function getAdviserEndorsement(application: EventApplication) {
+  return application.adviserEndorsement ?? ({ required: false, state: "Not Required" } satisfies AdviserEndorsement);
+}
+
 export function getAdviserEndorsementReadiness(application: EventApplication) {
-  const endorsement = application.adviserEndorsement;
+  const endorsement = getAdviserEndorsement(application);
   if (!endorsement?.required || endorsement.state === "Not Required") {
     return { required: false, complete: true, missing: [] as string[] };
   }

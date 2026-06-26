@@ -1,4 +1,5 @@
 import {
+  getAdviserEndorsement,
   getAdviserEndorsementReadiness,
   getSubmissionReadiness,
   type EventApplication,
@@ -39,7 +40,8 @@ function validateTransition(application: EventApplication, status: EventStatus, 
   if (status === "Pending Adviser Endorsement") {
     if (actor?.role !== "Student Officer") errors.push("Only a student officer can request adviser endorsement.");
     if (from !== "AI Pre-check") errors.push(`Adviser endorsement request is not allowed from ${from}.`);
-    const readiness = getSubmissionReadiness({ ...application, adviserEndorsement: { ...application.adviserEndorsement, state: "Endorsed" } });
+    const endorsement = getAdviserEndorsement(application);
+    const readiness = getSubmissionReadiness({ ...application, adviserEndorsement: { ...endorsement, state: "Endorsed" } });
     const missingBeforeEndorsement = readiness.missing.filter((item) => !item.includes("Faculty adviser endorsement"));
     if (missingBeforeEndorsement.length) errors.push(...missingBeforeEndorsement);
   }
@@ -144,7 +146,8 @@ export function endorseApplication(
   if (actor.role !== "Faculty Adviser" || application.adviserId !== actor.id) {
     return { ok: false, application, errors: ["Only the assigned faculty adviser can endorse this application."] };
   }
-  if (!application.adviserEndorsement.required) {
+  const endorsement = getAdviserEndorsement(application);
+  if (!endorsement.required) {
     return { ok: false, application, errors: ["This application does not require adviser endorsement."] };
   }
 
