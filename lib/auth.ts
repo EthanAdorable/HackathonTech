@@ -15,12 +15,8 @@ function toAuthUser(user: DemoUser) {
   };
 }
 
-function isDemoAuthEnabled() {
-  if (process.env.TAMS_DEMO_AUTH_ENABLED) {
-    return process.env.TAMS_DEMO_AUTH_ENABLED === "true";
-  }
-
-  return process.env.NODE_ENV !== "production" && !process.env.RAILWAY_ENVIRONMENT;
+export function isDemoAuthEnabled() {
+  return process.env.TAMS_DEMO_AUTH_ENABLED === "true";
 }
 
 async function loadAuthUsers() {
@@ -29,7 +25,8 @@ async function loadAuthUsers() {
 
   try {
     const client = new ConvexHttpClient(convexUrl);
-    const convexUsers = await client.query(api.users.list, {});
+    const adminActor = users.find((user) => user.role === "Admin") ?? users[0];
+    const convexUsers = await client.query(api.users.list, { actor: adminActor });
     return convexUsers.length ? convexUsers : users;
   } catch {
     return users;

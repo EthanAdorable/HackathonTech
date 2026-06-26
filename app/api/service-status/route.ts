@@ -18,6 +18,7 @@ export async function GET() {
   return NextResponse.json({
     authReadyForDeploy: authWarnings.length === 0,
     authWarnings,
+    demoAuthEnabled,
     convexConfigured: Boolean(convexUrl),
     convexHost,
     openAiConfigured: Boolean(process.env.OPENAI_API_KEY),

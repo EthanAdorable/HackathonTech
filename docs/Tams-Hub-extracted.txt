@@ -1,0 +1,79 @@
+TAMS Hub: AI-Assisted Campus Workﬂow and
+Access Management for Student Organizations
+Meet the Team
+Team Representative:
+Ethan Matthew C. Adorable
+0977-036-1016
+ecadorable@feualabang.edu.ph
+Problem Statement
+Student organizations play a major role in campus life, but the current process for filing event proposals and requirements remains heavily dependent on email. What should be a clear and organized workflow often becomes a scattered exchange of attachments, follow-ups, clarifications, and revisions across multiple email threads. As more organizations plan activities, important documents can become difficult to track, updates may be overlooked, and officers may be left uncertain about whether their submission is complete, already under review, or still waiting for action.
+This creates a stressful and inefficient experience for student leaders who are already balancing academics, organization responsibilities, event planning, and coordination with advisers or partner groups. A single missing requirement, unclear instruction, or delayed response can slow down an entire event timeline. Instead of focusing on improving the quality and impact of their activities, student officers often spend time repeatedly checking emails, resending files, and asking for status updates.
+The burden is also felt by SADU associates and campus staff, who must manually sort through submissions, verify requirements, track revisions, respond to repeated questions, and manage several event applications without a unified system. This increases the risk of miscommunication, duplicate work, delayed approvals, and inconsistent tracking of organization requests. Event-related files and communication may also become fragmented across different email accounts, drives, and channels, making the process harder to monitor, secure, and scale.
+As campus activities continue to grow, FEU needs a more reliable, transparent, and secure way to manage student organization workflows. There is a clear need for a centralized, role-based, and AI-assisted platform where student organizations, SADU, advisers, and authorized campus users can
+submit and review event requirements, track progress in real time, communicate in one place, and reduce manual checking through intelligent guidance and automation.
+Target Users
+The second primary user group is SADU associates and campus administrators who review event proposals, check requirements, request revisions, approve or reject submissions, and coordinate with student organizations.
+The primary target users are student organization officers who handle event planning, documentation, and filing. These include presidents, secretaries, project heads, treasurers, and other officers responsible for submitting requirements and monitoring event approval.
+The broader beneficiaries are student organization members, event participants, collaborating organizations, and the campus community, since a more organized and secure workflow can lead to faster event processing and better-managed student activities.
+Other target users include faculty advisers, who may need to view or endorse organization activities, and IT or campus system administrators, who manage secure access, user roles, and account permissions.
+User Persona
+Primary Target - Student Leader
+Age: 22
+Gender:
+Demographics
+Juan Reyes Biography
+He is a dedicated, tech-savvy student leader balancing demanding academics with the operational heavy lifting of a major campus organization. He likes to thrive on structure like manually creating Notion dashboards, as well as to watch content about workload automation; but is currently having troubles juggling fragmented communication channels and manual
+Occupation: Student Leader - Secretary of JPCS
+School: FEU Alabang
+Technical Skills
+System Architecture
+Paperwork Management
+Asynchronous Communication
+Goals and Motivation
+Finish documents in an earlier time Organize timelines of documents to be processed
+Communicate	better	with	the	upper management
+Challenges
+Overloading of Documents Lack of Resource Management Applications
+Unknown Status of Documents Submitted
+Proposed Solution
+Our proposed solution is “TAMS Hub”, an AI-assisted, role-based campus workflow platform for student organization event filing, SADU review, secure access, and organization collaboration.
+TAMS Hub integrates “TAMS Access” as part of the MVP. Users log in through secure identity verification, such as OTP-based authentication and a prototype NFC/card-tap simulation. Once verified, the system automatically identifies the user’s role and shows only the tools, files, dashboards, and actions they are allowed to access.
+The platform includes three main parts:
+TAMS Access
+A secure role-based login system that verifies users and determines what they can view or do. Student officers, SADU associates, advisers, and admins each receive different dashboards and permissions.
+TAMS Events
+A centralized event filing and tracking system where student organizations can submit event proposals, upload requirements, monitor approval status, receive revision requests, and communicate with SADU in one place.
+TAMS Guide
+An AI assistant that helps generate event requirement checklists, review submissions for missing or inconsistent information, answer filing-related questions, summarize proposals for SADU reviewers, and draft clarification messages.
+Through this MVP, a student organization officer can securely log in, access their organization dashboard, create an event application, upload requirements, receive AI-guided checks, submit to SADU, and track the event status. SADU users can securely log in, review submissions, see AI summaries, request revisions, and communicate directly with the organization inside the platform.
+TAMS Hub aligns primarily with SDG 4: Quality Education by improving the systems that support student organization activities, leadership development, and campus engagement. It also supports SDG 9: Industry, Innovation, and Infrastructure by introducing AI-assisted digital workflow automation and secure campus access, SDG 16: Peace, Justice, and Strong Institutions by making approval processes more transparent and accountable, and SDG 17: Partnerships for the Goals by improving collaboration among student organizations, SADU, advisers, and campus offices.
+Through this MVP, a student organization officer can securely log in, access their organization dashboard, create an event application, upload requirements, receive AI-guided checks, submit to SADU, and track the event status. SADU users can securely log in, review
+Expected Impact
+TAMS Hub has the potential to significantly transform how student organization activities are managed at FEU by replacing scattered, email-based event filing with a secure, centralized, and intelligent digital workflow. Instead of navigating long email threads, repeated follow-ups, and uncertain approval statuses, student officers will have a clear view of what requirements are needed, which documents are missing, where their application currently stands, and what action must be taken next.
+For student leaders, this means less time spent chasing updates and more time spent designing meaningful events, serving their members, and contributing to campus life. By making the process clearer and more guided, TAMS Hub can reduce stress, prevent last-minute filing problems, and help organizations plan activities with greater confidence and accountability.
+For SADU associates and campus staff, TAMS Hub can greatly reduce repetitive manual work by organizing submissions, identifying missing requirements, summarizing event details, and keeping all comments, revisions, and decisions attached to each application. This allows reviewers to focus less on searching through files and email threads, and more on evaluating the quality, safety, and impact of student-led activities. The result is a faster, more consistent, and more transparent approval process while keeping final decisions under human supervision.
+The TAMS Access system strengthens campus workflow security by ensuring that users only see the information, files, and actions appropriate to their verified role. This protects sensitive organization documents, reduces confusion between stakeholders, and creates a more structured digital environment for student organizations, advisers, SADU, and administrators.
+The AI-assisted features of TAMS Guide can further improve the quality of event submissions before they reach SADU. By generating tailored requirement checklists, detecting incomplete or inconsistent details, answering common filing questions, and preparing reviewer-friendly summaries,
+the system can reduce preventable errors, shorten revision cycles, and minimize repeated clarifications.
+Overall, TAMS Hub can create a more efficient, transparent, and student-centered campus operations experience. It empowers student organizations, supports SADU’s administrative work, improves communication across stakeholders, and helps FEU build a smarter foundation for managing campus activities and digital workflows.
+the system can reduce preventable errors, shorten revision cycles, and minimize repeated clarifications.
+Overall, TAMS Hub can create a more efficient, transparent, and student-centered campus operations experience. It empowers student organizations, supports SADU’s administrative work, improves communication across stakeholders, and helps FEU build a smarter foundation for managing campus activities and digital workflows.
+AI TOOLS TO BE USED
+We plan to use ChatGPT, Codex, Claude, OpenAI GPT models/API, and a possible Custom GPT in developing and demonstrating TAMS Hub.
+ChatGPT will be used for ideation, refining the problem statement, creating user personas, drafting event filing scenarios, preparing documentation, and improving the presentation of the project.
+Codex and Claude will assist in building the prototype web application, including the role-based dashboards, event submission form, status tracker, SADU review panel, communication thread, and OTP/NFC-style access flow.
+OpenAI GPT models/API will power the TAMS Guide features. These include generating event requirement checklists, checking submissions for missing or inconsistent information, summarizing event proposals for SADU reviewers, and drafting clear revision or clarification messages.
+A Custom GPT or policy assistant may be used to answer common event filing questions based on provided SADU guidelines, sample requirements, and workflow rules. The AI will provide guidance and review support, but final approval decisions will remain with authorized SADU personnel.
+Mockups
+Login and OTP
+Dashboard/Lobby
+File Events
+Applications Updates
+Messages & Collaboration
+AI TAMS Guide
+
+[TABLE 1]
+Ethan Matthew C. Adorable |  | Team Representative || Rey Mattheu M. Delos Reyes |  | Team Member || Jazriel Faye D. Dayanghirang |  | Team Member
+
+[TABLE 2]
+TAMS ACCESS || TAMS EVENTS || TAMS GUIDE

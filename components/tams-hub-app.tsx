@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { signIn, signOut, useSession } from "next-auth/react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -19,10 +20,12 @@ import {
   FileText,
   FilePlus2,
   Filter,
+  History,
   KeyRound,
   LayoutGrid,
   LogOut,
   MessageSquare,
+  Paperclip,
   Plus,
   Search,
   SendHorizonal,
@@ -30,17 +33,20 @@ import {
   ShieldCheck,
   Smartphone,
   Sparkles,
+  Trash2,
   UploadCloud,
   UsersRound,
   RotateCcw,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   type DemoUser,
   type EventApplication,
   type EventStatus,
+  type RequirementAttachment,
   type Role,
   getApplicationCompletion,
+  getSubmissionReadiness,
   getTemplateCompletion,
   makeAiSummary,
   makeChecklist,
@@ -49,7 +55,8 @@ import {
   templateDefinitions,
   users,
 } from "@/lib/tams-data";
-import { addMessage, transitionApplication } from "@/lib/workflow";
+import { addMessage, endorseApplication as endorseWorkflowApplication, tryTransitionApplication } from "@/lib/workflow";
+import { localRequirementUploadAdapter } from "./requirement-upload-adapter";
 
 const storageKey = "tams-hub-prototype-state";
 const defaultApplicationId = seedApplications.find((application) => application.status === "Revision Requested")?.id ?? seedApplications[0].id;
@@ -66,6 +73,7 @@ type ServiceStatus = {
   railwayProject: string;
   railwayProjectId: "set" | "missing";
   railwayProjectIdConfigured: boolean;
+  demoAuthEnabled: boolean;
 };
 
 type ConvexApplicationsResponse = {
@@ -116,6 +124,7 @@ const statusTone: Record<EventStatus, string> = {
   Draft: "neutral",
   "Template Completion": "gold",
   "AI Pre-check": "gold",
+  "Pending Adviser Endorsement": "gold",
   "Submitted to SADU": "blue",
   "Under Review": "blue",
   "Revision Requested": "gold",
@@ -134,21 +143,33 @@ const guideModeLabels: Record<GuideMode, string> = {
 };
 
 export function TamsHubApp() {
-  const [entered, setEntered] = useState(false);
-  const [activeUserId, setActiveUserId] = useState("juan");
+  const { data: session, status: sessionStatus } = useSession();
   const [section, setSection] = useState<Section>("dashboard");
   const [applications, setApplications] = useState<EventApplication[]>(seedApplications);
   const [selectedAppId, setSelectedAppId] = useState(defaultApplicationId);
   const [guideMode, setGuideMode] = useState<GuideMode>("checklist");
   const [guideQuestion, setGuideQuestion] = useState("What should be completed before SADU review?");
   const [guideOutput, setGuideOutput] = useState<string[]>([]);
+  const [guideSource, setGuideSource] = useState("not-run");
   const [guideLogs, setGuideLogs] = useState<GuideLog[]>([]);
   const [messageDraft, setMessageDraft] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [applicationSource, setApplicationSource] = useState<"convex" | "local">("local");
   const [roleUsers, setRoleUsers] = useState<DemoUser[]>(users);
+  const [uploadState, setUploadState] = useState<Record<string, { loading: boolean; error?: string }>>({});
 
-  const activeUser = roleUsers.find((user) => user.id === activeUserId) ?? roleUsers[0] ?? users[0];
+  const hasVerifiedSessionUser = Boolean(session?.user?.id && session.user.name && session.user.role);
+  const activeUser = useMemo<DemoUser>(() => {
+    const sessionUser = session?.user;
+    if (!sessionUser?.id || !sessionUser.name || !sessionUser.role) return users[0];
+    return {
+      id: sessionUser.id,
+      name: sessionUser.name,
+      role: sessionUser.role,
+      organization: sessionUser.organization,
+      title: sessionUser.title ?? "TAMS Access user",
+    };
+  }, [session]);
   const selectedApp = applications.find((application) => application.id === selectedAppId) ?? applications[0];
   const templateAvailability = useMemo(() => {
     return Object.fromEntries(
@@ -190,6 +211,7 @@ export function TamsHubApp() {
   }, [applicationSource]);
 
   useEffect(() => {
+    if (sessionStatus !== "authenticated") return;
     let active = true;
 
     async function hydrateData() {
@@ -197,7 +219,6 @@ export function TamsHubApp() {
         const convexUsers = await loadConvexUsers();
         if (active && convexUsers) {
           setRoleUsers(convexUsers);
-          setActiveUserId((current) => (convexUsers.some((user) => user.id === current) ? current : convexUsers[0].id));
         }
       } catch {
         // Keep local prototype role users.
@@ -239,7 +260,7 @@ export function TamsHubApp() {
     return () => {
       active = false;
     };
-  }, [loadConvexApplications, loadConvexUsers]);
+  }, [loadConvexApplications, loadConvexUsers, sessionStatus]);
 
   useEffect(() => {
     if (hydrated && applicationSource === "local") {
@@ -248,10 +269,11 @@ export function TamsHubApp() {
   }, [applicationSource, applications, hydrated]);
 
   useEffect(() => {
-    if (hydrated) void loadGuideLogs(selectedApp.id);
-  }, [hydrated, loadGuideLogs, selectedApp.id]);
+    if (hydrated && hasVerifiedSessionUser) void loadGuideLogs(selectedApp.id);
+  }, [hasVerifiedSessionUser, hydrated, loadGuideLogs, selectedApp.id]);
 
   const visibleApplications = useMemo(() => {
+    if (!hasVerifiedSessionUser) return [];
     if (activeUser.role === "Student Officer") {
       return applications.filter((application) => application.ownerId === activeUser.id);
     }
@@ -259,7 +281,7 @@ export function TamsHubApp() {
       return applications.filter((application) => application.adviserId === activeUser.id);
     }
     return applications;
-  }, [activeUser, applications]);
+  }, [activeUser, applications, hasVerifiedSessionUser]);
 
   useEffect(() => {
     if (visibleApplications.length && !visibleApplications.some((application) => application.id === selectedAppId)) {
@@ -450,6 +472,71 @@ export function TamsHubApp() {
     void syncConvexTemplate(templateId, { [fieldId]: value });
   }
 
+  async function uploadRequirement(templateId: string, file: File) {
+    if (!activeUser) return;
+    const stateKey = `${selectedApp.id}:${templateId}`;
+    setUploadState((current) => ({ ...current, [stateKey]: { loading: true } }));
+    try {
+      const currentTemplate = selectedApp.templates.find((template) => template.templateId === templateId);
+      const previousAttachment = currentTemplate?.attachments?.[0];
+      const attachment = await localRequirementUploadAdapter.uploadRequirementFile(file, {
+        applicationId: selectedApp.id,
+        templateId,
+        uploaderName: activeUser.name,
+        previousAttachment,
+      });
+      setApplications((current) =>
+        current.map((application) => {
+          if (application.id !== selectedApp.id) return application;
+          return {
+            ...application,
+            status: application.status === "Draft" ? "Template Completion" : application.status,
+            templates: application.templates.map((template) =>
+              template.templateId === templateId ? { ...template, attachments: [attachment] } : template,
+            ),
+          };
+        }),
+      );
+      setUploadState((current) => ({ ...current, [stateKey]: { loading: false } }));
+    } catch (error) {
+      setUploadState((current) => ({
+        ...current,
+        [stateKey]: { loading: false, error: error instanceof Error ? error.message : "Upload failed. Try again." },
+      }));
+    }
+  }
+
+  async function removeRequirement(templateId: string, attachment: RequirementAttachment) {
+    if (!activeUser) return;
+    const stateKey = `${selectedApp.id}:${templateId}`;
+    setUploadState((current) => ({ ...current, [stateKey]: { loading: true } }));
+    try {
+      await localRequirementUploadAdapter.removeRequirementFile(attachment, {
+        applicationId: selectedApp.id,
+        templateId,
+        uploaderName: activeUser.name,
+        previousAttachment: attachment,
+      });
+      setApplications((current) =>
+        current.map((application) => {
+          if (application.id !== selectedApp.id) return application;
+          return {
+            ...application,
+            templates: application.templates.map((template) =>
+              template.templateId === templateId ? { ...template, attachments: [] } : template,
+            ),
+          };
+        }),
+      );
+      setUploadState((current) => ({ ...current, [stateKey]: { loading: false } }));
+    } catch (error) {
+      setUploadState((current) => ({
+        ...current,
+        [stateKey]: { loading: false, error: error instanceof Error ? error.message : "Remove failed. Try again." },
+      }));
+    }
+  }
+
   function updateApplicationDetails(updates: Partial<EditableEventDetail>) {
     const next: EventApplication = {
       ...selectedApp,
@@ -468,6 +555,7 @@ export function TamsHubApp() {
   }
 
   function createApplication() {
+    if (!activeUser) return;
     const id = `app-${Date.now()}`;
     const next: EventApplication = {
       id,
@@ -482,6 +570,7 @@ export function TamsHubApp() {
       status: "Draft",
       riskLevel: "Low",
       templates: templateDefinitions.map((template) => ({ templateId: template.id, values: {}, enabled: templateAvailability[template.id] ?? true })),
+      adviserEndorsement: { required: true, state: "Pending" },
       messages: [],
       timeline: [
         {
@@ -498,8 +587,21 @@ export function TamsHubApp() {
     void syncConvexCreate(next);
   }
 
+  function workflowActor() {
+    return { id: activeUser.id, name: activeUser.name, role: activeUser.role };
+  }
+
+  function applyWorkflowResult(result: ReturnType<typeof tryTransitionApplication>) {
+    if (!result.ok) {
+      setGuideOutput(["Workflow action paused.", ...result.errors.slice(0, 4)]);
+      return false;
+    }
+    updateApplication(result.application);
+    return true;
+  }
+
   function setStatus(status: EventStatus, note: string) {
-    updateApplication(transitionApplication(selectedApp, status, note));
+    if (!applyWorkflowResult(tryTransitionApplication(selectedApp, status, note, workflowActor()))) return;
     void syncConvexWorkflow({ action: "updateStatus", status, note });
   }
 
@@ -508,51 +610,95 @@ export function TamsHubApp() {
     setGuideOutput([
       "Application has been checked.",
       currentCompletion.missing.length
-        ? "Demo compliance check completed successfully. Required prototype fields can still be completed before submission."
-        : "Demo compliance check completed successfully. Required prototype fields are complete.",
+        ? "Demo compliance check completed successfully. Required fields or attachments can still be completed before submission."
+        : "Demo compliance check completed successfully. Required fields and attachments are complete.",
     ]);
     if (selectedApp.status === "Revision Requested") {
-      updateApplication(transitionApplication(selectedApp, "Revision Requested", "Demo compliance check completed for revision response."));
+      updateApplication({
+        ...selectedApp,
+        timeline: [
+          ...selectedApp.timeline,
+          {
+            id: `timeline-${Date.now()}`,
+            status: "AI Pre-check",
+            note: "Demo compliance check completed for revision response.",
+            createdAt: new Date().toISOString(),
+            actorId: activeUser.id,
+            actorName: activeUser.name,
+            actorRole: activeUser.role,
+          },
+        ],
+      });
       return;
     }
     setStatus("AI Pre-check", "Demo compliance check completed.");
+  }
+
+  function submitApplication() {
+    const readinessBeforeEndorsement = getSubmissionReadiness({
+      ...selectedApp,
+      adviserEndorsement: selectedApp.adviserEndorsement.required
+        ? { ...selectedApp.adviserEndorsement, state: "Endorsed", actorId: "pending", timestamp: new Date().toISOString() }
+        : selectedApp.adviserEndorsement,
+    });
+    const missingBeforeEndorsement = readinessBeforeEndorsement.missing.filter((item) => !item.includes("Faculty adviser endorsement"));
+    if (missingBeforeEndorsement.length) {
+      setGuideOutput(["Submission paused until requirements are complete.", ...missingBeforeEndorsement.slice(0, 4)]);
+      setSection("file");
+      return;
+    }
+
+    if (selectedApp.adviserEndorsement.required && selectedApp.adviserEndorsement.state !== "Endorsed") {
+      setStatus("Pending Adviser Endorsement", "Student routed the application for adviser endorsement.");
+      return;
+    }
+
+    setStatus("Submitted to SADU", "Student submitted the application to SADU.");
   }
 
   function resubmitApplication() {
     const currentCompletion = getApplicationCompletion(selectedApp);
     if (currentCompletion.missing.length) {
       setGuideOutput([
-        "Revision upload paused until required prototype fields are complete.",
+        "Revision upload paused until required fields and attachments are complete.",
         ...currentCompletion.missing.slice(0, 4),
       ]);
       setSection("file");
       return;
     }
-    updateApplication(transitionApplication(selectedApp, "Resubmitted", "Student resubmitted after revision."));
+    if (!applyWorkflowResult(tryTransitionApplication(selectedApp, "Resubmitted", "Student resubmitted after revision.", workflowActor()))) return;
     void syncConvexWorkflow({ action: "resubmit", note: "Student resubmitted after revision." });
   }
 
   async function generateGuide() {
     const fallback = localGuideResponse(selectedApp, guideMode, guideQuestion);
     setGuideOutput(["Generating guidance..."]);
+    setGuideSource("loading");
     try {
       const response = await fetch("/api/tams-guide", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: guideMode, question: guideQuestion, application: selectedApp }),
+        body: JSON.stringify({ mode: guideMode, question: guideQuestion, applicationId: selectedApp.id }),
       });
-      if (!response.ok) throw new Error("Guide route unavailable");
-      const data = (await response.json()) as { lines?: string[] };
+      const data = (await response.json()) as { lines?: string[]; source?: string; error?: string };
+      if (!response.ok) {
+        setGuideSource(data.source ?? "unavailable");
+        setGuideOutput(data.error ? [data.error] : fallback);
+        return;
+      }
       setGuideOutput(data.lines?.length ? data.lines : fallback);
+      setGuideSource(data.source ?? "unavailable");
       void loadGuideLogs(selectedApp.id);
     } catch {
+      setGuideSource("client-fallback");
       setGuideOutput(fallback);
     }
   }
 
   function sendMessage(body = messageDraft) {
+    if (!activeUser) return;
     if (!body.trim()) return;
-    updateApplication(addMessage(selectedApp, activeUser.name, activeUser.role, body.trim()));
+    updateApplication(addMessage(selectedApp, activeUser.name, activeUser.role, body.trim(), workflowActor()));
     void syncConvexWorkflow({
       action: "addMessage",
       author: activeUser.name,
@@ -564,8 +710,8 @@ export function TamsHubApp() {
 
   function requestRevision() {
     const body = makeRevisionDraft(selectedApp);
-    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body);
-    updateApplication(transitionApplication(withMessage, "Revision Requested", "SADU requested revisions."));
+    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body, workflowActor());
+    if (!applyWorkflowResult(tryTransitionApplication(withMessage, "Revision Requested", "SADU requested revisions.", workflowActor()))) return;
     void syncConvexWorkflow({
       action: "requestRevision",
       author: activeUser.name,
@@ -576,8 +722,8 @@ export function TamsHubApp() {
 
   function approveApplication() {
     const body = "Approved. Final decision recorded by SADU reviewer.";
-    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body);
-    updateApplication(transitionApplication(withMessage, "SADU Approved", "SADU approved the application."));
+    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body, workflowActor());
+    if (!applyWorkflowResult(tryTransitionApplication(withMessage, "SADU Approved", "SADU approved the application.", workflowActor()))) return;
     void syncConvexWorkflow({
       action: "approve",
       author: activeUser.name,
@@ -587,9 +733,11 @@ export function TamsHubApp() {
   }
 
   function rejectApplication() {
+    const confirmed = window.confirm(`Reject ${selectedApp.title}? This records a final SADU rejection in the application timeline.`);
+    if (!confirmed) return;
     const body = "Rejected by SADU after human review. Please coordinate before filing again.";
-    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body);
-    updateApplication(transitionApplication(withMessage, "Rejected", "SADU rejected the application."));
+    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body, workflowActor());
+    if (!applyWorkflowResult(tryTransitionApplication(withMessage, "Rejected", "SADU rejected the application.", workflowActor()))) return;
     void syncConvexWorkflow({
       action: "reject",
       author: activeUser.name,
@@ -599,29 +747,28 @@ export function TamsHubApp() {
   }
 
   function endorseApplication() {
-    const body = "Faculty adviser note: Reviewed for organization coordination. Endorsement placeholder recorded for SADU visibility.";
-    updateApplication(
-      addMessage(
-        selectedApp,
-        activeUser.name,
-        activeUser.role,
-        body,
-      ),
-    );
+    const body = window.prompt("Add adviser endorsement notes for SADU review.", "Reviewed and endorsed for SADU review.");
+    if (!body?.trim()) return;
+    const result = endorseWorkflowApplication(selectedApp, workflowActor(), body.trim());
+    if (!applyWorkflowResult(result)) return;
     void syncConvexWorkflow({
       action: "addEndorsement",
       author: activeUser.name,
-      body,
+      body: body.trim(),
     });
   }
 
-  if (!entered) {
-    return <AccessScreen users={roleUsers} activeUserId={activeUserId} setActiveUserId={setActiveUserId} onEnter={() => setEntered(true)} />;
+  if (sessionStatus === "loading") {
+    return <AccessShellMessage title="Checking TAMS Access" message="Verifying your campus session." />;
+  }
+
+  if (!hasVerifiedSessionUser) {
+    return <AccessScreen users={roleUsers} />;
   }
 
   return (
-    <main className="app-shell">
-      <Sidebar activeUser={activeUser} activeSection={section} setSection={setSection} onSignOut={() => setEntered(false)} />
+    <main className="app-shell" id="main-content">
+      <Sidebar activeUser={activeUser} activeSection={section} setSection={setSection} onSignOut={() => void signOut()} />
 
       <section className="workspace">
         <Topbar
@@ -656,8 +803,11 @@ export function TamsHubApp() {
             guideOutput={guideOutput}
             onApplicationChange={updateApplicationDetails}
             onTemplateChange={updateTemplateValue}
+            onRequirementUpload={uploadRequirement}
+            onRequirementRemove={removeRequirement}
+            uploadState={uploadState}
             onPrecheck={runComplianceCheck}
-            onSubmit={() => setStatus("Submitted to SADU", "Student submitted the application to SADU.")}
+            onSubmit={submitApplication}
             onResubmit={resubmitApplication}
           />
         )}
@@ -701,6 +851,7 @@ export function TamsHubApp() {
             guideQuestion={guideQuestion}
             setGuideQuestion={setGuideQuestion}
             guideOutput={guideOutput}
+            guideSource={guideSource}
             guideLogs={guideLogs}
             onGenerateGuide={generateGuide}
           />
@@ -710,23 +861,50 @@ export function TamsHubApp() {
   );
 }
 
-function AccessScreen({
-  users,
-  activeUserId,
-  setActiveUserId,
-  onEnter,
-}: {
-  users: DemoUser[];
-  activeUserId: string;
-  setActiveUserId: (id: string) => void;
-  onEnter: () => void;
-}) {
-  const activeUser = users.find((user) => user.id === activeUserId) ?? users[0];
+function AccessScreen({ users }: { users: DemoUser[] }) {
+  const [activeUserId, setActiveUserId] = useState(users[0]?.id ?? "juan");
+  const activeUser = users.find((user) => user.id === activeUserId) ?? users[0] ?? {
+    id: "juan",
+    name: "Juan Reyes",
+    role: "Student Officer" as Role,
+    organization: "FEU Alabang Student Council",
+    title: "Student Organization Officer",
+  };
   const [accessStep, setAccessStep] = useState<"login" | "otp" | "card">("login");
+  const [serviceStatus, setServiceStatus] = useState<ServiceStatus | null>(null);
+  const [loginError, setLoginError] = useState("");
+  const [loginPending, setLoginPending] = useState(false);
   const otpDigits = ["", "", "", "", "", ""];
+  const demoAuthEnabled = serviceStatus?.demoAuthEnabled ?? false;
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/service-status")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: ServiceStatus | null) => {
+        if (active) setServiceStatus(data);
+      })
+      .catch(() => {
+        if (active) setServiceStatus(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function enterWithDemoUser(userId = activeUser?.id) {
+    if (!userId) return;
+    setLoginError("");
+    setLoginPending(true);
+    const result = await signIn("credentials", { userId, redirect: false });
+    setLoginPending(false);
+    if (result?.error || !result?.ok) {
+      setLoginError("Demo access is disabled. Enable TAMS_DEMO_AUTH_ENABLED=true only for intentional prototype sessions.");
+    }
+  }
 
   return (
-    <main className="access-shell">
+    <main className="access-shell" id="main-content">
       <section className="access-hero">
         <div className="brand wide">
           <MascotLogo />
@@ -766,21 +944,30 @@ function AccessScreen({
             <button className="access-method" onClick={() => setAccessStep("otp")}><Smartphone size={18} /><div><strong>OTP Verification</strong><span>Receive a one-time code via SMS or email</span></div></button>
 
             <div className="access-login-card">
-              <p className="label">Preview as role</p>
-              <div className="role-choice-grid">
-                {users.map((user) => (
-                  <button
-                    key={user.id}
-                    className={user.id === activeUserId ? "role-chip active" : "role-chip"}
-                    aria-pressed={user.id === activeUserId}
-                    onClick={() => setActiveUserId(user.id)}
-                  >
-                    {roleIcons[user.role]}
-                    {roleDisplayName(user.role)}
+              <p className="label">Prototype demo access</p>
+              {demoAuthEnabled ? (
+                <>
+                  <div className="role-choice-grid">
+                    {users.map((user) => (
+                      <button
+                        key={user.id}
+                        className={user.id === activeUserId ? "role-chip active" : "role-chip"}
+                        aria-pressed={user.id === activeUserId}
+                        onClick={() => setActiveUserId(user.id)}
+                      >
+                        {roleIcons[user.role]}
+                        {roleDisplayName(user.role)}
+                      </button>
+                    ))}
+                  </div>
+                  <button className="gold-button full" disabled={loginPending} onClick={() => void enterWithDemoUser()}>
+                    {loginPending ? "Verifying..." : `Enter as ${roleDisplayName(activeUser.role)}`}
                   </button>
-                ))}
-              </div>
-              <button className="gold-button full" onClick={onEnter}>Enter as {roleDisplayName(activeUser.role)}</button>
+                </>
+              ) : (
+                <p className="fine-print">Demo role login is disabled for this environment.</p>
+              )}
+              {loginError && <p className="fine-print" role="alert">{loginError}</p>}
             </div>
           </>
         )}
@@ -791,7 +978,9 @@ function AccessScreen({
             <div className="otp-grid">
               {otpDigits.map((digit, index) => <input key={index} value={digit} aria-label={`OTP digit ${index + 1}`} readOnly />)}
             </div>
-            <button className="primary-button full" onClick={onEnter}>Verify & Enter</button>
+            <button className="primary-button full" disabled={!demoAuthEnabled || loginPending} onClick={() => void enterWithDemoUser()}>
+              {loginPending ? "Verifying..." : "Verify & Enter"}
+            </button>
             <button className="link-button" onClick={() => setAccessStep("login")}><ArrowLeft size={16} aria-hidden="true" /> Back</button>
           </div>
         )}
@@ -803,12 +992,29 @@ function AccessScreen({
               <span />
             </div>
             <div className="verification-title centered"><strong>Tap TAMS ID Card</strong><span>Hold your campus card near the reader to verify your campus role.</span></div>
-            <button className="primary-button full" onClick={onEnter}>Simulate Card Tap</button>
+            <button className="primary-button full" disabled={!demoAuthEnabled || loginPending} onClick={() => void enterWithDemoUser()}>
+              {loginPending ? "Verifying..." : "Simulate Card Tap"}
+            </button>
             <button className="link-button" onClick={() => setAccessStep("login")}><ArrowLeft size={16} aria-hidden="true" /> Back</button>
           </div>
         )}
 
         <p className="secure-note"><KeyRound size={14} /> Access is based on verified campus role.</p>
+      </section>
+    </main>
+  );
+}
+
+function AccessShellMessage({ title, message }: { title: string; message: string }) {
+  return (
+    <main className="access-shell" id="main-content">
+      <section className="access-hero">
+        <div className="brand wide">
+          <MascotLogo />
+          <strong>TAMS Hub</strong>
+        </div>
+        <h1>{title}</h1>
+        <p>{message}</p>
       </section>
     </main>
   );
@@ -865,6 +1071,7 @@ function Topbar({
 }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus | null>(null);
+  const notificationPopoverRef = useRef<HTMLDivElement>(null);
   const revisionApplication = applications.find((item) => item.status === "Revision Requested");
   const revisionCompletion = revisionApplication ? getApplicationCompletion(revisionApplication) : null;
   const revisionNotification = revisionApplication
@@ -896,6 +1103,12 @@ function Topbar({
     };
   }, []);
 
+  useEffect(() => {
+    if (notificationsOpen) {
+      notificationPopoverRef.current?.focus();
+    }
+  }, [notificationsOpen]);
+
   return (
     <header className="topbar">
       <h1>{title}</h1>
@@ -912,7 +1125,9 @@ function Topbar({
             {notificationItems.length > 0 && <span className="notification-dot" aria-hidden="true" />}
           </button>
           {notificationsOpen && (
-            <div className="notification-popover" id="notification-popover" role="region" aria-label="Notifications">
+            <div id="notification-popover" role="region" aria-label="Notifications" className="notification-popover" ref={notificationPopoverRef} tabIndex={-1} onKeyDown={(event) => {
+              if (event.key === "Escape") setNotificationsOpen(false);
+            }}>
               <strong>Notifications</strong>
               {notificationItems.length ? notificationItems.map((item) => <span key={item}>{item}</span>) : <span>No active alerts.</span>}
             </div>
@@ -1130,6 +1345,11 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
   const railwayProjectId = status?.railwayProjectId ?? "missing";
   const authWarnings = status?.authWarnings ?? [];
 
+  function confirmResetDemo() {
+    const confirmed = window.confirm("Reset demo data? This restores the prototype applications and clears local draft state.");
+    if (confirmed) onResetDemo();
+  }
+
   return (
     <section className="service-grid">
       <article className="service-card">
@@ -1177,7 +1397,7 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
           <strong>Demo Data</strong>
           <p>Restore local prototype data after a review or revision demo.</p>
         </div>
-        <button className="secondary-button" onClick={onResetDemo}><RotateCcw size={16} /> Reset</button>
+        <button className="secondary-button" onClick={confirmResetDemo}><RotateCcw size={16} /> Reset</button>
       </article>
     </section>
   );
@@ -1190,6 +1410,9 @@ function FileEventView({
   guideOutput,
   onApplicationChange,
   onTemplateChange,
+  onRequirementUpload,
+  onRequirementRemove,
+  uploadState,
   onPrecheck,
   onSubmit,
   onResubmit,
@@ -1200,19 +1423,27 @@ function FileEventView({
   guideOutput: string[];
   onApplicationChange: (updates: Partial<EditableEventDetail>) => void;
   onTemplateChange: (templateId: string, fieldId: string, value: string) => void;
+  onRequirementUpload: (templateId: string, file: File) => void;
+  onRequirementRemove: (templateId: string, attachment: RequirementAttachment) => void;
+  uploadState: Record<string, { loading: boolean; error?: string }>;
   onPrecheck: () => void;
   onSubmit: () => void;
   onResubmit: () => void;
 }) {
-  const mainTemplates = templateDefinitions.slice(0, 4);
   const guideLines = guideOutput.length ? guideOutput : localGuideResponse(application, "missing", "");
   const applicationCompletion = getApplicationCompletion(application);
+  const submissionReadiness = getSubmissionReadiness(application);
   const missingCount = applicationCompletion.missing.length;
+  const requiredAttachmentMissing = templateDefinitions.filter((template) => {
+    const entry = application.templates.find((item) => item.templateId === template.id);
+    return entry?.enabled && template.attachmentRequirement?.required && !(entry.attachments?.some((attachment) => attachment.reviewerVisible));
+  }).length;
   const revisionAlert = application.status === "Revision Requested";
   const proposalValues = application.templates.find((template) => template.templateId === "proposal")?.values ?? {};
   const budgetValues = application.templates.find((template) => template.templateId === "budget")?.values ?? {};
   const revisionDetail = revisionAlert ? revisionGuideDetail(applicationCompletion.missing, application.messages) : "";
   const canEditDetails = activeUser.role === "Student Officer" && ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"].includes(application.status);
+  const canManageUploads = canEditDetails;
 
   return (
     <section className="file-layout">
@@ -1235,16 +1466,83 @@ function FileEventView({
 
         <div className="panel">
           <h3>Upload Requirements</h3>
-          <div className="requirement-grid">
-            {mainTemplates.map((template) => {
+          <div className="requirement-upload-stack">
+            {templateDefinitions.map((template) => {
               const status = getTemplateCompletion(application, template.id);
               const entry = application.templates.find((item) => item.templateId === template.id);
               const enabled = entry?.enabled ?? true;
+              const attachment = entry?.attachments?.[0];
+              const stateKey = `${application.id}:${template.id}`;
+              const currentUploadState = uploadState[stateKey];
+              const requirement = template.attachmentRequirement;
+              const uploadStatus = !enabled
+                ? "Unavailable"
+                : attachment
+                  ? attachment.status === "accepted"
+                    ? "Accepted"
+                    : `Uploaded v${attachment.revision}`
+                  : requirement?.required
+                    ? "Required"
+                    : "Optional";
               return (
-                <div className="requirement-tile" key={template.id}>
-                  <UploadCloud size={18} />
-                  <div><strong>{template.name.replace(" Template", "")}</strong><span>{enabled ? (status.complete ? "Ready" : "Required") : "Unavailable"}</span></div>
-                </div>
+                <article className={enabled ? "requirement-upload-card" : "requirement-upload-card unavailable"} key={template.id}>
+                  <div className="requirement-upload-main">
+                    <span className={attachment ? "requirement-icon ready" : "requirement-icon"}><Paperclip size={18} /></span>
+                    <div>
+                      <strong>{template.name.replace(" Template", "")}</strong>
+                      <p>{requirement?.label ?? "Supporting file"}{requirement?.required ? " required for submission" : " optional"}</p>
+                    </div>
+                    <span className={enabled && status.complete ? "ready-tag" : "missing-tag"}>{uploadStatus}</span>
+                  </div>
+
+                  {attachment ? (
+                    <div className="file-meta">
+                      <div><strong>{attachment.fileName}</strong><span>{formatFileSize(attachment.size)} - {attachment.mimeType || "Unknown type"}</span></div>
+                      <div><strong>{formatShortDate(attachment.uploadedAt)}</strong><span>Uploaded by {attachment.uploadedBy}</span></div>
+                      <div><strong>{attachment.reviewerVisible ? "Reviewer visible" : "Student draft only"}</strong><span>{attachment.reviewNote ?? "No reviewer note"}</span></div>
+                    </div>
+                  ) : (
+                    <div className="empty-upload-state" role="status">
+                      <UploadCloud size={16} />
+                      <span>{enabled ? "No file uploaded yet." : "Template unavailable for this filing cycle."}</span>
+                    </div>
+                  )}
+
+                  {attachment?.versions.length ? (
+                    <details className="revision-history">
+                      <summary><History size={14} /> Version history</summary>
+                      {attachment.versions.slice().reverse().map((version) => (
+                        <div className="revision-row" key={version.id}>
+                          <span>v{version.revision}</span>
+                          <strong>{version.fileName}</strong>
+                          <small>{formatShortDate(version.uploadedAt)} - {formatFileSize(version.size)}</small>
+                        </div>
+                      ))}
+                    </details>
+                  ) : null}
+
+                  <div className="requirement-actions">
+                    <label className="secondary-button upload-control">
+                      <UploadCloud size={16} />
+                      {attachment ? "Replace" : "Upload"}
+                      <input
+                        type="file"
+                        disabled={!enabled || !canManageUploads || currentUploadState?.loading}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) onRequirementUpload(template.id, file);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                    <button className="danger-button" disabled={!attachment || !canManageUploads || currentUploadState?.loading} onClick={() => attachment && onRequirementRemove(template.id, attachment)}>
+                      <Trash2 size={16} /> Remove
+                    </button>
+                    <span className="reviewer-visibility"><Eye size={14} /> {requirement?.reviewerVisible ? "Visible to SADU" : "Hidden until requested"}</span>
+                  </div>
+                  {currentUploadState?.loading && <p className="upload-state" role="status">Updating file...</p>}
+                  {currentUploadState?.error && <p className="upload-error" role="alert">{currentUploadState.error}</p>}
+                </article>
               );
             })}
           </div>
@@ -1266,21 +1564,26 @@ function FileEventView({
                     </span>
                   </summary>
                   <div className="field-grid">
-                    {template.fields.map((field) => (
-                      <label key={field.id} className="field">
-                        <span>{field.label}{field.required ? " *" : ""}</span>
-                        {field.type === "textarea" ? (
-                          <textarea disabled={!enabled} value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
-                        ) : field.type === "select" ? (
-                          <select disabled={!enabled} value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)}>
-                            <option value="">Select</option>
-                            {field.options?.map((option) => <option key={option}>{option}</option>)}
-                          </select>
-                        ) : (
-                          <input disabled={!enabled} type={field.type} value={entry?.values[field.id] ?? ""} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
-                        )}
-                      </label>
-                    ))}
+                    {template.fields.map((field) => {
+                      const value = entry?.values[field.id] ?? "";
+                      const missingRequiredField = field.required && enabled && !value.trim();
+                      return (
+                        <label key={field.id} className="field">
+                          <span>{field.label}{field.required ? " *" : ""}</span>
+                          {missingRequiredField && <small className="field-error" role="status">Required before submission.</small>}
+                          {field.type === "textarea" ? (
+                            <textarea disabled={!enabled} aria-invalid={missingRequiredField} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
+                          ) : field.type === "select" ? (
+                            <select disabled={!enabled} aria-invalid={missingRequiredField} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)}>
+                              <option value="">Select</option>
+                              {field.options?.map((option) => <option key={option}>{option}</option>)}
+                            </select>
+                          ) : (
+                            <input disabled={!enabled} aria-invalid={missingRequiredField} type={field.type} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
+                          )}
+                        </label>
+                      );
+                    })}
                   </div>
                 </details>
               );
@@ -1299,13 +1602,13 @@ function FileEventView({
           })}
         </ul>
         {revisionAlert && <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>Revision Inconsistency</strong><p>{revisionDetail}</p></div></div>}
-        <div className="warning-box amber" role="status" aria-live="polite"><CircleAlert size={16} /><div><strong>{missingCount || "No"} required document(s) missing</strong><p>{missingCount ? "Upload them to proceed with submission." : `${completionPercent}% of required prototype templates are complete.`}</p></div></div>
+        <div className="warning-box amber" role="status" aria-live="polite"><CircleAlert size={16} /><div><strong>{submissionReadiness.missing.length || "No"} required item(s) missing</strong><p>{submissionReadiness.ready ? `${completionPercent}% of required fields and attachments are complete.` : submissionReadiness.missing.slice(0, 2).join(" ") || `${requiredAttachmentMissing} required attachment(s) still need a file.`}</p></div></div>
         <button className="gold-button full" onClick={onPrecheck}><Sparkles size={16} /> Run AI Completeness Check</button>
         <div className="guide-says" role="status" aria-live="polite"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
         {revisionAlert ? (
           <button className="primary-button full" disabled={missingCount > 0} onClick={onResubmit}><UploadCloud size={16} /> Upload Revised Documents</button>
         ) : (
-          <button className="primary-button full" disabled={completionPercent < 70} onClick={onSubmit}><SendHorizonal size={16} /> Submit to SADU</button>
+          <button className="primary-button full" disabled={!submissionReadiness.ready} onClick={onSubmit}><SendHorizonal size={16} /> Submit to SADU</button>
         )}
       </aside>
     </section>
@@ -1366,13 +1669,20 @@ function ApplicationsView({
       </section>
 
       <section className="applications-layout">
+        {activeUser.role === "SADU Associate" && (
+          <div className="panel review-attachments-panel">
+            <h3>Requirement Files</h3>
+            <AttachmentReviewList application={application} />
+          </div>
+        )}
+
         <div className="panel">
           <h3>Required Actions</h3>
           <div className="action-list">
             {requiredActions.map((item) => (
               <div className="required-action" key={item.title}><CircleAlert size={18} /><div><strong>{item.title}</strong><p>{item.detail}</p></div></div>
             ))}
-            {!requiredActions.length && <div className="required-action ok"><CheckCircle2 size={18} /><div><strong>No missing prototype fields</strong><p>Ready for human review.</p></div></div>}
+            {!requiredActions.length && <div className="required-action ok"><CheckCircle2 size={18} /><div><strong>No missing requirements</strong><p>Ready for human review.</p></div></div>}
           </div>
           <WorkflowActions role={activeUser.role} status={application.status} onReview={onReview} onRevision={onRevision} onResubmit={onResubmit} onApprove={onApprove} onReject={onReject} onEndorse={onEndorse} />
         </div>
@@ -1410,19 +1720,22 @@ function ApplicationsView({
 function getProgressMilestones(application: EventApplication) {
   const lookup = new Map(application.timeline.map((entry) => [entry.status, entry]));
   const finalEntry = lookup.get("SADU Approved") ?? lookup.get("Rejected") ?? lookup.get("Archived");
-  const adviserEntry = application.messages.find((message) => message.role === "Faculty Adviser");
+  const endorsement = application.adviserEndorsement;
+  const adviserEndorsed = !endorsement.required || endorsement.state === "Endorsed";
 
   return [
     { label: "Draft Created", done: true, active: application.status === "Draft", date: lookup.get("Draft")?.createdAt },
+    { label: "AI Pre-check", done: Boolean(lookup.get("AI Pre-check") || lookup.get("Submitted to SADU") || finalEntry), active: application.status === "AI Pre-check", date: lookup.get("AI Pre-check")?.createdAt },
+    { label: "Adviser Endorsement", done: adviserEndorsed || Boolean(finalEntry), active: application.status === "Pending Adviser Endorsement", date: endorsement.timestamp ?? lookup.get("Pending Adviser Endorsement")?.createdAt },
     { label: "Submitted to SADU", done: Boolean(lookup.get("Submitted to SADU") || lookup.get("Under Review") || lookup.get("Revision Requested") || lookup.get("Resubmitted") || finalEntry), active: application.status === "Submitted to SADU", date: lookup.get("Submitted to SADU")?.createdAt },
     { label: "Under Review", done: Boolean(lookup.get("Under Review") || lookup.get("Revision Requested") || lookup.get("Resubmitted") || finalEntry), active: application.status === "Under Review", date: lookup.get("Under Review")?.createdAt },
     { label: "Revision Requested", done: Boolean(lookup.get("Revision Requested") || lookup.get("Resubmitted") || finalEntry), active: application.status === "Revision Requested", date: lookup.get("Revision Requested")?.createdAt },
-    { label: "Adviser Endorsement", done: Boolean(adviserEntry || finalEntry), active: false, date: adviserEntry?.createdAt },
     { label: "Final Approval", done: Boolean(finalEntry), active: application.status === "SADU Approved" || application.status === "Rejected" || application.status === "Archived", date: finalEntry?.createdAt },
   ];
 }
 
 function getRequiredActionCards(application: EventApplication) {
+  const readiness = getSubmissionReadiness(application);
   const missingCards = getApplicationCompletion(application).missing.slice(0, 3).map((item) => {
     const [title, detail] = item.split(":");
     const actionTitle = application.status === "Revision Requested" ? `Revise ${title.replace(" Template", "")}` : title;
@@ -1430,6 +1743,14 @@ function getRequiredActionCards(application: EventApplication) {
   });
 
   if (missingCards.length) return missingCards;
+
+  if (!readiness.aiPrecheckComplete) {
+    return [{ title: "Run AI pre-check", detail: "TAMS Guide must complete the required pre-check before SADU submission." }];
+  }
+
+  if (readiness.adviserRequired && !readiness.adviserEndorsed) {
+    return [{ title: "Await adviser endorsement", detail: "The assigned faculty adviser must endorse this application before SADU review." }];
+  }
 
   if (application.status === "Revision Requested") {
     return [
@@ -1470,17 +1791,18 @@ function ReviewerInsightsPanel({ application, completionPercent }: { application
         <p>{makeAiSummary(application)}</p>
       </article>
       <article className="reviewer-card">
-        <div className="reviewer-heading"><FilePlus2 size={18} /><strong>Template Readiness</strong><span>{completionPercent}%</span></div>
+        <div className="reviewer-heading"><FilePlus2 size={18} /><strong>Requirement Readiness</strong><span>{completionPercent}%</span></div>
         <div className="template-mini-list">
           {templateDefinitions.map((template) => {
             const status = getTemplateCompletion(application, template.id);
             const entry = application.templates.find((item) => item.templateId === template.id);
             const enabled = entry?.enabled ?? true;
+            const attachmentCount = entry?.attachments?.filter((attachment) => attachment.reviewerVisible).length ?? 0;
             return (
               <div key={template.id} className="template-mini-row">
                 <span className={enabled && status.complete ? "mini-dot ready" : "mini-dot waiting"} />
                 <strong>{template.name.replace(" Template", "")}</strong>
-                <small>{enabled ? (status.complete ? "Ready" : `${status.missing.length} missing`) : "Unavailable"}</small>
+                <small>{enabled ? (status.complete ? `Ready - ${attachmentCount} file` : `${status.missing.length} missing`) : "Unavailable"}</small>
               </div>
             );
           })}
@@ -1493,6 +1815,43 @@ function ReviewerInsightsPanel({ application, completionPercent }: { application
         </ul>
       </article>
     </section>
+  );
+}
+
+function AttachmentReviewList({ application }: { application: EventApplication }) {
+  const visibleTemplates = templateDefinitions.filter((template) => application.templates.find((entry) => entry.templateId === template.id)?.enabled);
+
+  if (!visibleTemplates.length) {
+    return <div className="empty-upload-state" role="status"><FilePlus2 size={16} /><span>No enabled requirements for review.</span></div>;
+  }
+
+  return (
+    <div className="review-file-list">
+      {visibleTemplates.map((template) => {
+        const entry = application.templates.find((item) => item.templateId === template.id);
+        const status = getTemplateCompletion(application, template.id);
+        const attachment = entry?.attachments?.find((item) => item.reviewerVisible);
+        return (
+          <article key={template.id} className="review-file-row">
+            <div>
+              <strong>{template.name.replace(" Template", "")}</strong>
+              <span>{template.attachmentRequirement?.label ?? "Supporting file"}</span>
+            </div>
+            {attachment ? (
+              <>
+                <div><strong>{attachment.fileName}</strong><span>v{attachment.revision} - {formatFileSize(attachment.size)}</span></div>
+                <span className={attachment.status === "accepted" ? "ready-tag" : "missing-tag"}>{attachment.status === "accepted" ? "Accepted" : "For review"}</span>
+              </>
+            ) : (
+              <>
+                <div><strong>Missing file</strong><span>{status.missingAttachments[0] ?? "No reviewer-visible upload"}</span></div>
+                <span className="missing-tag">Missing</span>
+              </>
+            )}
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1599,6 +1958,7 @@ function GuideView({
   guideQuestion,
   setGuideQuestion,
   guideOutput,
+  guideSource,
   guideLogs,
   onGenerateGuide,
 }: {
@@ -1608,10 +1968,12 @@ function GuideView({
   guideQuestion: string;
   setGuideQuestion: (value: string) => void;
   guideOutput: string[];
+  guideSource: string;
   guideLogs: GuideLog[];
   onGenerateGuide: () => void;
 }) {
   const lines = guideOutput.length ? guideOutput : localGuideResponse(application, "summary", guideQuestion);
+  const sourceLabel = guideSourceLabel(guideSource);
 
   return (
     <div className="screen-stack guide-screen">
@@ -1670,14 +2032,14 @@ function GuideView({
               <span><Bot size={14} /> {guideModeLabels[guideMode]}</span>
               <strong>{application.title}</strong>
             </div>
-            <small>Human review required</small>
+            <small>{sourceLabel}</small>
           </div>
           <div className="guide-output-lines">
             {lines.map((line) => <p key={line}>{line}</p>)}
           </div>
         </div>
         <div className="guide-history" aria-label="TAMS Guide audit history">
-          <div className="guide-history-heading"><Clock3 size={15} /><strong>Guidance history</strong><span>{guideLogs.length ? "Convex audit log" : "No saved runs yet"}</span></div>
+          <div className="guide-history-heading"><Clock3 size={15} /><strong>Guidance history</strong><span>{guideLogs.length ? "Access-controlled Convex audit" : "No saved runs yet"}</span></div>
           {guideLogs.length ? (
             guideLogs.map((log) => (
               <article key={log.id} className="guide-history-item">
@@ -1795,7 +2157,7 @@ function localGuideResponse(application: EventApplication, mode: GuideMode, ques
   if (mode === "checklist") return makeChecklist(application);
   if (mode === "missing") {
     const missing = getApplicationCompletion(application).missing;
-    return missing.length ? missing : ["All required prototype fields are complete."];
+    return missing.length ? missing : ["All required fields and attachments are complete."];
   }
   if (mode === "revision") return [makeRevisionDraft(application)];
   if (mode === "question") {
@@ -1805,6 +2167,18 @@ function localGuideResponse(application: EventApplication, mode: GuideMode, ques
     ];
   }
   return [makeAiSummary(application)];
+}
+
+function guideSourceLabel(source: string) {
+  if (source === "openai") return "OpenAI live source";
+  if (source === "local-demo") return "Local demo rules";
+  if (source === "mock-no-key") return "Mock rules: no OpenAI key";
+  if (source === "mock-openai-timeout") return "Mock fallback: OpenAI timeout";
+  if (source === "mock-openai-error") return "Mock fallback: OpenAI error";
+  if (source === "access-denied") return "Access denied";
+  if (source === "loading") return "Generating...";
+  if (source === "client-fallback") return "Local client fallback";
+  return "Human review required";
 }
 
 function sectionTitle(section: Section) {
@@ -1829,6 +2203,12 @@ function roleWelcomeName(role: Role) {
 
 function formatShortDate(value: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+}
+
+function formatFileSize(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatDashboardDate(applications: EventApplication[]) {

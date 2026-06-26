@@ -87,7 +87,9 @@ assert.match(appComponent, /formatBudgetEstimate\(budgetValues\.totalBudget\)/, 
 assert.match(appComponent, /value=\{proposalValues\.objectives \?\? ""\}/, "File event objectives summary should derive from the selected proposal template");
 assert.doesNotMatch(appComponent, /SADU flagged the budget breakdown and participant count/, "File event revision warning should not use fixed budget and participant copy");
 assert.doesNotMatch(appComponent, /value="25,000\.00"/, "File event budget summary should not use a fixed sample amount");
-assert.match(appComponent, /required document\(s\) missing/, "File event guide should show a separate missing-documents notice");
+assert.match(appComponent, /required item\(s\) missing/, "File event guide should show a separate missing-requirements notice");
+assert.match(appComponent, /onRequirementUpload/, "File event requirements should expose upload and replace controls");
+assert.match(appComponent, /Requirement Files/, "SADU review should expose reviewer-visible requirement files");
 assert.match(appComponent, /className="warning-box" role="alert"/, "File event revision warning should be announced as an alert");
 assert.match(appComponent, /className="guide-says" role="status" aria-live="polite"/, "File event guide output should be announced politely");
 assert.match(appComponent, /const missingCards = getApplicationCompletion\(application\)\.missing/, "Status required actions should derive from current template gaps");
@@ -190,12 +192,12 @@ assert.match(appComponent, /aria-label="TAMS Guide mode"/, "Guide mode selector 
 assert.match(appComponent, /guideModeLabels/, "Guide output should identify the active guidance mode");
 assert.match(appComponent, /className="guide-output" role="status" aria-live="polite"/, "Guide workbench output should be announced politely");
 assert.doesNotMatch(globalCss, /var\(--green\)/, "Guide styles should use defined green tokens");
-assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
+assert.match(appComponent, /Guidance only/, "Guide output should preserve the human-review boundary");
 assert.match(convexSchema, /guideLogs: defineTable/, "Convex schema should include auditable TAMS Guide logs");
 assert.match(convexGuide, /export const record = mutation/, "Convex guide function should record generated guidance");
 assert.match(convexGuide, /export const listForApplication = query/, "Convex guide function should expose guidance logs by application");
-assert.match(tamsGuideRoute, /recordGuideLog\(body, "mock"/, "Mock guide responses should be audit logged when Convex is configured");
-assert.match(tamsGuideRoute, /recordGuideLog\(body, "openai"/, "OpenAI guide responses should be audit logged when Convex is configured");
+assert.match(tamsGuideRoute, /recordGuideLog\(authorizedBody, actor, source, mockLines\)/, "Mock guide responses should be audit logged when Convex is configured");
+assert.match(tamsGuideRoute, /recordGuideLog\(authorizedBody, actor, "openai", lines\)/, "OpenAI guide responses should be audit logged when Convex is configured");
 assert.match(tamsGuideRoute, /applicationId\.startsWith\("app-"\)/, "Guide logging should skip local prototype draft ids");
 assert.match(guideLogsRoute, /api\.guide\.listForApplication/, "Guide logs route should read auditable guidance history from Convex");
 assert.match(appComponent, /fetch\(`\/api\/guide-logs\?applicationId=\$\{encodeURIComponent\(applicationId\)\}`\)/, "Guide view should load guidance history for the selected application");
@@ -215,7 +217,7 @@ assert.match(appComponent, /<AdminOperationsPanel users=\{roleUsers\}/, "Admin r
 assert.match(appComponent, /const loadConvexApplications = useCallback/, "App should share the Convex application loader across hydration and reset");
 assert.match(appComponent, /if \(applicationSource === "convex"\)/, "Admin reset should preserve Convex-backed sessions when possible");
 assert.match(appComponent, /setApplicationSource\("local"\)/, "Admin reset should explicitly switch to local mode only after falling back to seed data");
-assert.match(convexApplications, /templates: templates\.map\(templateWithUiId\)/, "Convex detailed queries should expose template document ids for updates");
+assert.match(convexApplications, /templates: templates\.map\(\(template: any\) => templateWithUiId\(template, requirementsByTemplate\.get\(template\._id\) \?\? \[\]\)\)/, "Convex detailed queries should expose template document ids for updates");
 assert.match(convexApplications, /templateDocumentId: document\._id/, "Convex template rows should carry explicit document ids for updates");
 assert.match(convexWorkflowRoute, /api\.applications\.create/, "Convex workflow route should sync new application creation");
 assert.match(convexWorkflowRoute, /api\.applications\.updateTemplate/, "Convex workflow route should sync template field edits");
@@ -321,9 +323,43 @@ review = transitionApplication(addMessage(review, "SADU Associate", "SADU Associ
 assert.equal(review.status, "Revision Requested");
 assert.ok(review.messages.some((message) => message.body === revisionBody));
 
+function demoAttachment(id, fileName) {
+  return [{
+    id,
+    fileName,
+    size: 192000,
+    uploadedAt: "2025-06-18T09:00:00.000Z",
+    uploadedBy: "Juan Reyes",
+    revision: 2,
+    note: "Replacement uploaded after SADU revision.",
+    mimeType: "application/pdf",
+    status: "uploaded",
+    reviewerVisible: true,
+    versions: [{
+      id: `${id}-v2`,
+      fileName,
+      size: 192000,
+      uploadedAt: "2025-06-18T09:00:00.000Z",
+      uploadedBy: "Juan Reyes",
+      revision: 2,
+      note: "Replacement uploaded after SADU revision.",
+    }],
+  }];
+}
+
 const revised = {
   ...review,
   templates: review.templates.map((template) =>
+    template.templateId === "budget"
+      ? {
+          ...template,
+          values: {
+            ...template.values,
+            expenseBreakdown: "Venue logistics, booth materials, speaker tokens, and publication materials.",
+          },
+          attachments: demoAttachment("budget-revision", "revised-budget-breakdown.pdf"),
+        }
+      : 
     template.templateId === "publicity"
       ? {
           ...template,
@@ -332,6 +368,7 @@ const revised = {
             postingDate: "2025-07-22",
             materials: "Poster, caption, publication calendar, and approval screenshots.",
           },
+          attachments: demoAttachment("publicity-revision", "revised-publicity-materials.pdf"),
         }
       : template,
   ),
@@ -339,17 +376,25 @@ const revised = {
 assert.equal(getApplicationCompletion(revised).missing.length, 0, "revised demo application should clear required missing fields");
 
 const resubmitted = transitionApplication(revised, "Resubmitted", "Student resubmitted after revision.");
+const underReviewAgain = transitionApplication(
+  resubmitted,
+  "Under Review",
+  "SADU reopened the resubmitted application for review.",
+  { id: "sadu", name: "SADU Associate", role: "SADU Associate" },
+);
 const approved = transitionApplication(
-  addMessage(resubmitted, "SADU Associate", "SADU Associate", "Approved. Final decision recorded by SADU reviewer."),
+  addMessage(underReviewAgain, "SADU Associate", "SADU Associate", "Approved. Final decision recorded by SADU reviewer."),
   "SADU Approved",
   "SADU approved the application.",
+  { id: "sadu", name: "SADU Associate", role: "SADU Associate" },
 );
 assert.equal(approved.status, "SADU Approved");
 assert.ok(approved.timeline.some((entry) => entry.status === "Resubmitted"));
+assert.ok(approved.timeline.some((entry) => entry.status === "Under Review"));
 assert.ok(approved.timeline.some((entry) => entry.status === "SADU Approved"));
 
 assert.ok(makeChecklist(approved).length >= 4, "TAMS Guide checklist should return useful guidance");
-assert.match(makeAiSummary(approved), /SADU should verify final readiness/i);
+assert.match(makeAiSummary(approved), /SADU should verify policy readiness and final approval/i);
 
 for (const mutationName of ["requestRevision", "resubmit", "approve", "reject", "addEndorsement"]) {
   assert.match(convexApplications, new RegExp(`export const ${mutationName} = mutation`), `Convex mutation ${mutationName} should be available`);

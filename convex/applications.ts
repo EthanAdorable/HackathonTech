@@ -1,10 +1,26 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+const role = v.union(
+  v.literal("Student Officer"),
+  v.literal("SADU Associate"),
+  v.literal("Faculty Adviser"),
+  v.literal("Admin"),
+);
+
+const actor = v.object({
+  id: v.string(),
+  name: v.string(),
+  role,
+  organization: v.optional(v.string()),
+  title: v.optional(v.string()),
+});
+
 const status = v.union(
   v.literal("Draft"),
   v.literal("Template Completion"),
   v.literal("AI Pre-check"),
+  v.literal("Pending Adviser Endorsement"),
   v.literal("Submitted to SADU"),
   v.literal("Under Review"),
   v.literal("Revision Requested"),
@@ -14,22 +30,28 @@ const status = v.union(
   v.literal("Archived"),
 );
 
-async function addTimeline(ctx: any, applicationId: any, nextStatus: string, note: string) {
+async function addTimeline(ctx: any, applicationId: any, nextStatus: string, note: string, accessActor?: any) {
   await ctx.db.insert("timeline", {
     applicationId,
     status: nextStatus,
     note,
     createdAt: new Date().toISOString(),
+    actorId: accessActor?.id,
+    actorName: accessActor?.name,
+    actorRole: accessActor?.role,
   });
 }
 
-async function addWorkflowMessage(ctx: any, applicationId: any, author: string, role: string, body: string) {
+async function addWorkflowMessage(ctx: any, applicationId: any, author: string, role: string, body: string, accessActor?: any) {
   await ctx.db.insert("messages", {
     applicationId,
     author,
     role,
     body,
     createdAt: new Date().toISOString(),
+    actorId: accessActor?.id,
+    actorName: accessActor?.name,
+    actorRole: accessActor?.role,
   });
 }
 
@@ -43,6 +65,77 @@ function assertStatus(application: any, allowed: string[], action: string) {
   if (!allowed.includes(application.status)) {
     throw new Error(`${action} is not allowed from ${application.status}.`);
   }
+}
+
+function canSeeAllApplications(accessActor: any) {
+  return accessActor.role === "Admin" || accessActor.role === "SADU Associate";
+}
+
+function canReadApplication(accessActor: any, application: any) {
+  if (canSeeAllApplications(accessActor)) return true;
+  if (accessActor.role === "Student Officer") return application.ownerId === accessActor.id;
+  if (accessActor.role === "Faculty Adviser") return application.adviserId === accessActor.id;
+  return false;
+}
+
+function assertCanReadApplication(accessActor: any, application: any) {
+  if (!canReadApplication(accessActor, application)) {
+    throw new Error("You are not allowed to read this application.");
+  }
+}
+
+function assertCanCreateApplication(accessActor: any) {
+  if (accessActor.role !== "Student Officer") {
+    throw new Error("Only student officers can create applications.");
+  }
+}
+
+function assertCanEditApplication(accessActor: any, application: any) {
+  if (accessActor.role !== "Student Officer" || application.ownerId !== accessActor.id) {
+    throw new Error("Only the owning student officer can edit this application.");
+  }
+}
+
+function assertCanReviewAsSadu(accessActor: any) {
+  if (accessActor.role !== "SADU Associate") {
+    throw new Error("Only SADU associates can perform SADU review actions.");
+  }
+}
+
+function assertCanEndorseApplication(accessActor: any, application: any) {
+  if (accessActor.role !== "Faculty Adviser" || application.adviserId !== accessActor.id) {
+    throw new Error("Only the assigned faculty adviser can endorse this application.");
+  }
+}
+
+function assertCanAdminister(accessActor: any) {
+  if (accessActor.role !== "Admin") {
+    throw new Error("Only admins can administer TAMS Hub demo data and templates.");
+  }
+}
+
+function isAdviserEndorsementComplete(application: any) {
+  const required = application.adviserEndorsementRequired ?? (application.expectedParticipants >= 100 || application.riskLevel !== "Low");
+  return !required || application.adviserEndorsementState === "Endorsed";
+}
+
+async function applicationsForActor(ctx: any, accessActor: any) {
+  if (accessActor.role === "Student Officer") {
+    return await ctx.db
+      .query("applications")
+      .withIndex("by_owner", (q: any) => q.eq("ownerId", accessActor.id))
+      .collect();
+  }
+  if (accessActor.role === "Faculty Adviser") {
+    return await ctx.db
+      .query("applications")
+      .withIndex("by_adviser", (q: any) => q.eq("adviserId", accessActor.id))
+      .collect();
+  }
+  if (canSeeAllApplications(accessActor)) {
+    return await ctx.db.query("applications").collect();
+  }
+  return [];
 }
 
 function requiredTemplateGaps(templates: any[]) {
@@ -61,11 +154,196 @@ function requiredTemplateGaps(templates: any[]) {
   });
 }
 
+const defaultRequirementDefinitionsByTemplate: Record<
+  string,
+  Array<{
+    requirementKey: string;
+    label: string;
+    description?: string;
+    required: boolean;
+    visibleToReviewer: boolean;
+    accepts?: string[];
+    maxSizeBytes?: number;
+  }>
+> = {
+  proposal: [
+    {
+      requirementKey: "signed-event-proposal",
+      label: "Signed event proposal",
+      description: "Final proposal endorsed by the organization officer and adviser.",
+      required: true,
+      visibleToReviewer: true,
+      accepts: ["application/pdf"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+  budget: [
+    {
+      requirementKey: "budget-breakdown",
+      label: "Budget breakdown",
+      description: "Line-item cost estimate, funding source, and procurement notes.",
+      required: true,
+      visibleToReviewer: true,
+      accepts: ["application/pdf", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+  venue: [
+    {
+      requirementKey: "venue-request-form",
+      label: "Venue request form",
+      description: "Facilities or room reservation request for the preferred venue.",
+      required: true,
+      visibleToReviewer: true,
+      accepts: ["application/pdf", "image/png", "image/jpeg"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+  program: [
+    {
+      requirementKey: "program-flow",
+      label: "Program flow document",
+      description: "Run of show with call times, segments, and assigned officers.",
+      required: true,
+      visibleToReviewer: true,
+      accepts: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+  publicity: [
+    {
+      requirementKey: "publicity-materials",
+      label: "Publicity materials",
+      description: "Final or draft publication materials for review.",
+      required: true,
+      visibleToReviewer: true,
+      accepts: ["application/pdf", "image/png", "image/jpeg"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+  speaker: [
+    {
+      requirementKey: "speaker-invitation",
+      label: "Speaker invitation or confirmation",
+      description: "Invitation letter, confirmation, or equivalent coordination proof.",
+      required: false,
+      visibleToReviewer: true,
+      accepts: ["application/pdf", "image/png", "image/jpeg"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+  postEvent: [
+    {
+      requirementKey: "post-event-documentation",
+      label: "Post-event documentation",
+      description: "Attendance, photos, completion report, or outcome documentation.",
+      required: false,
+      visibleToReviewer: true,
+      accepts: ["application/pdf", "image/png", "image/jpeg"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+};
+
+async function insertDefaultRequirements(ctx: any, templateDocument: any) {
+  const definitions = defaultRequirementDefinitionsByTemplate[templateDocument.templateId] ?? [];
+  for (let index = 0; index < definitions.length; index += 1) {
+    const requirement = definitions[index];
+    await ctx.db.insert("templateRequirements", {
+      applicationId: templateDocument.applicationId,
+      templateDocumentId: templateDocument._id,
+      templateId: templateDocument.templateId,
+      requirementKey: requirement.requirementKey,
+      label: requirement.label,
+      description: requirement.description,
+      required: requirement.required,
+      visibleToReviewer: requirement.visibleToReviewer,
+      accepts: requirement.accepts,
+      maxSizeBytes: requirement.maxSizeBytes,
+      sortOrder: index,
+    });
+  }
+}
+
+async function ensureDefaultRequirementsForTemplate(ctx: any, templateDocument: any) {
+  const existing = await ctx.db
+    .query("templateRequirements")
+    .withIndex("by_template", (q: any) => q.eq("templateDocumentId", templateDocument._id))
+    .collect();
+  if (existing.length) return existing;
+  await insertDefaultRequirements(ctx, templateDocument);
+  return await ctx.db
+    .query("templateRequirements")
+    .withIndex("by_template", (q: any) => q.eq("templateDocumentId", templateDocument._id))
+    .collect();
+}
+
+async function activeAttachmentsForApplication(ctx: any, applicationId: any) {
+  const attachments = await ctx.db
+    .query("attachments")
+    .withIndex("by_application", (q: any) => q.eq("applicationId", applicationId))
+    .collect();
+  return attachments.filter((attachment: any) => attachment.status === "active");
+}
+
+function requiredAttachmentGaps(templates: any[], requirements: any[], activeAttachments: any[]) {
+  const enabledTemplateIds = new Set(templates.filter((template) => template.enabled).map((template) => template._id));
+  const activeRequirementIds = new Set(activeAttachments.map((attachment) => attachment.requirementId));
+  return requirements
+    .filter((requirement) => requirement.required && enabledTemplateIds.has(requirement.templateDocumentId))
+    .filter((requirement) => !activeRequirementIds.has(requirement._id))
+    .map((requirement) => requirement.label);
+}
+
+function makeReadiness(templates: any[], requirements: any[], activeAttachments: any[]) {
+  const missingFields = requiredTemplateGaps(templates);
+  const missingAttachments = requiredAttachmentGaps(templates, requirements, activeAttachments);
+  return {
+    ready: missingFields.length === 0 && missingAttachments.length === 0,
+    missingFields,
+    missingAttachments,
+  };
+}
+
+async function getApplicationReadiness(ctx: any, applicationId: any) {
+  const [templates, requirements, activeAttachments] = await Promise.all([
+    ctx.db
+      .query("templates")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", applicationId))
+      .collect(),
+    ctx.db
+      .query("templateRequirements")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", applicationId))
+      .collect(),
+    activeAttachmentsForApplication(ctx, applicationId),
+  ]);
+  return { templates, requirements, activeAttachments, readiness: makeReadiness(templates, requirements, activeAttachments) };
+}
+
 function withUiId(document: any) {
   return { ...document, id: document._id };
 }
 
-function templateWithUiId(document: any) {
+function attachmentWithUiId(document: any, url?: string | null) {
+  return {
+    ...document,
+    id: document._id,
+    attachmentId: document._id,
+    url,
+  };
+}
+
+function requirementWithUiId(document: any, activeAttachment?: any, url?: string | null) {
+  return {
+    ...document,
+    id: document._id,
+    requirementId: document._id,
+    uploadStatus: activeAttachment ? "uploaded" : document.required ? "missing" : "optional",
+    activeAttachment: activeAttachment ? attachmentWithUiId(activeAttachment, url) : null,
+  };
+}
+
+function templateWithUiId(document: any, requirements: any[] = []) {
   return {
     _creationTime: document._creationTime,
     _id: document._id,
@@ -75,117 +353,117 @@ function templateWithUiId(document: any) {
     templateId: document.templateId,
     enabled: document.enabled,
     values: document.values,
+    requirements,
+  };
+}
+
+async function hydrateApplication(ctx: any, application: any) {
+  const [templates, messages, timeline, requirements, attachments] = await Promise.all([
+    ctx.db
+      .query("templates")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
+      .collect(),
+    ctx.db
+      .query("messages")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
+      .collect(),
+    ctx.db
+      .query("timeline")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
+      .collect(),
+    ctx.db
+      .query("templateRequirements")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
+      .collect(),
+    ctx.db
+      .query("attachments")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
+      .collect(),
+  ]);
+
+  const activeAttachments = attachments.filter((attachment: any) => attachment.status === "active");
+  const activeByRequirement = new Map<any, any>(activeAttachments.map((attachment: any) => [attachment.requirementId, attachment]));
+  const urlsByAttachment = new Map<any, string | null>();
+  await Promise.all(
+    activeAttachments.map(async (attachment: any) => {
+      urlsByAttachment.set(attachment._id, await ctx.storage.getUrl(attachment.storageId));
+    }),
+  );
+
+  const requirementsByTemplate = new Map<any, any[]>();
+  for (const requirement of requirements) {
+    const activeAttachment = activeByRequirement.get(requirement._id) as any | undefined;
+    const hydrated = requirementWithUiId(
+      requirement,
+      activeAttachment,
+      activeAttachment ? urlsByAttachment.get(activeAttachment._id) : null,
+    );
+    requirementsByTemplate.set(requirement.templateDocumentId, [
+      ...(requirementsByTemplate.get(requirement.templateDocumentId) ?? []),
+      hydrated,
+    ]);
+  }
+
+  return {
+    ...withUiId(application),
+    templates: templates.map((template: any) => templateWithUiId(template, requirementsByTemplate.get(template._id) ?? [])),
+    requirements: requirements.map((requirement: any) => {
+      const activeAttachment = activeByRequirement.get(requirement._id) as any | undefined;
+      return requirementWithUiId(
+        requirement,
+        activeAttachment,
+        activeAttachment ? urlsByAttachment.get(activeAttachment._id) : null,
+      );
+    }),
+    attachments: attachments.map((attachment: any) =>
+      attachmentWithUiId(attachment, attachment.status === "active" ? urlsByAttachment.get(attachment._id) : null),
+    ),
+    readiness: makeReadiness(templates, requirements, activeAttachments),
+    messages: messages.map(withUiId),
+    timeline: timeline.map(withUiId),
   };
 }
 
 export const list = query({
   args: {
-    role: v.optional(v.string()),
-    userId: v.optional(v.string()),
+    actor,
   },
   handler: async (ctx, args) => {
-    if (args.role === "Student Officer" && args.userId) {
-      const applications = await ctx.db
-        .query("applications")
-        .withIndex("by_owner", (q: any) => q.eq("ownerId", args.userId as string))
-        .collect();
-      return applications.map(withUiId);
-    }
-    if (args.role === "Faculty Adviser" && args.userId) {
-      const applications = await ctx.db
-        .query("applications")
-        .withIndex("by_adviser", (q: any) => q.eq("adviserId", args.userId as string))
-        .collect();
-      return applications.map(withUiId);
-    }
-    const applications = await ctx.db.query("applications").collect();
+    const applications = await applicationsForActor(ctx, args.actor);
     return applications.map(withUiId);
   },
 });
 
 export const listWithDetails = query({
   args: {
-    role: v.optional(v.string()),
-    userId: v.optional(v.string()),
+    actor,
   },
   handler: async (ctx, args) => {
-    let applications;
-    if (args.role === "Student Officer" && args.userId) {
-      applications = await ctx.db
-        .query("applications")
-        .withIndex("by_owner", (q: any) => q.eq("ownerId", args.userId as string))
-        .collect();
-    } else if (args.role === "Faculty Adviser" && args.userId) {
-      applications = await ctx.db
-        .query("applications")
-        .withIndex("by_adviser", (q: any) => q.eq("adviserId", args.userId as string))
-        .collect();
-    } else {
-      applications = await ctx.db.query("applications").collect();
-    }
+    const applications = await applicationsForActor(ctx, args.actor);
 
     return await Promise.all(
-      applications.map(async (application: any) => {
-        const [templates, messages, timeline] = await Promise.all([
-          ctx.db
-            .query("templates")
-            .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
-            .collect(),
-          ctx.db
-            .query("messages")
-            .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
-            .collect(),
-          ctx.db
-            .query("timeline")
-            .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
-            .collect(),
-        ]);
-
-        return {
-          ...withUiId(application),
-          templates: templates.map(templateWithUiId),
-          messages: messages.map(withUiId),
-          timeline: timeline.map(withUiId),
-        };
-      }),
+      applications.map(async (application: any) => hydrateApplication(ctx, application)),
     );
   },
 });
 
 export const get = query({
   args: {
+    actor,
     applicationId: v.id("applications"),
   },
   handler: async (ctx, args) => {
     const application = await ctx.db.get(args.applicationId);
     if (!application) return null;
+    assertCanReadApplication(args.actor, application);
 
-    const [templates, messages, timeline] = await Promise.all([
-      ctx.db
-        .query("templates")
-        .withIndex("by_application", (q: any) => q.eq("applicationId", args.applicationId))
-        .collect(),
-      ctx.db
-        .query("messages")
-        .withIndex("by_application", (q: any) => q.eq("applicationId", args.applicationId))
-        .collect(),
-      ctx.db
-        .query("timeline")
-        .withIndex("by_application", (q: any) => q.eq("applicationId", args.applicationId))
-        .collect(),
-    ]);
-
-    return {
-      ...withUiId(application),
-      templates: templates.map(templateWithUiId),
-      messages: messages.map(withUiId),
-      timeline: timeline.map(withUiId),
-    };
+    return await hydrateApplication(ctx, application);
   },
 });
 
 export const create = mutation({
   args: {
+    actor,
     title: v.string(),
     organization: v.string(),
     eventType: v.string(),
@@ -204,6 +482,10 @@ export const create = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    assertCanCreateApplication(args.actor);
+    if (args.ownerId !== args.actor.id) {
+      throw new Error("Student officers can only create applications for themselves.");
+    }
     const applicationId = await ctx.db.insert("applications", {
       title: args.title,
       organization: args.organization,
@@ -211,18 +493,25 @@ export const create = mutation({
       venue: args.venue,
       eventDate: args.eventDate,
       expectedParticipants: args.expectedParticipants,
-      ownerId: args.ownerId,
+      ownerId: args.actor.id,
       adviserId: args.adviserId,
       status: "Draft",
       riskLevel: args.riskLevel,
+      adviserEndorsementRequired: args.expectedParticipants >= 100 || args.riskLevel !== "Low",
+      adviserEndorsementState: args.expectedParticipants >= 100 || args.riskLevel !== "Low" ? "Pending" : "Not Required",
     });
 
     for (const template of args.templates) {
-      await ctx.db.insert("templates", {
+      const templateDocumentId = await ctx.db.insert("templates", {
         applicationId,
         templateId: template.templateId,
         enabled: template.enabled,
         values: template.values,
+      });
+      await insertDefaultRequirements(ctx, {
+        _id: templateDocumentId,
+        applicationId,
+        templateId: template.templateId,
       });
     }
 
@@ -231,6 +520,9 @@ export const create = mutation({
       status: "Draft",
       note: "Application created in TAMS Events.",
       createdAt: new Date().toISOString(),
+      actorId: args.actor.id,
+      actorName: args.actor.name,
+      actorRole: args.actor.role,
     });
 
     return applicationId;
@@ -239,6 +531,7 @@ export const create = mutation({
 
 export const updateStatus = mutation({
   args: {
+    actor,
     applicationId: v.id("applications"),
     status,
     note: v.string(),
@@ -246,21 +539,47 @@ export const updateStatus = mutation({
   handler: async (ctx, args) => {
     const application = assertApplication(await ctx.db.get(args.applicationId));
     if (args.status === "AI Pre-check") {
+      assertCanEditApplication(args.actor, application);
       assertStatus(application, ["Draft", "Template Completion", "AI Pre-check"], "Pre-check");
+    } else if (args.status === "Pending Adviser Endorsement") {
+      assertCanEditApplication(args.actor, application);
+      assertStatus(application, ["AI Pre-check"], "Adviser endorsement request");
+      const { readiness } = await getApplicationReadiness(ctx, args.applicationId);
+      if (readiness.missingFields.length || readiness.missingAttachments.length) {
+        throw new Error(
+          `Adviser endorsement requires all required fields and attachments. Missing fields: ${
+            readiness.missingFields.join(", ") || "none"
+          }. Missing attachments: ${readiness.missingAttachments.join(", ") || "none"}.`,
+        );
+      }
     } else if (args.status === "Submitted to SADU") {
-      assertStatus(application, ["Template Completion", "AI Pre-check"], "Submission");
+      assertCanEditApplication(args.actor, application);
+      assertStatus(application, ["AI Pre-check", "Pending Adviser Endorsement"], "Submission");
+      const { readiness } = await getApplicationReadiness(ctx, args.applicationId);
+      if (!readiness.ready) {
+        throw new Error(
+          `Submission is not ready. Missing fields: ${readiness.missingFields.join(", ") || "none"}. Missing attachments: ${
+            readiness.missingAttachments.join(", ") || "none"
+          }.`,
+        );
+      }
+      if (!isAdviserEndorsementComplete(application)) {
+        throw new Error("Submission to SADU requires faculty adviser endorsement.");
+      }
     } else if (args.status === "Under Review") {
+      assertCanReviewAsSadu(args.actor);
       assertStatus(application, ["Submitted to SADU", "Resubmitted"], "SADU review");
     } else if (["Revision Requested", "Resubmitted", "SADU Approved", "Rejected"].includes(args.status)) {
       throw new Error(`Use the ${args.status} workflow action.`);
     }
     await ctx.db.patch(args.applicationId, { status: args.status });
-    await addTimeline(ctx, args.applicationId, args.status, args.note);
+    await addTimeline(ctx, args.applicationId, args.status, args.note, args.actor);
   },
 });
 
 export const updateDetails = mutation({
   args: {
+    actor,
     applicationId: v.id("applications"),
     title: v.string(),
     organization: v.string(),
@@ -271,6 +590,7 @@ export const updateDetails = mutation({
   },
   handler: async (ctx, args) => {
     const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanEditApplication(args.actor, application);
     assertStatus(application, ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"], "Event detail editing");
     await ctx.db.patch(args.applicationId, {
       title: args.title,
@@ -282,145 +602,347 @@ export const updateDetails = mutation({
       status: application.status === "Draft" ? "Template Completion" : application.status,
     });
     if (application.status === "Draft") {
-      await addTimeline(ctx, args.applicationId, "Template Completion", "Event details updated.");
+      await addTimeline(ctx, args.applicationId, "Template Completion", "Event details updated.", args.actor);
     }
   },
 });
 
 export const addMessage = mutation({
   args: {
+    actor,
     applicationId: v.id("applications"),
-    author: v.string(),
-    role: v.string(),
     body: v.string(),
   },
   handler: async (ctx, args) => {
-    await addWorkflowMessage(ctx, args.applicationId, args.author, args.role, args.body);
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanReadApplication(args.actor, application);
+    await addWorkflowMessage(ctx, args.applicationId, args.actor.name, args.actor.role, args.body, args.actor);
   },
 });
 
 export const requestRevision = mutation({
   args: {
+    actor,
     applicationId: v.id("applications"),
-    author: v.string(),
-    role: v.string(),
     body: v.string(),
   },
   handler: async (ctx, args) => {
     const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanReviewAsSadu(args.actor);
     assertStatus(application, ["Under Review"], "Revision request");
-    await addWorkflowMessage(ctx, args.applicationId, args.author, args.role, args.body);
+    await addWorkflowMessage(ctx, args.applicationId, args.actor.name, args.actor.role, args.body, args.actor);
     await ctx.db.patch(args.applicationId, { status: "Revision Requested" });
-    await addTimeline(ctx, args.applicationId, "Revision Requested", "SADU requested revisions.");
+    await addTimeline(ctx, args.applicationId, "Revision Requested", "SADU requested revisions.", args.actor);
   },
 });
 
 export const resubmit = mutation({
   args: {
+    actor,
     applicationId: v.id("applications"),
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanEditApplication(args.actor, application);
     assertStatus(application, ["Revision Requested"], "Resubmission");
-    const templates = await ctx.db
-      .query("templates")
-      .withIndex("by_application", (q: any) => q.eq("applicationId", args.applicationId))
-      .collect();
-    if (requiredTemplateGaps(templates).length) {
-      throw new Error("Resubmission requires all required prototype fields.");
+    const { readiness } = await getApplicationReadiness(ctx, args.applicationId);
+    if (!readiness.ready) {
+      throw new Error(
+        `Resubmission requires all required fields and attachments. Missing fields: ${
+          readiness.missingFields.join(", ") || "none"
+        }. Missing attachments: ${readiness.missingAttachments.join(", ") || "none"}.`,
+      );
     }
     await ctx.db.patch(args.applicationId, { status: "Resubmitted" });
-    await addTimeline(ctx, args.applicationId, "Resubmitted", args.note ?? "Student resubmitted after revision.");
+    await addTimeline(ctx, args.applicationId, "Resubmitted", args.note ?? "Student resubmitted after revision.", args.actor);
   },
 });
 
 export const approve = mutation({
   args: {
+    actor,
     applicationId: v.id("applications"),
-    author: v.string(),
-    role: v.string(),
     body: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanReviewAsSadu(args.actor);
     assertStatus(application, ["Under Review"], "Approval");
+    if (!isAdviserEndorsementComplete(application)) {
+      throw new Error("SADU approval requires faculty adviser endorsement.");
+    }
     await addWorkflowMessage(
       ctx,
       args.applicationId,
-      args.author,
-      args.role,
+      args.actor.name,
+      args.actor.role,
       args.body ?? "Approved. Final decision recorded by SADU reviewer.",
+      args.actor,
     );
     await ctx.db.patch(args.applicationId, { status: "SADU Approved" });
-    await addTimeline(ctx, args.applicationId, "SADU Approved", "SADU approved the application.");
+    await addTimeline(ctx, args.applicationId, "SADU Approved", "SADU approved the application.", args.actor);
   },
 });
 
 export const reject = mutation({
   args: {
+    actor,
     applicationId: v.id("applications"),
-    author: v.string(),
-    role: v.string(),
     body: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanReviewAsSadu(args.actor);
     assertStatus(application, ["Under Review"], "Rejection");
     await addWorkflowMessage(
       ctx,
       args.applicationId,
-      args.author,
-      args.role,
+      args.actor.name,
+      args.actor.role,
       args.body ?? "Rejected by SADU after human review. Please coordinate before filing again.",
+      args.actor,
     );
     await ctx.db.patch(args.applicationId, { status: "Rejected" });
-    await addTimeline(ctx, args.applicationId, "Rejected", "SADU rejected the application.");
+    await addTimeline(ctx, args.applicationId, "Rejected", "SADU rejected the application.", args.actor);
   },
 });
 
 export const addEndorsement = mutation({
   args: {
+    actor,
     applicationId: v.id("applications"),
-    author: v.string(),
     body: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    assertApplication(await ctx.db.get(args.applicationId));
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanEndorseApplication(args.actor, application);
+    assertStatus(application, ["Pending Adviser Endorsement"], "Adviser endorsement");
+    const timestamp = new Date().toISOString();
     await addWorkflowMessage(
       ctx,
       args.applicationId,
-      args.author,
-      "Faculty Adviser",
-      args.body ?? "Faculty adviser note: Reviewed for organization coordination. Endorsement placeholder recorded for SADU visibility.",
+      args.actor.name,
+      args.actor.role,
+      args.body ?? "Reviewed and endorsed for SADU review.",
+      args.actor,
     );
+    await ctx.db.patch(args.applicationId, {
+      status: "Submitted to SADU",
+      adviserEndorsementRequired: true,
+      adviserEndorsementState: "Endorsed",
+      adviserEndorsementActorId: args.actor.id,
+      adviserEndorsementActorName: args.actor.name,
+      adviserEndorsementActorRole: args.actor.role,
+      adviserEndorsementTimestamp: timestamp,
+      adviserEndorsementNotes: args.body ?? "Reviewed and endorsed for SADU review.",
+    });
+    await addTimeline(ctx, args.applicationId, "Submitted to SADU", "Faculty adviser endorsed the application for SADU review.", args.actor);
+  },
+});
+
+export const generateAttachmentUploadUrl = mutation({
+  args: {
+    actor,
+  },
+  handler: async (ctx, args) => {
+    if (args.actor.role !== "Student Officer") {
+      throw new Error("Only student officers can upload application documents.");
+    }
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const getReadiness = query({
+  args: {
+    actor,
+    applicationId: v.id("applications"),
+  },
+  handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanReadApplication(args.actor, application);
+    const { readiness } = await getApplicationReadiness(ctx, args.applicationId);
+    return readiness;
+  },
+});
+
+export const listRequirements = query({
+  args: {
+    actor,
+    applicationId: v.id("applications"),
+    reviewerOnly: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanReadApplication(args.actor, application);
+    const [requirements, activeAttachments] = await Promise.all([
+      ctx.db
+        .query("templateRequirements")
+        .withIndex("by_application", (q: any) => q.eq("applicationId", args.applicationId))
+        .collect(),
+      activeAttachmentsForApplication(ctx, args.applicationId),
+    ]);
+    const activeByRequirement = new Map<any, any>(
+      activeAttachments.map((attachment: any) => [attachment.requirementId, attachment]),
+    );
+    return await Promise.all(
+      requirements
+        .filter((requirement: any) => !args.reviewerOnly || requirement.visibleToReviewer)
+        .map(async (requirement: any) => {
+          const activeAttachment = activeByRequirement.get(requirement._id);
+          const url = activeAttachment ? await ctx.storage.getUrl(activeAttachment.storageId) : null;
+          return requirementWithUiId(requirement, activeAttachment, url);
+        }),
+    );
+  },
+});
+
+export const recordAttachmentUpload = mutation({
+  args: {
+    actor,
+    requirementId: v.id("templateRequirements"),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    contentType: v.string(),
+    sizeBytes: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const requirement = assertApplication(await ctx.db.get(args.requirementId));
+    const application = assertApplication(await ctx.db.get(requirement.applicationId));
+    assertCanEditApplication(args.actor, application);
+    assertStatus(
+      application,
+      ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"],
+      "Requirement upload",
+    );
+    if (requirement.maxSizeBytes && args.sizeBytes > requirement.maxSizeBytes) {
+      throw new Error(`File exceeds the ${requirement.maxSizeBytes} byte limit for ${requirement.label}.`);
+    }
+    if (requirement.accepts?.length && !requirement.accepts.includes(args.contentType)) {
+      throw new Error(`${args.contentType} is not accepted for ${requirement.label}.`);
+    }
+
+    const existingAttachments = await ctx.db
+      .query("attachments")
+      .withIndex("by_requirement", (q: any) => q.eq("requirementId", args.requirementId))
+      .collect();
+    const activeAttachment = existingAttachments.find((attachment: any) => attachment.status === "active");
+    const revision = existingAttachments.reduce((max: number, attachment: any) => Math.max(max, attachment.revision), 0) + 1;
+    const now = new Date().toISOString();
+
+    const attachmentId = await ctx.db.insert("attachments", {
+      applicationId: requirement.applicationId,
+      templateDocumentId: requirement.templateDocumentId,
+      requirementId: args.requirementId,
+      storageId: args.storageId,
+      fileName: args.fileName,
+      contentType: args.contentType,
+      sizeBytes: args.sizeBytes,
+      uploadedBy: args.actor.name,
+      uploadedByRole: args.actor.role,
+      revision,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    if (activeAttachment) {
+      await ctx.db.patch(activeAttachment._id, {
+        status: "replaced",
+        updatedAt: now,
+        replacedBy: attachmentId,
+      });
+    }
+
+    if (application.status === "Draft") {
+      await ctx.db.patch(requirement.applicationId, { status: "Template Completion" });
+      await addTimeline(ctx, requirement.applicationId, "Template Completion", "Requirement document uploaded.", args.actor);
+    }
+
+    return attachmentId;
+  },
+});
+
+export const removeAttachment = mutation({
+  args: {
+    actor,
+    attachmentId: v.id("attachments"),
+    deleteFromStorage: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const attachment = assertApplication(await ctx.db.get(args.attachmentId)) as any;
+    const application = assertApplication(await ctx.db.get(attachment.applicationId));
+    assertCanEditApplication(args.actor, application);
+    assertStatus(
+      application,
+      ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"],
+      "Requirement attachment removal",
+    );
+    if (attachment.status !== "active") {
+      throw new Error("Only the active attachment can be removed.");
+    }
+
+    const now = new Date().toISOString();
+    await ctx.db.patch(args.attachmentId, {
+      status: "removed",
+      updatedAt: now,
+      removedAt: now,
+    });
+    if (args.deleteFromStorage) {
+      await ctx.storage.delete(attachment.storageId);
+    }
+    return args.attachmentId;
+  },
+});
+
+export const initializeRequirements = mutation({
+  args: {
+    actor,
+    applicationId: v.id("applications"),
+  },
+  handler: async (ctx, args) => {
+    const application = assertApplication(await ctx.db.get(args.applicationId));
+    assertCanReadApplication(args.actor, application);
+    const templates = await ctx.db
+      .query("templates")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", args.applicationId))
+      .collect();
+    const requirements = [];
+    for (const template of templates) {
+      requirements.push(...(await ensureDefaultRequirementsForTemplate(ctx, template)));
+    }
+    return requirements.map(withUiId);
   },
 });
 
 export const updateTemplate = mutation({
   args: {
+    actor,
     templateDocumentId: v.id("templates"),
     values: v.any(),
   },
   handler: async (ctx, args) => {
     const template = await ctx.db.get(args.templateDocumentId);
     if (!template) return;
+    const application = assertApplication(await ctx.db.get(template.applicationId));
+    assertCanEditApplication(args.actor, application);
 
     await ctx.db.patch(args.templateDocumentId, { values: { ...(template.values ?? {}), ...args.values } });
-    const application = await ctx.db.get(template.applicationId);
     if (application?.status === "Draft") {
       await ctx.db.patch(template.applicationId, { status: "Template Completion" });
-      await addTimeline(ctx, template.applicationId, "Template Completion", "Template fields updated.");
+      await addTimeline(ctx, template.applicationId, "Template Completion", "Template fields updated.", args.actor);
     }
   },
 });
 
 export const updateTemplateAvailability = mutation({
   args: {
+    actor,
     templateId: v.string(),
     enabled: v.boolean(),
   },
   handler: async (ctx, args) => {
+    assertCanAdminister(args.actor);
     const templates = await ctx.db
       .query("templates")
       .filter((q) => q.eq(q.field("templateId"), args.templateId))

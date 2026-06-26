@@ -1,4 +1,20 @@
 import { query } from "./_generated/server";
+import { v } from "convex/values";
+
+const role = v.union(
+  v.literal("Student Officer"),
+  v.literal("SADU Associate"),
+  v.literal("Faculty Adviser"),
+  v.literal("Admin"),
+);
+
+const actor = v.object({
+  id: v.string(),
+  name: v.string(),
+  role,
+  organization: v.optional(v.string()),
+  title: v.optional(v.string()),
+});
 
 function accessIdForUser(document: any) {
   if (document.role === "Student Officer") return "juan";
@@ -13,9 +29,15 @@ function withUiId(document: any) {
 }
 
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    actor,
+  },
+  handler: async (ctx, args) => {
     const users = await ctx.db.query("users").collect();
-    return users.map(withUiId);
+    const mapped = users.map(withUiId);
+    if (args.actor.role !== "Admin") {
+      return mapped.filter((user) => user.id === args.actor.id);
+    }
+    return mapped;
   },
 });
