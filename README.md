@@ -92,7 +92,7 @@ Convex files live in `convex/`:
 
 The dedicated Convex project is configured under `conneura/tams-hub-prototype` with dev deployment `dev:zealous-ocelot-537` and `NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud`. Convex functions have been generated, pushed, and seeded.
 
-The running MVP loads seeded applications from the dedicated Convex deployment when `NEXT_PUBLIC_CONVEX_URL` is configured. New application creation, template field edits, admin template availability, status transitions, revision requests, approvals, rejections, endorsements, messages, and TAMS Guide audit logs sync through Convex-backed routes, with local optimistic fallback for prototype speed.
+The running MVP loads seeded applications from the dedicated Convex deployment when `NEXT_PUBLIC_CONVEX_URL` is configured. New application creation, template field edits, admin template availability, status transitions, revision requests, approvals, rejections, endorsements, messages, and TAMS Guide audit logs sync through Convex-backed routes, with local optimistic fallback for prototype speed. Recent TAMS Guide runs are visible in the Guide workbench as a lightweight audit history.
 
 ## Railway Notes
 

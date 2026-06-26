@@ -2120,6 +2120,73 @@ p {
   font-size: 13px;
 }
 
+.guide-history {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.guide-history-heading,
+.guide-history-item {
+  display: grid;
+}
+
+.guide-history-heading {
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  color: var(--green-700);
+  font-size: 12px;
+}
+
+.guide-history-heading span {
+  justify-self: end;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.guide-history-item {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 10px;
+}
+
+.guide-history-item span {
+  color: var(--green-700);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.guide-history-item strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guide-history-item small {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.guide-history-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .fine-print {
   margin-bottom: 0;
   color: var(--muted);

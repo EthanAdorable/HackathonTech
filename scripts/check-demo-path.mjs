@@ -44,6 +44,7 @@ const nextConfig = readFileSync(new URL("../next.config.ts", import.meta.url), "
 const convexApplicationsRoute = readFileSync(new URL("../app/api/convex-applications/route.ts", import.meta.url), "utf8");
 const convexUsersRoute = readFileSync(new URL("../app/api/convex-users/route.ts", import.meta.url), "utf8");
 const convexWorkflowRoute = readFileSync(new URL("../app/api/convex-workflow/route.ts", import.meta.url), "utf8");
+const guideLogsRoute = readFileSync(new URL("../app/api/guide-logs/route.ts", import.meta.url), "utf8");
 const convexSetup = readFileSync(new URL("../scripts/setup-convex.mjs", import.meta.url), "utf8");
 const railwaySetup = readFileSync(new URL("../scripts/setup-railway.mjs", import.meta.url), "utf8");
 const serviceRunbook = readFileSync(new URL("../docs/service-setup.md", import.meta.url), "utf8");
@@ -169,6 +170,10 @@ assert.match(convexGuide, /export const listForApplication = query/, "Convex gui
 assert.match(tamsGuideRoute, /recordGuideLog\(body, "mock"/, "Mock guide responses should be audit logged when Convex is configured");
 assert.match(tamsGuideRoute, /recordGuideLog\(body, "openai"/, "OpenAI guide responses should be audit logged when Convex is configured");
 assert.match(tamsGuideRoute, /applicationId\.startsWith\("app-"\)/, "Guide logging should skip local prototype draft ids");
+assert.match(guideLogsRoute, /api\.guide\.listForApplication/, "Guide logs route should read auditable guidance history from Convex");
+assert.match(appComponent, /fetch\(`\/api\/guide-logs\?applicationId=\$\{encodeURIComponent\(applicationId\)\}`\)/, "Guide view should load guidance history for the selected application");
+assert.match(appComponent, /aria-label="TAMS Guide audit history"/, "Guide view should expose the guidance audit history");
+assert.match(globalCss, /\.guide-history-item strong\s*\{[\s\S]*text-overflow: ellipsis/, "Guide history entries should stay compact inside the workbench");
 assert.match(convexApplicationsRoute, /ConvexHttpClient/, "Frontend hydration route should read from the configured Convex deployment");
 assert.match(convexApplicationsRoute, /api\.applications\.listWithDetails/, "Frontend hydration route should load detailed Convex applications");
 assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should try to hydrate application data from Convex");
@@ -225,6 +230,7 @@ assert.match(readme, /zealous-ocelot-537\.convex\.cloud/, "README should record 
 assert.match(readme, /loads seeded applications from the dedicated Convex deployment/, "README should describe Convex-backed application reads");
 assert.match(readme, /New application creation, template field edits, admin template availability, status transitions/, "README should describe Convex-backed create, edit, admin, and workflow actions");
 assert.match(readme, /TAMS Guide audit logs sync through Convex-backed routes/, "README should describe Convex-backed guide audit logs");
+assert.match(readme, /visible in the Guide workbench/, "README should describe visible TAMS Guide audit history");
 assert.match(readme, /local fallback for prototype demos/, "README should describe the remaining local prototype fallback");
 assert.match(readme, /Railway is still waiting for CLI login and a dedicated Railway project ID/, "README should describe current Railway setup blocker");
 assert.match(readme, /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");

@@ -75,6 +75,20 @@ type ConvexUsersResponse = {
   users: DemoUser[];
 };
 
+type GuideLog = {
+  id: string;
+  mode: GuideMode;
+  question?: string;
+  source: string;
+  lines: string[];
+  createdAt: string;
+};
+
+type GuideLogsResponse = {
+  source: "convex" | "local";
+  logs: GuideLog[];
+};
+
 type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
 type GuideMode = "checklist" | "missing" | "summary" | "revision" | "question";
 
@@ -123,6 +137,7 @@ export function TamsHubApp() {
   const [guideMode, setGuideMode] = useState<GuideMode>("checklist");
   const [guideQuestion, setGuideQuestion] = useState("What should be completed before SADU review?");
   const [guideOutput, setGuideOutput] = useState<string[]>([]);
+  const [guideLogs, setGuideLogs] = useState<GuideLog[]>([]);
   const [messageDraft, setMessageDraft] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [applicationSource, setApplicationSource] = useState<"convex" | "local">("local");
@@ -152,6 +167,22 @@ export function TamsHubApp() {
     const data = (await response.json()) as ConvexUsersResponse;
     return data.source === "convex" && data.users.length ? data.users : null;
   }, []);
+
+  const loadGuideLogs = useCallback(async (applicationId: string) => {
+    if (applicationSource !== "convex" || applicationId.startsWith("app-")) {
+      setGuideLogs([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/guide-logs?applicationId=${encodeURIComponent(applicationId)}`);
+      if (!response.ok) throw new Error("Guide logs route unavailable");
+      const data = (await response.json()) as GuideLogsResponse;
+      setGuideLogs(data.source === "convex" ? data.logs.slice(-5).reverse() : []);
+    } catch {
+      setGuideLogs([]);
+    }
+  }, [applicationSource]);
 
   useEffect(() => {
     let active = true;
@@ -210,6 +241,10 @@ export function TamsHubApp() {
       window.localStorage.setItem(storageKey, JSON.stringify(applications));
     }
   }, [applicationSource, applications, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) void loadGuideLogs(selectedApp.id);
+  }, [hydrated, loadGuideLogs, selectedApp.id]);
 
   const visibleApplications = useMemo(() => {
     if (activeUser.role === "Student Officer") {
@@ -427,6 +462,7 @@ export function TamsHubApp() {
       if (!response.ok) throw new Error("Guide route unavailable");
       const data = (await response.json()) as { lines?: string[] };
       setGuideOutput(data.lines?.length ? data.lines : fallback);
+      void loadGuideLogs(selectedApp.id);
     } catch {
       setGuideOutput(fallback);
     }
@@ -581,6 +617,7 @@ export function TamsHubApp() {
             guideQuestion={guideQuestion}
             setGuideQuestion={setGuideQuestion}
             guideOutput={guideOutput}
+            guideLogs={guideLogs}
             onGenerateGuide={generateGuide}
           />
         )}
@@ -1396,6 +1433,7 @@ function GuideView({
   guideQuestion,
   setGuideQuestion,
   guideOutput,
+  guideLogs,
   onGenerateGuide,
 }: {
   application: EventApplication;
@@ -1404,6 +1442,7 @@ function GuideView({
   guideQuestion: string;
   setGuideQuestion: (value: string) => void;
   guideOutput: string[];
+  guideLogs: GuideLog[];
   onGenerateGuide: () => void;
 }) {
   const lines = guideOutput.length ? guideOutput : localGuideResponse(application, "summary", guideQuestion);
@@ -1470,6 +1509,20 @@ function GuideView({
           <div className="guide-output-lines">
             {lines.map((line) => <p key={line}>{line}</p>)}
           </div>
+        </div>
+        <div className="guide-history" aria-label="TAMS Guide audit history">
+          <div className="guide-history-heading"><Clock3 size={15} /><strong>Guidance history</strong><span>{guideLogs.length ? "Convex audit log" : "No saved runs yet"}</span></div>
+          {guideLogs.length ? (
+            guideLogs.map((log) => (
+              <article key={log.id} className="guide-history-item">
+                <span>{guideModeLabels[log.mode] ?? log.mode} - {log.source}</span>
+                <strong>{log.lines[0] ?? "Guidance recorded."}</strong>
+                <small>{formatShortDate(log.createdAt)}</small>
+              </article>
+            ))
+          ) : (
+            <p className="guide-history-empty">Generate guidance for a Convex-backed application to record a review trail.</p>
+          )}
         </div>
         <p className="fine-print">AI guidance only. Final approval decisions remain with SADU and human reviewers.</p>
       </section>
