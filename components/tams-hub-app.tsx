@@ -95,6 +95,7 @@ type GuideLogsResponse = {
 
 type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
 type GuideMode = "checklist" | "missing" | "summary" | "revision" | "question";
+type EditableEventDetail = Pick<EventApplication, "title" | "organization" | "eventType" | "venue" | "eventDate" | "expectedParticipants">;
 
 const sectionItems: { id: Section; label: string; icon: ReactNode }[] = [
   { id: "dashboard", label: "Dashboard", icon: <LayoutGrid size={18} /> },
@@ -275,13 +276,15 @@ export function TamsHubApp() {
     setApplications((current) => current.map((application) => (application.id === next.id ? next : application)));
   }
 
-  function applyRemoteApplications(nextApplications: EventApplication[]) {
+  function applyRemoteApplications(nextApplications: EventApplication[], preferredApplicationId?: string) {
     if (!nextApplications.length) return;
     setApplications(nextApplications);
     setSelectedAppId((current) =>
-      nextApplications.some((application) => application.id === current)
-        ? current
-        : nextApplications.find((application) => application.status === "Revision Requested")?.id ?? nextApplications[0].id,
+      preferredApplicationId && nextApplications.some((application) => application.id === preferredApplicationId)
+        ? preferredApplicationId
+        : nextApplications.some((application) => application.id === current)
+          ? current
+          : nextApplications.find((application) => application.status === "Revision Requested")?.id ?? nextApplications[0].id,
     );
   }
 
@@ -316,8 +319,17 @@ export function TamsHubApp() {
     const templateDocumentId = template?.templateDocumentId ?? template?.id;
     if (!templateDocumentId) return;
     try {
-      const data = await postConvexWorkflow({ action: "updateTemplate", templateDocumentId, values });
-      if (data?.source === "convex") applyRemoteApplications(data.applications);
+      await postConvexWorkflow({ action: "updateTemplate", templateDocumentId, values });
+    } catch {
+      // Keep optimistic local prototype state if Convex sync is unavailable.
+    }
+  }
+
+  async function syncConvexDetails(next: EditableEventDetail) {
+    if (applicationSource !== "convex") return;
+    if (!isConvexApplicationId(selectedApp.id)) return;
+    try {
+      await postConvexWorkflow({ action: "updateDetails", applicationId: selectedApp.id, ...next });
     } catch {
       // Keep optimistic local prototype state if Convex sync is unavailable.
     }
@@ -340,8 +352,37 @@ export function TamsHubApp() {
         templates: next.templates,
       });
       if (data?.source === "convex") {
-        applyRemoteApplications(data.applications);
-        if (data.createdApplicationId) setSelectedAppId(data.createdApplicationId);
+        const createdApplicationId = data.createdApplicationId;
+        if (!createdApplicationId) {
+          applyRemoteApplications(data.applications);
+          return;
+        }
+
+        setApplications((current) => {
+          const optimistic = current.find((application) => application.id === next.id) ?? next;
+          const remote = data.applications.find((application) => application.id === createdApplicationId);
+          const merged: EventApplication = {
+            ...(remote ?? optimistic),
+            ...optimistic,
+            id: createdApplicationId,
+            templates: (remote?.templates ?? optimistic.templates).map((remoteTemplate) => {
+              const optimisticTemplate = optimistic.templates.find((template) => template.templateId === remoteTemplate.templateId);
+              return optimisticTemplate
+                ? { ...remoteTemplate, enabled: optimisticTemplate.enabled, values: optimisticTemplate.values }
+                : remoteTemplate;
+            }),
+          };
+          const remoteApplications = data.applications.map((application) =>
+            application.id === createdApplicationId ? merged : application,
+          );
+          const localOnly = current.filter(
+            (application) =>
+              application.id !== next.id &&
+              !remoteApplications.some((remoteApplication) => remoteApplication.id === application.id),
+          );
+          return [...localOnly, ...remoteApplications];
+        });
+        setSelectedAppId((current) => (current === next.id ? createdApplicationId : current));
       }
     } catch {
       // Keep the optimistic local draft if Convex creation is unavailable.
@@ -364,9 +405,11 @@ export function TamsHubApp() {
     setMessageDraft("");
     if (applicationSource === "convex") {
       try {
-        const convexApplications = await loadConvexApplications();
-        if (convexApplications) {
-          applyRemoteApplications(convexApplications);
+        const data = await postConvexWorkflow({ action: "resetDemo" });
+        if (data?.source === "convex" && data.applications.length) {
+          applyRemoteApplications(data.applications);
+          setApplicationSource("convex");
+          setGuideLogs([]);
           return;
         }
       } catch {
@@ -392,16 +435,36 @@ export function TamsHubApp() {
   }
 
   function updateTemplateValue(templateId: string, fieldId: string, value: string) {
-    const nextTemplates = selectedApp.templates.map((template) =>
-      template.templateId === templateId ? { ...template, values: { ...template.values, [fieldId]: value } } : template,
+    setApplications((current) =>
+      current.map((application) => {
+        if (application.id !== selectedAppId) return application;
+        return {
+          ...application,
+          status: application.status === "Draft" ? "Template Completion" : application.status,
+          templates: application.templates.map((template) =>
+            template.templateId === templateId ? { ...template, values: { ...template.values, [fieldId]: value } } : template,
+          ),
+        };
+      }),
     );
-    const nextTemplate = nextTemplates.find((template) => template.templateId === templateId);
-    updateApplication({
+    void syncConvexTemplate(templateId, { [fieldId]: value });
+  }
+
+  function updateApplicationDetails(updates: Partial<EditableEventDetail>) {
+    const next: EventApplication = {
       ...selectedApp,
+      ...updates,
       status: selectedApp.status === "Draft" ? "Template Completion" : selectedApp.status,
-      templates: nextTemplates,
+    };
+    updateApplication(next);
+    void syncConvexDetails({
+      title: next.title,
+      organization: next.organization,
+      eventType: next.eventType,
+      venue: next.venue,
+      eventDate: next.eventDate,
+      expectedParticipants: next.expectedParticipants,
     });
-    if (nextTemplate) void syncConvexTemplate(templateId, nextTemplate.values);
   }
 
   function createApplication() {
@@ -414,7 +477,7 @@ export function TamsHubApp() {
       venue: "FEU Alabang Auditorium",
       eventDate: "2026-09-01",
       expectedParticipants: 40,
-      ownerId: "juan",
+      ownerId: activeUser.id,
       adviserId: "adviser",
       status: "Draft",
       riskLevel: "Low",
@@ -438,6 +501,21 @@ export function TamsHubApp() {
   function setStatus(status: EventStatus, note: string) {
     updateApplication(transitionApplication(selectedApp, status, note));
     void syncConvexWorkflow({ action: "updateStatus", status, note });
+  }
+
+  function runComplianceCheck() {
+    const currentCompletion = getApplicationCompletion(selectedApp);
+    setGuideOutput([
+      "Application has been checked.",
+      currentCompletion.missing.length
+        ? "Demo compliance check completed successfully. Required prototype fields can still be completed before submission."
+        : "Demo compliance check completed successfully. Required prototype fields are complete.",
+    ]);
+    if (selectedApp.status === "Revision Requested") {
+      updateApplication(transitionApplication(selectedApp, "Revision Requested", "Demo compliance check completed for revision response."));
+      return;
+    }
+    setStatus("AI Pre-check", "Demo compliance check completed.");
   }
 
   function resubmitApplication() {
@@ -576,10 +654,11 @@ export function TamsHubApp() {
             activeUser={activeUser}
             completionPercent={completion.percent}
             guideOutput={guideOutput}
+            onApplicationChange={updateApplicationDetails}
             onTemplateChange={updateTemplateValue}
-            onPrecheck={() => setStatus("AI Pre-check", "TAMS Guide pre-check completed.")}
+            onPrecheck={runComplianceCheck}
             onSubmit={() => setStatus("Submitted to SADU", "Student submitted the application to SADU.")}
-            onGenerateGuide={generateGuide}
+            onResubmit={resubmitApplication}
           />
         )}
 
@@ -632,7 +711,7 @@ export function TamsHubApp() {
 }
 
 function AccessScreen({
-  users: roleUsers,
+  users,
   activeUserId,
   setActiveUserId,
   onEnter,
@@ -642,7 +721,7 @@ function AccessScreen({
   setActiveUserId: (id: string) => void;
   onEnter: () => void;
 }) {
-  const activeUser = roleUsers.find((user) => user.id === activeUserId) ?? roleUsers[0] ?? users[0];
+  const activeUser = users.find((user) => user.id === activeUserId) ?? users[0];
   const [accessStep, setAccessStep] = useState<"login" | "otp" | "card">("login");
   const otpDigits = ["", "", "", "", "", ""];
 
@@ -689,7 +768,7 @@ function AccessScreen({
             <div className="access-login-card">
               <p className="label">Preview as role</p>
               <div className="role-choice-grid">
-                {roleUsers.map((user) => (
+                {users.map((user) => (
                   <button
                     key={user.id}
                     className={user.id === activeUserId ? "role-chip active" : "role-chip"}
@@ -1109,24 +1188,31 @@ function FileEventView({
   activeUser,
   completionPercent,
   guideOutput,
+  onApplicationChange,
   onTemplateChange,
   onPrecheck,
   onSubmit,
-  onGenerateGuide,
+  onResubmit,
 }: {
   application: EventApplication;
   activeUser: DemoUser;
   completionPercent: number;
   guideOutput: string[];
+  onApplicationChange: (updates: Partial<EditableEventDetail>) => void;
   onTemplateChange: (templateId: string, fieldId: string, value: string) => void;
   onPrecheck: () => void;
   onSubmit: () => void;
-  onGenerateGuide: () => void;
+  onResubmit: () => void;
 }) {
   const mainTemplates = templateDefinitions.slice(0, 4);
   const guideLines = guideOutput.length ? guideOutput : localGuideResponse(application, "missing", "");
-  const missingCount = getApplicationCompletion(application).missing.length;
+  const applicationCompletion = getApplicationCompletion(application);
+  const missingCount = applicationCompletion.missing.length;
   const revisionAlert = application.status === "Revision Requested";
+  const proposalValues = application.templates.find((template) => template.templateId === "proposal")?.values ?? {};
+  const budgetValues = application.templates.find((template) => template.templateId === "budget")?.values ?? {};
+  const revisionDetail = revisionAlert ? revisionGuideDetail(applicationCompletion.missing, application.messages) : "";
+  const canEditDetails = activeUser.role === "Student Officer" && ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"].includes(application.status);
 
   return (
     <section className="file-layout">
@@ -1135,15 +1221,15 @@ function FileEventView({
         <div className="panel">
           <h3>Event Information</h3>
           <div className="form-grid">
-            <Field label="Event Title" wide><input value={application.title} readOnly /></Field>
-            <Field label="Organization"><input value={application.organization} readOnly /></Field>
-            <Field label="Event Type"><input value={application.eventType} readOnly /></Field>
-            <Field label="Date & Time"><input value={application.eventDate} readOnly /></Field>
-            <Field label="Venue"><input value={application.venue} readOnly /></Field>
-            <Field label="Expected Participants"><input value={application.expectedParticipants} readOnly /></Field>
+            <Field label="Event Title" wide><input value={application.title} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ title: event.target.value })} /></Field>
+            <Field label="Organization"><input value={application.organization} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ organization: event.target.value })} /></Field>
+            <Field label="Event Type"><input value={application.eventType} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ eventType: event.target.value })} /></Field>
+            <Field label="Date & Time"><input type="date" value={application.eventDate} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ eventDate: event.target.value })} /></Field>
+            <Field label="Venue"><input value={application.venue} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ venue: event.target.value })} /></Field>
+            <Field label="Expected Participants"><input type="number" min="1" value={application.expectedParticipants} readOnly={!canEditDetails} onChange={(event) => onApplicationChange({ expectedParticipants: Math.max(1, Number(event.target.value) || 1) })} /></Field>
             <Field label="Adviser Name"><input value={activeUser.role === "Faculty Adviser" ? activeUser.name : "Prof. Maria Santos"} readOnly /></Field>
-            <Field label="Budget Estimate (PHP)"><input value="25,000.00" readOnly /></Field>
-            <Field label="Event Objectives" wide><textarea placeholder={"Describe the purpose, goals, and expected outcomes of this event\u2026"} /></Field>
+            <Field label="Budget Estimate (PHP)"><input value={formatBudgetEstimate(budgetValues.totalBudget)} readOnly /></Field>
+            <Field label="Event Objectives" wide><textarea value={proposalValues.objectives ?? ""} readOnly placeholder={"Describe the purpose, goals, and expected outcomes of this event\u2026"} /></Field>
           </div>
         </div>
 
@@ -1212,11 +1298,15 @@ function FileEventView({
             return <li key={template.id} className={status.complete ? "ok" : "missing"}>{template.name.replace(" Template", "")}</li>;
           })}
         </ul>
-        {revisionAlert && <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>Revision Inconsistency</strong><p>SADU flagged the budget breakdown and participant count for reconciliation before resubmission.</p></div></div>}
+        {revisionAlert && <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>Revision Inconsistency</strong><p>{revisionDetail}</p></div></div>}
         <div className="warning-box amber" role="status" aria-live="polite"><CircleAlert size={16} /><div><strong>{missingCount || "No"} required document(s) missing</strong><p>{missingCount ? "Upload them to proceed with submission." : `${completionPercent}% of required prototype templates are complete.`}</p></div></div>
-        <button className="gold-button full" onClick={() => { onPrecheck(); onGenerateGuide(); }}><Sparkles size={16} /> Run AI Completeness Check</button>
+        <button className="gold-button full" onClick={onPrecheck}><Sparkles size={16} /> Run AI Completeness Check</button>
         <div className="guide-says" role="status" aria-live="polite"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
-        <button className="primary-button full" disabled={completionPercent < 70} onClick={onSubmit}><SendHorizonal size={16} /> Submit to SADU</button>
+        {revisionAlert ? (
+          <button className="primary-button full" disabled={missingCount > 0} onClick={onResubmit}><UploadCloud size={16} /> Upload Revised Documents</button>
+        ) : (
+          <button className="primary-button full" disabled={completionPercent < 70} onClick={onSubmit}><SendHorizonal size={16} /> Submit to SADU</button>
+        )}
       </aside>
     </section>
   );
@@ -1351,6 +1441,23 @@ function getRequiredActionCards(application: EventApplication) {
   }
 
   return [];
+}
+
+function formatBudgetEstimate(value?: string) {
+  const amount = Number(String(value ?? "").replace(/,/g, ""));
+  if (!Number.isFinite(amount) || amount <= 0) return "Not set";
+  return new Intl.NumberFormat("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+}
+
+function revisionGuideDetail(missingItems: string[], messages: EventApplication["messages"]) {
+  if (missingItems.length) {
+    return `SADU flagged ${missingItems.slice(0, 2).join("; ")} before resubmission.`;
+  }
+
+  const latestRevision = [...messages]
+    .reverse()
+    .find((message) => message.role === "SADU Associate" && /revise|revision|clarify|resubmit/i.test(message.body));
+  return latestRevision?.body ?? "Review the SADU thread and resolve the latest revision notes before resubmission.";
 }
 
 function ReviewerInsightsPanel({ application, completionPercent }: { application: EventApplication; completionPercent: number }) {
@@ -1610,7 +1717,7 @@ function WorkflowActions({
 }) {
   if (role === "SADU Associate") {
     const canStartReview = status === "Submitted to SADU" || status === "Resubmitted";
-    const canDecide = canStartReview || status === "Under Review";
+    const canDecide = status === "Under Review";
     return (
       <div className="action-stack">
         <div className="action-row">
