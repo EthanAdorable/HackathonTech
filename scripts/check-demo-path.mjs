@@ -214,9 +214,14 @@ assert.match(serviceCheckScript, /function projectTargetSummary\(\)/, "Service c
 assert.match(serviceCheckScript, /TAMS_RAILWAY_PROJECT_ID/, "Service checks should require an explicit Railway project ID for deploy readiness");
 assert.match(serviceCheckScript, /label: "Dedicated project target"/, "Service checks should report dedicated project targeting status");
 assert.match(serviceStatusRoute, /convexProject/, "Service status API should expose the target Convex project");
+assert.match(serviceStatusRoute, /convexHost/, "Service status API should expose the configured Convex host");
+assert.match(serviceStatusRoute, /railwayProjectId: railwayProjectId \? "set" : "missing"/, "Service status API should expose redacted Railway project ID state");
 assert.match(serviceStatusRoute, /railwayProjectIdConfigured/, "Service status API should expose explicit Railway project ID readiness");
 assert.match(appComponent, /Target project: \$\{convexProject\}/, "Admin service cards should show the dedicated Convex target");
 assert.match(appComponent, /Target project: \$\{railwayProject\}/, "Admin service cards should show the dedicated Railway target");
+assert.match(appComponent, /Host: \{convexHost\}/, "Admin service cards should show the configured Convex host");
+assert.match(appComponent, /Project ID: \{railwayProjectId\}/, "Admin service cards should show redacted Railway project ID state");
+assert.match(globalCss, /\.service-detail\s*\{[\s\S]*text-overflow: ellipsis/, "Admin service readiness metadata should stay compact");
 assert.match(appComponent, /railwayReady && railwayProjectReady/, "Admin service cards should require both Railway runtime and explicit project ID readiness");
 assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");

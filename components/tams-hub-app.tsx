@@ -56,11 +56,13 @@ const defaultApplicationId = seedApplications.find((application) => application.
 
 type ServiceStatus = {
   convexConfigured: boolean;
+  convexHost: string;
   convexProject: string;
   openAiConfigured: boolean;
   railwayConfigured: boolean;
   railwayEnvironment?: string;
   railwayProject: string;
+  railwayProjectId: "set" | "missing";
   railwayProjectIdConfigured: boolean;
 };
 
@@ -1003,6 +1005,8 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
   const openAiReady = status?.openAiConfigured ?? false;
   const convexProject = status?.convexProject ?? "tams-hub-prototype";
   const railwayProject = status?.railwayProject ?? "tams-hub-prototype";
+  const convexHost = status?.convexHost || "not configured";
+  const railwayProjectId = status?.railwayProjectId ?? "missing";
 
   return (
     <section className="service-grid">
@@ -1011,6 +1015,7 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
         <div>
           <strong>Convex Project</strong>
           <p>{convexReady ? `Runtime URL configured for ${convexProject}.` : `Target project: ${convexProject}. Waiting for Convex deployment URL.`}</p>
+          <span className="service-detail">Host: {convexHost}</span>
         </div>
         <span className={convexReady ? "status-pill green" : "status-pill gold"}>{convexReady ? "Ready" : "Waiting"}</span>
       </article>
@@ -1023,6 +1028,7 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
               ? `Running on ${railwayProject}${status?.railwayEnvironment ? ` (${status.railwayEnvironment})` : ""}.`
               : `Target project: ${railwayProject}. ${railwayProjectReady ? "Project ID is configured." : "Waiting for Railway login and project ID."}`}
           </p>
+          <span className="service-detail">Project ID: {railwayProjectId}</span>
         </div>
         <span className={railwayReady && railwayProjectReady ? "status-pill green" : "status-pill gold"}>{railwayReady && railwayProjectReady ? "Ready" : "Waiting"}</span>
       </article>
