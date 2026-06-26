@@ -10,6 +10,7 @@ const checks = [
   ["skip link is visible on focus", css.includes(".skip-link:focus-visible")],
   ["notification popover can receive focus", component.includes("notificationPopoverRef") && component.includes("tabIndex={-1}")],
   ["notification popover closes with Escape", component.includes('event.key === "Escape"')],
+  ["notification focus returns to trigger", component.includes("notificationButtonRef") && component.includes("notificationButtonRef.current?.focus()")],
   ["destructive actions require confirmation", component.match(/window\.confirm/g)?.length >= 2],
   ["required fields expose inline validation", component.includes("field-error") && component.includes("aria-invalid={missingRequiredField}")],
   ["reduced motion preference is respected", css.includes("@media (prefers-reduced-motion: reduce)")],

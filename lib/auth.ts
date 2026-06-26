@@ -39,10 +39,22 @@ export const authOptions: NextAuthOptions = {
       name: "TAMS Access Prototype",
       credentials: {
         userId: { label: "User", type: "text" },
+        email: { label: "FEU Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!isDemoAuthEnabled()) return null;
         const authUsers = await loadAuthUsers();
+        if (credentials?.email && credentials?.password) {
+          const normalizedEmail = credentials.email.toLowerCase().trim();
+          const expectedPassword = process.env.TAMS_FEU_LOGIN_PASSWORD ?? "Password";
+          const studentUser = authUsers.find((item) => item.role === "Student Officer") ?? authUsers[0];
+          if (normalizedEmail === "student@feualabang.edu.ph" && credentials.password === expectedPassword && studentUser) {
+            return toAuthUser(studentUser);
+          }
+          return null;
+        }
+
+        if (!isDemoAuthEnabled()) return null;
         const user = authUsers.find((item) => item.id === credentials?.userId);
         if (!user) return null;
         return toAuthUser(user);

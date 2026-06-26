@@ -4,7 +4,6 @@ import Image from "next/image";
 import { signIn, signOut, useSession } from "next-auth/react";
 import {
   AlertTriangle,
-  ArrowLeft,
   BadgeCheck,
   Bell,
   Bot,
@@ -14,7 +13,6 @@ import {
   CircleAlert,
   ClipboardCheck,
   Clock3,
-  CreditCard,
   Eye,
   ClipboardList,
   FileText,
@@ -31,7 +29,6 @@ import {
   SendHorizonal,
   Settings2,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   Trash2,
   UploadCloud,
@@ -864,6 +861,8 @@ export function TamsHubApp() {
 }
 
 function AccessScreen({ users }: { users: DemoUser[] }) {
+  const feuLoginEmail = "student@feualabang.edu.ph";
+  const feuLoginPassword = "Password";
   const [activeUserId, setActiveUserId] = useState(users[0]?.id ?? "juan");
   const activeUser = users.find((user) => user.id === activeUserId) ?? users[0] ?? {
     id: "juan",
@@ -872,11 +871,9 @@ function AccessScreen({ users }: { users: DemoUser[] }) {
     organization: "FEU Alabang Student Council",
     title: "Student Organization Officer",
   };
-  const [accessStep, setAccessStep] = useState<"login" | "otp" | "card">("login");
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus | null>(null);
   const [loginError, setLoginError] = useState("");
   const [loginPending, setLoginPending] = useState(false);
-  const otpDigits = ["", "", "", "", "", ""];
   const demoAuthEnabled = serviceStatus?.demoAuthEnabled ?? false;
 
   useEffect(() => {
@@ -902,6 +899,20 @@ function AccessScreen({ users }: { users: DemoUser[] }) {
     setLoginPending(false);
     if (result?.error || !result?.ok) {
       setLoginError("Demo access is disabled. Enable TAMS_DEMO_AUTH_ENABLED=true only for intentional prototype sessions.");
+    }
+  }
+
+  async function enterWithFeuAccount() {
+    setLoginError("");
+    setLoginPending(true);
+    const result = await signIn("credentials", {
+      email: feuLoginEmail,
+      password: feuLoginPassword,
+      redirect: false,
+    });
+    setLoginPending(false);
+    if (result?.error || !result?.ok) {
+      setLoginError("Unable to sign in with this FEU account.");
     }
   }
 
@@ -933,73 +944,41 @@ function AccessScreen({ users }: { users: DemoUser[] }) {
           </div>
         </div>
 
-        {accessStep === "login" && (
-          <>
-            <div className="access-login-card">
-              <p className="label">FEU account login</p>
-              <input value="student@feualabang.edu.ph" readOnly aria-label="FEU email" />
-              <input value="Password" readOnly aria-label="Password" type="password" />
-              <button className="primary-button full" onClick={() => setAccessStep("otp")}>Continue with FEU Account</button>
-            </div>
+        <div className="access-login-card">
+          <p className="label">FEU account login</p>
+          <input value={feuLoginEmail} readOnly aria-label="FEU email" />
+          <input value={feuLoginPassword} readOnly aria-label="Password" type="password" />
+          <button className="primary-button full" disabled={loginPending} onClick={() => void enterWithFeuAccount()}>
+            {loginPending ? "Signing in..." : "Continue with FEU Account"}
+          </button>
+          {loginError && <p className="fine-print" role="alert">{loginError}</p>}
+        </div>
 
-            <button className="access-method" onClick={() => setAccessStep("card")}><CreditCard size={18} /><div><strong>Tap TAMS ID Card</strong><span>Hold your campus card near the reader</span></div></button>
-            <button className="access-method" onClick={() => setAccessStep("otp")}><Smartphone size={18} /><div><strong>OTP Verification</strong><span>Receive a one-time code via SMS or email</span></div></button>
-
-            <div className="access-login-card">
-              <p className="label">Prototype demo access</p>
-              {demoAuthEnabled ? (
-                <>
-                  <div className="role-choice-grid">
-                    {users.map((user) => (
-                      <button
-                        key={user.id}
-                        className={user.id === activeUserId ? "role-chip active" : "role-chip"}
-                        aria-pressed={user.id === activeUserId}
-                        onClick={() => setActiveUserId(user.id)}
-                      >
-                        {roleIcons[user.role]}
-                        {roleDisplayName(user.role)}
-                      </button>
-                    ))}
-                  </div>
-                  <button className="gold-button full" disabled={loginPending} onClick={() => void enterWithDemoUser()}>
-                    {loginPending ? "Verifying..." : `Enter as ${roleDisplayName(activeUser.role)}`}
+        <div className="access-login-card">
+          <p className="label">Prototype demo access</p>
+          {demoAuthEnabled ? (
+            <>
+              <div className="role-choice-grid">
+                {users.map((user) => (
+                  <button
+                    key={user.id}
+                    className={user.id === activeUserId ? "role-chip active" : "role-chip"}
+                    aria-pressed={user.id === activeUserId}
+                    onClick={() => setActiveUserId(user.id)}
+                  >
+                    {roleIcons[user.role]}
+                    {roleDisplayName(user.role)}
                   </button>
-                </>
-              ) : (
-                <p className="fine-print">Demo role login is disabled for this environment.</p>
-              )}
-              {loginError && <p className="fine-print" role="alert">{loginError}</p>}
-            </div>
-          </>
-        )}
-
-        {accessStep === "otp" && (
-          <div className="access-login-card verification-card">
-            <div className="verification-title"><KeyRound size={18} /><div><strong>OTP Verification</strong><span>Enter the 6-digit code sent to ju***@feualabang.edu.ph</span></div></div>
-            <div className="otp-grid">
-              {otpDigits.map((digit, index) => <input key={index} value={digit} aria-label={`OTP digit ${index + 1}`} readOnly />)}
-            </div>
-            <button className="primary-button full" disabled={!demoAuthEnabled || loginPending} onClick={() => void enterWithDemoUser()}>
-              {loginPending ? "Verifying..." : "Verify & Enter"}
-            </button>
-            <button className="link-button" onClick={() => setAccessStep("login")}><ArrowLeft size={16} aria-hidden="true" /> Back</button>
-          </div>
-        )}
-
-        {accessStep === "card" && (
-          <div className="access-login-card verification-card">
-            <div className="card-reader">
-              <CreditCard size={28} />
-              <span />
-            </div>
-            <div className="verification-title centered"><strong>Tap TAMS ID Card</strong><span>Hold your campus card near the reader to verify your campus role.</span></div>
-            <button className="primary-button full" disabled={!demoAuthEnabled || loginPending} onClick={() => void enterWithDemoUser()}>
-              {loginPending ? "Verifying..." : "Simulate Card Tap"}
-            </button>
-            <button className="link-button" onClick={() => setAccessStep("login")}><ArrowLeft size={16} aria-hidden="true" /> Back</button>
-          </div>
-        )}
+                ))}
+              </div>
+              <button className="gold-button full" disabled={loginPending} onClick={() => void enterWithDemoUser()}>
+                {loginPending ? "Verifying..." : `Enter as ${roleDisplayName(activeUser.role)}`}
+              </button>
+            </>
+          ) : (
+            <p className="fine-print">Demo role login is disabled for this environment.</p>
+          )}
+        </div>
 
         <p className="secure-note"><KeyRound size={14} /> Access is based on verified campus role.</p>
       </section>
@@ -1073,6 +1052,7 @@ function Topbar({
 }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus | null>(null);
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
   const notificationPopoverRef = useRef<HTMLDivElement>(null);
   const revisionApplication = applications.find((item) => item.status === "Revision Requested");
   const revisionCompletion = revisionApplication ? getApplicationCompletion(revisionApplication) : null;
@@ -1118,6 +1098,7 @@ function Topbar({
         <div className="notification-wrap">
           <button
             className="notification-button"
+            ref={notificationButtonRef}
             aria-label="View notifications"
             aria-expanded={notificationsOpen}
             aria-controls={notificationsOpen ? "notification-popover" : undefined}
@@ -1128,7 +1109,10 @@ function Topbar({
           </button>
           {notificationsOpen && (
             <div id="notification-popover" role="region" aria-label="Notifications" className="notification-popover" ref={notificationPopoverRef} tabIndex={-1} onKeyDown={(event) => {
-              if (event.key === "Escape") setNotificationsOpen(false);
+              if (event.key === "Escape") {
+                setNotificationsOpen(false);
+                notificationButtonRef.current?.focus();
+              }
             }}>
               <strong>Notifications</strong>
               {notificationItems.length ? notificationItems.map((item) => <span key={item}>{item}</span>) : <span>No active alerts.</span>}
@@ -1995,7 +1979,7 @@ function GuideView({
       </section>
 
       <section className="feature-grid">
-        <Feature icon={<ShieldCheck />} title="TAMS Access" text="Multi-factor authentication with NFC card, OTP, and FEU SSO placeholders." />
+        <Feature icon={<ShieldCheck />} title="TAMS Access" text="Role-based FEU account login with a NextAuth-ready credentials provider." />
         <Feature icon={<FilePlus2 />} title="Event Filing" text="Structured event proposal forms with AI-guided completeness checks." />
         <Feature icon={<Sparkles />} title="TAMS Guide" text="Summaries, missing field checks, revision drafts, and filing answers." />
         <Feature icon={<CalendarDays />} title="Real-Time Tracking" text="Visual timeline from draft to final SADU approval." />

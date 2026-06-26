@@ -57,7 +57,7 @@ TAMS_RAILWAY_PROJECT_ID=
 - Faculty Adviser
 - Admin
 
-The visible role switcher simulates TAMS Access with OTP and NFC/card-tap verification. The NextAuth route at `/api/auth/[...nextauth]` is included as the structured auth placeholder for real credentials or campus providers later. `TAMS_DEMO_AUTH_ENABLED=true` keeps credentials role switching available for local prototype demos; leave it unset or false for public deploys unless demo access is intentional.
+The FEU account login signs in directly through the NextAuth credentials provider. `TAMS_DEMO_AUTH_ENABLED=true` keeps role switching available for local prototype demos; leave it unset or false for public deploys unless demo access is intentional.
 
 ## Main Modules
 
@@ -147,4 +147,4 @@ When checking a running deployment, set `TAMS_HUB_HEALTH_URL` to the app URL so 
 - TAMS Guide is guidance only and never final approval.
 - Final approval, rejection, and revision decisions remain with SADU and human reviewers.
 - Seeded application reads, application creation, template edits, template availability, workflow actions, and TAMS Guide audit logs come from Convex when configured, with local fallback for prototype demos.
-- OTP/NFC access is simulated for the prototype.
+- Campus OTP/NFC access is disabled for the prototype; the login screen uses FEU email and password credentials for now.

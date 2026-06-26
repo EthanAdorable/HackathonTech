@@ -34,6 +34,10 @@ assert.match(appComponent, /signIn\("credentials"/, "Demo role selection should 
 assert.match(appComponent, /signOut\(\)/, "Signing out should clear the NextAuth session.");
 assert.doesNotMatch(appComponent, /const \[entered, setEntered\]/, "The app must not use local entered state as the access gate.");
 assert.match(appComponent, /demoAuthEnabled \? \(/, "Demo role controls should render only when the server reports demo auth enabled.");
+assert.match(authConfig, /email: \{ label: "FEU Email"/, "Credentials auth should accept direct FEU email login.");
+assert.match(authConfig, /password: \{ label: "Password"/, "Credentials auth should accept direct FEU password login.");
+assert.match(authConfig, /normalizedEmail === "student@feualabang\.edu\.ph"/, "Prototype FEU login should be limited to the configured campus account.");
+assert.match(authConfig, /if \(!isDemoAuthEnabled\(\)\) return null;/, "Demo role switching should remain gated when FEU login is enabled.");
 
 assert.match(serviceStatusRoute, /demoAuthEnabled/, "Service status should expose whether demo auth is explicitly enabled.");
 

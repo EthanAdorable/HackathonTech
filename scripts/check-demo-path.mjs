@@ -118,7 +118,10 @@ assert.match(globalCss, /\.table-scroll\s*\{[\s\S]*overflow-x: auto/, "Dashboard
 assert.match(globalCss, /\.guide-alert\s*\{[\s\S]*grid-template-columns: 1fr/, "Guide alert should stack at the mobile breakpoint");
 assert.match(globalCss, /\.access-heading \.mascot-logo/, "Access page mascot should be sized like the reference login screens");
 assert.match(nextConfig, /devIndicators:\s*false/, "Local demos should hide the Next.js dev indicator for reference-clean screenshots");
-assert.match(appComponent, /<ArrowLeft size=\{16\} aria-hidden="true" \/> Back/, "Verification back controls should use the shared Lucide icon set");
+assert.match(appComponent, /function enterWithFeuAccount/, "FEU account login should submit directly through credentials sign-in");
+assert.match(appComponent, /onClick=\{\(\) => void enterWithFeuAccount\(\)\}/, "Primary access button should continue through FEU email/password login");
+assert.doesNotMatch(appComponent, /OTP Verification/, "Access screen should not expose OTP verification while TOTP is disabled");
+assert.doesNotMatch(appComponent, /setAccessStep/, "Access screen should not route FEU login through a verification step");
 assert.match(appComponent, /aria-pressed=\{user\.id === activeUserId\}/, "Access role preview chips should expose selected state");
 assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
 assert.match(appComponent, /aria-controls=\{notificationsOpen \? "notification-popover" : undefined\}/, "Notification trigger should reference the open popover");
