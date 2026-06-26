@@ -2225,7 +2225,7 @@ function MiniThread({ application, activeRole, ownLabel, expanded = false }: { a
 function MascotLogo({ large = false }: { large?: boolean }) {
   return (
     <div className={large ? "mascot-logo large" : "mascot-logo"} aria-label="TAMS Hub mascot">
-      <Image src="/tams-mascot.svg" alt="" width={large ? 156 : 43} height={large ? 156 : 43} priority={large} />
+      <Image src="/tams-hub-logo.png" alt="" width={large ? 156 : 43} height={large ? 156 : 43} priority={large} />
     </div>
   );
 }
