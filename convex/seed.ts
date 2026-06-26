@@ -123,6 +123,61 @@ export const seedDemoData = mutation({
   },
 });
 
+export const clearFiledData = mutation({
+  args: {
+    actor,
+    deleteStoredFiles: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    if (args.actor.role !== "Admin") {
+      throw new Error("Only admins can clear filed data.");
+    }
+
+    const storageIds = new Set<string>();
+    for (const table of ["attachments", "uploadedDocuments"] as const) {
+      const rows = await ctx.db.query(table).collect();
+      for (const row of rows) {
+        storageIds.add(row.storageId);
+      }
+    }
+
+    const deletedRows: Record<string, number> = {};
+    for (const table of [
+      "compiledVerificationSummaries",
+      "verificationResults",
+      "extractionRuns",
+      "uploadedDocuments",
+      "guideLogs",
+      "timeline",
+      "messages",
+      "attachments",
+      "templateRequirements",
+      "templates",
+      "applications",
+    ] as const) {
+      const rows = await ctx.db.query(table).collect();
+      deletedRows[table] = rows.length;
+      for (const row of rows) {
+        await ctx.db.delete(row._id);
+      }
+    }
+
+    let deletedStoredFiles = 0;
+    if (args.deleteStoredFiles !== false) {
+      for (const storageId of storageIds) {
+        await ctx.storage.delete(storageId);
+        deletedStoredFiles += 1;
+      }
+    }
+
+    return {
+      deletedRows,
+      deletedStoredFiles,
+      preservedTables: ["users"],
+    };
+  },
+});
+
 function defaultRequirementForTemplate(templateId: string) {
   const requirements: Record<
     string,
