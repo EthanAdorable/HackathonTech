@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import {
   activeExtractionSchemaVersion,
   activePromptVersion,
-  activeRubricVersionId,
   type DocumentRubricProfile,
   isSupportedDocumentMimeType,
 } from "./rubrics";

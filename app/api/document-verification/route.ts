@@ -54,6 +54,10 @@ type DocumentSource = {
   sourceFileBase64?: string;
 };
 
+type CodexLbContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
 const defaultCodexLbBaseUrl = "https://codex-lb-production-6b47.up.railway.app/v1";
 const defaultCodexLbModel = "gpt-5.4-mini";
 
@@ -563,5 +567,5 @@ function codexLbUserContent(input: {
         url: input.source.mediaDataUrl,
       },
     },
-  ] as any;
+  ] satisfies CodexLbContentPart[];
 }
