@@ -8,9 +8,13 @@ import { withTimeout } from "@/lib/async-timeout";
 import {
   compileVerificationSummary,
   makeVerificationCacheKey,
+  runCrossDocumentVerification,
   runDeterministicVerification,
   validateExtractionJson,
+  documentExtractionSchemas,
   type DocumentExtraction,
+  type DocumentVerificationSummary,
+  type ExtractionMode,
   type VerificationResult,
   type VerificationRunStatus,
 } from "@/lib/document-verification";
@@ -20,6 +24,7 @@ import {
   activeRubricVersionId,
   getRubricProfile,
   isSupportedDocumentMimeType,
+  isVerificationDocumentType,
 } from "@/lib/rubrics";
 import { getAccessActor } from "@/lib/server-access";
 
@@ -39,6 +44,14 @@ type ActiveDocument = {
   rubricVersionId: string;
   extractionSchemaVersion: string;
   promptVersion: string;
+};
+
+type DocumentSource = {
+  text: string;
+  locations: string[];
+  mode: ExtractionMode;
+  mediaDataUrl?: string;
+  sourceFileBase64?: string;
 };
 
 const defaultCodexLbBaseUrl = "https://codex-lb-production-6b47.up.railway.app/v1";
@@ -71,8 +84,9 @@ export async function POST(request: Request) {
     const activeDocuments = (await withTimeout(
       client.query(api.verification.listActiveDocuments, { actor, applicationId }),
     )) as ActiveDocument[];
-    if (!activeDocuments.length) {
-      return NextResponse.json({ source: "convex", error: "No active uploaded documents were found." }, { status: 409 });
+    const verificationDocuments = activeDocuments.filter((document) => isVerificationDocumentType(document.documentType));
+    if (!verificationDocuments.length) {
+      return NextResponse.json({ source: "convex", error: "No active APP, APF, or VERF uploaded documents were found." }, { status: 409 });
     }
 
     const urlsByAttachment = new Map<string, string>();
@@ -82,8 +96,9 @@ export async function POST(request: Request) {
 
     const outcomes = [];
     const codexLbApiKey = process.env.CODEX_LB_API_KEY;
-    const fileSignature = activeDocumentSignature(activeDocuments);
-    for (const document of activeDocuments) {
+    const fileSignature = activeDocumentSignature(verificationDocuments);
+    const missingDocumentResults = missingRequiredDocumentResults(verificationDocuments);
+    for (const document of verificationDocuments) {
       const profile = getRubricProfile(document.documentType);
       const cacheKey = makeVerificationCacheKey({
         sha256: document.sha256,
@@ -137,7 +152,7 @@ export async function POST(request: Request) {
       if (!profile) {
         extractionError = `No rubric profile is registered for ${document.documentType}.`;
         status = "failed_rubric_unavailable";
-      } else if (!isSupportedDocumentMimeType(document.mimeType)) {
+      } else if (!isSupportedDocumentMimeType(document.mimeType, document.documentType)) {
         extractionError = `${document.mimeType} is not a supported document verification MIME type.`;
         status = "failed_schema";
       } else if (!url) {
@@ -150,18 +165,18 @@ export async function POST(request: Request) {
         try {
           const source = await fetchDocumentSource(url, document.mimeType);
           extractedTextPreview = source.text.slice(0, 1800);
-          if (!source.text.trim()) {
-            extractionError = "No readable text or table content could be extracted from the source file.";
+          if (!source.text.trim() && !source.mediaDataUrl && !source.sourceFileBase64) {
+            extractionError = "No readable text, image, or source content could be extracted from the source file.";
             status = "failed_schema";
           } else {
             model = process.env.CODEX_LB_MODEL ?? defaultCodexLbModel;
-            aiSource = "codex-lb";
+            aiSource = source.mode === "vision_ocr" || source.mode === "weak_pdf_vision" ? "codex-lb:vision-ocr" : "codex-lb";
             const aiJson = await extractWithCodexLb({
               apiKey: codexLbApiKey,
               model,
               documentType: document.documentType,
               fileName: document.originalName,
-              extractedText: source.text,
+              source,
               sourceLocations: source.locations,
               requiredFieldIds: profile.requiredFieldIds,
             });
@@ -186,6 +201,9 @@ export async function POST(request: Request) {
             mimeType: document.mimeType,
             extraction,
             extractionError,
+            rubricVersionId: document.rubricVersionId,
+            extractionSchemaVersion: document.extractionSchemaVersion,
+            promptVersion: document.promptVersion,
           })
         : [
             {
@@ -222,13 +240,30 @@ export async function POST(request: Request) {
       });
     }
 
-    const allResults = outcomes.flatMap((outcome) => outcome.results);
+    const crossDocumentResults = runCrossDocumentVerification(
+      outcomes.flatMap((outcome) => (outcome.extraction ? [outcome.extraction] : [])),
+    );
+    const allResults = [...outcomes.flatMap((outcome) => outcome.results), ...missingDocumentResults, ...crossDocumentResults];
+    const documentSummaries: DocumentVerificationSummary[] = outcomes.map((outcome) => {
+      const blockers = outcome.results.filter((result) => result.severity === "critical" && result.status === "fail");
+      const warnings = outcome.results.filter((result) => result.severity === "warning" && ["warning", "manual_review"].includes(result.status));
+      return {
+        documentType: outcome.extraction?.documentType ?? "unknown",
+        status: outcome.status,
+        fieldCount: outcome.extraction?.normalizedFields.length ?? 0,
+        confidence: outcome.extraction?.confidence ?? 0,
+        extractionMode: outcome.extraction?.extractionMode,
+        blockerCount: blockers.length,
+        warningCount: warnings.length,
+      };
+    });
     const summary = compileVerificationSummary({
       rubricVersionId: activeRubricVersionId,
-      documentCount: activeDocuments.length,
+      documentCount: verificationDocuments.length,
       fileSignature,
       results: allResults,
       runStatuses: outcomes.map((outcome) => outcome.status),
+      documentSummaries,
     });
 
     for (const outcome of outcomes) {
@@ -243,7 +278,7 @@ export async function POST(request: Request) {
           model: outcome.model,
           aiSource: outcome.aiSource,
           results: outcome.results,
-          summary,
+          summary: { ...summary, extractionRunIds: outcomes.map((item) => item.runId) },
         }),
       );
     }
@@ -286,15 +321,43 @@ function normalizeCachedResults(results: Array<Record<string, unknown>>): Verifi
     method: result.method as VerificationResult["method"],
     confidence: typeof result.confidence === "number" ? result.confidence : 0,
     failureReason: typeof result.failureReason === "string" ? result.failureReason : undefined,
+    documentType: typeof result.documentType === "string" ? result.documentType : undefined,
   }));
 }
 
-async function fetchDocumentSource(url: string, mimeType: string) {
+function missingRequiredDocumentResults(documents: ActiveDocument[]): VerificationResult[] {
+  const uploadedTypes = new Set(documents.map((document) => document.documentType));
+  return (["app", "apf", "verf"] as const)
+    .filter((documentType) => !uploadedTypes.has(documentType))
+    .map((documentType) => ({
+      checkId: "required_document_slot_present",
+      label: `${documentType.toUpperCase()} required document slot is present`,
+      status: "fail" as const,
+      severity: "critical" as const,
+      blocking: true,
+      evidence: [`No active ${documentType.toUpperCase()} uploaded document was found.`],
+      recommendation: `Upload the completed ${documentType.toUpperCase()} form and run document verification again.`,
+      method: "deterministic" as const,
+      confidence: 1,
+      failureReason: "Required APP/APF/VERF upload is missing.",
+      documentType,
+    }));
+}
+
+async function fetchDocumentSource(url: string, mimeType: string): Promise<DocumentSource> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Unable to fetch uploaded document: ${response.status}`);
   const buffer = Buffer.from(await response.arrayBuffer());
+  if (mimeType === "image/jpeg" || mimeType === "image/png") {
+    return {
+      text: "",
+      locations: [`image:${mimeType}`],
+      mode: "vision_ocr" as ExtractionMode,
+      mediaDataUrl: `data:${mimeType};base64,${buffer.toString("base64")}`,
+    };
+  }
   if (mimeType === "text/csv") {
-    return { text: buffer.toString("utf8"), locations: ["csv:rows"] };
+    return { text: buffer.toString("utf8"), locations: ["csv:rows"], mode: "text_csv" as ExtractionMode };
   }
   if (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
     return extractDocxText(buffer);
@@ -303,16 +366,24 @@ async function fetchDocumentSource(url: string, mimeType: string) {
     return extractXlsxText(buffer);
   }
   if (mimeType === "application/pdf") {
-    return extractPdfText(buffer);
+    const pdf = extractPdfText(buffer);
+    if (pdf.text.length < 300) {
+      return {
+        ...pdf,
+        mode: "weak_pdf_vision" as ExtractionMode,
+        sourceFileBase64: buffer.toString("base64").slice(0, 900000),
+      };
+    }
+    return pdf;
   }
-  return { text: "", locations: [] };
+  return { text: "", locations: [], mode: "text_pdf" as ExtractionMode };
 }
 
 function extractDocxText(buffer: Buffer) {
   const entries = readZipEntries(buffer);
   const documentXml = entries.get("word/document.xml") ?? "";
   const text = xmlText(documentXml).replace(/\s+/g, " ").trim();
-  return { text, locations: text ? ["docx:word/document.xml"] : [] };
+  return { text, locations: text ? ["docx:word/document.xml"] : [], mode: "text_docx" as ExtractionMode };
 }
 
 function extractXlsxText(buffer: Buffer) {
@@ -323,7 +394,7 @@ function extractXlsxText(buffer: Buffer) {
   const sheetTexts = [...entries.entries()]
     .filter(([name]) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name))
     .map(([name, xml]) => `${name}: ${xmlText(xml)} ${sharedStrings.join(" ")}`);
-  return { text: sheetTexts.join("\n").trim(), locations: sheetTexts.map((text) => text.split(":")[0]) };
+  return { text: sheetTexts.join("\n").trim(), locations: sheetTexts.map((text) => text.split(":")[0]), mode: "text_xlsx" as ExtractionMode };
 }
 
 function extractPdfText(buffer: Buffer) {
@@ -347,7 +418,7 @@ function extractPdfText(buffer: Buffer) {
     .replace(/[^\x20-\x7E\n]+/g, " ")
     .replace(/\s+/g, " ")
     .trim() ?? "";
-  return { text, locations: text ? ["pdf:text-spans"] : [] };
+  return { text, locations: text ? ["pdf:text-spans"] : [], mode: "text_pdf" as ExtractionMode };
 }
 
 function readZipEntries(buffer: Buffer) {
@@ -392,7 +463,7 @@ async function extractWithCodexLb(input: {
   model: string;
   documentType: string;
   fileName: string;
-  extractedText: string;
+  source: DocumentSource;
   sourceLocations: string[];
   requiredFieldIds: string[];
 }) {
@@ -413,34 +484,7 @@ async function extractWithCodexLb(input: {
         },
         {
           role: "user",
-          content: JSON.stringify({
-            requiredSchema: {
-              documentType: input.documentType,
-              schemaVersion: activeExtractionSchemaVersion,
-              normalizedFields: [
-                {
-                  fieldId: "string",
-                  label: "string",
-                  value: "string | number | boolean | null",
-                  confidence: "number 0..1",
-                  evidence: ["short factual quote"],
-                  sourceLocations: ["page, paragraph, sheet, cell, or text span"],
-                },
-              ],
-              missingFields: ["fieldId"],
-              unknownFields: ["fieldId"],
-              confidence: "number 0..1",
-              evidence: ["short factual quote"],
-              sourceLocations: ["page, paragraph, sheet, cell, or text span"],
-            },
-            fileName: input.fileName,
-            documentType: input.documentType,
-            schemaVersion: activeExtractionSchemaVersion,
-            promptVersion: activePromptVersion,
-            requiredFieldIds: input.requiredFieldIds,
-            sourceLocations: input.sourceLocations,
-            extractedText: input.extractedText.slice(0, 14000),
-          }),
+          content: codexLbUserContent(input),
         },
       ],
     }),
@@ -449,4 +493,75 @@ async function extractWithCodexLb(input: {
   const content = completion.choices[0]?.message.content;
   if (!content) throw new Error("Codex-LB returned an empty extraction response.");
   return JSON.parse(content);
+}
+
+function codexLbUserContent(input: {
+  documentType: string;
+  fileName: string;
+  source: DocumentSource;
+  sourceLocations: string[];
+  requiredFieldIds: string[];
+}) {
+  const schema = documentExtractionSchemas[input.documentType as keyof typeof documentExtractionSchemas];
+  const payload = {
+    instruction:
+      "Return only JSON. Extract factual APP/APF/VERF data. Mark blank templates as completenessStatus=blank_or_incomplete. Include documentData with the profile fields, normalizedFields with evidence, and do not invent missing values.",
+    requiredSchema: {
+      documentType: input.documentType,
+      schemaVersion: activeExtractionSchemaVersion,
+      completenessStatus: "filled | blank_or_incomplete",
+      extractionMode: input.source.mode,
+      formCode: "string | null",
+      formVersion: "string | null",
+      pageCount: "number | undefined",
+      hasPage2: "boolean | undefined",
+      documentData: Object.fromEntries([...(schema?.fields ?? []), ...(schema?.optionalFields ?? [])].map((field) => [field, "string | number | boolean | array | null"])),
+      normalizedFields: [
+        {
+          fieldId: "string",
+          label: "string",
+          value: "string | number | boolean | string[] | object[] | null",
+          confidence: "number 0..1",
+          evidence: ["short factual quote or visual observation"],
+          sourceLocations: ["page, paragraph, sheet, cell, text span, or image region"],
+        },
+      ],
+      missingFields: ["fieldId"],
+      unknownFields: ["fieldId"],
+      confidence: "number 0..1",
+      evidence: ["short factual quote or visual observation"],
+      sourceLocations: ["page, paragraph, sheet, cell, text span, or image region"],
+    },
+    fileName: input.fileName,
+    documentType: input.documentType,
+    schemaVersion: activeExtractionSchemaVersion,
+    promptVersion: activePromptVersion,
+    requiredFieldIds: input.requiredFieldIds,
+    documentExtractionSchema: schema,
+    sourceMode: input.source.mode,
+    sourceLocations: input.sourceLocations,
+    extractedText: input.source.text.slice(0, 14000),
+    sourceFileBase64:
+      input.source.sourceFileBase64 && !input.source.mediaDataUrl
+        ? {
+            mimeType: "application/pdf",
+            note: "Weak-text PDF supplied as base64 for OCR-style extraction through Codex-LB where supported.",
+            base64: input.source.sourceFileBase64,
+          }
+        : undefined,
+  };
+
+  if (!input.source.mediaDataUrl) return JSON.stringify(payload);
+  return [
+    {
+      type: "text",
+      text: JSON.stringify(payload),
+    },
+    {
+      type: "image_url",
+      image_url: {
+        url: input.source.mediaDataUrl,
+      },
+    },
+  ] as any;
 }

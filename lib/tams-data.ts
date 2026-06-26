@@ -90,6 +90,24 @@ export type ApplicationVerificationSummary = {
   currentFileSignature: string;
   blockingFindings: VerificationSummaryFinding[];
   warnings: VerificationSummaryFinding[];
+  documentSummaries?: Array<{
+    documentType: string;
+    status: string;
+    fieldCount: number;
+    confidence: number;
+    extractionMode?: string;
+    completedAt?: string;
+    blockerCount: number;
+    warningCount: number;
+  }>;
+  crossDocumentResults?: Array<{
+    checkId: string;
+    label: string;
+    status: string;
+    severity: string;
+    evidence: string[];
+    recommendation: string;
+  }>;
   generatedAt: string;
 };
 
@@ -215,6 +233,27 @@ export const statuses: EventStatus[] = [
 
 export const templateDefinitions: TemplateDefinition[] = [
   {
+    id: "app",
+    name: "APP Form",
+    description: "Activity / Program Proposal with event scope, schedule, venue, budget, and approvals.",
+    attachmentRequirement: { label: "Completed APP PDF", required: true, reviewerVisible: true },
+    fields: [],
+  },
+  {
+    id: "apf",
+    name: "APF Form",
+    description: "Activity Profile with objectives, programme, participants, budget, committees, and signatories.",
+    attachmentRequirement: { label: "Completed APF PDF", required: true, reviewerVisible: true },
+    fields: [],
+  },
+  {
+    id: "verf",
+    name: "VERF Form",
+    description: "Venue and Equipment Reservation Form with facilities, equipment, setup, and acknowledgement evidence.",
+    attachmentRequirement: { label: "Completed VERF PDF or image", required: true, reviewerVisible: true },
+    fields: [],
+  },
+  {
     id: "proposal",
     name: "Event Proposal Template",
     description: "Core event intent, objectives, audience, and operational details.",
@@ -317,7 +356,13 @@ function attachment(
   return {
     ...version,
     id: `${templateId}-attachment`,
-    mimeType: fileName.endsWith(".xlsx") ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "application/pdf",
+    mimeType: fileName.endsWith(".xlsx")
+      ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      : fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")
+        ? "image/jpeg"
+        : fileName.endsWith(".png")
+          ? "image/png"
+          : "application/pdf",
     status,
     reviewerVisible: templateDefinitions.find((template) => template.id === templateId)?.attachmentRequirement?.reviewerVisible ?? true,
     reviewNote,
@@ -376,6 +421,9 @@ export const seedApplications: EventApplication[] = [
       venue: { preferredVenue: "FEU Alabang Auditorium", setupNeeds: "Registration desk, booths, and stage seating" },
       program: { callTime: "8:00 AM", programFlow: "Registration, employer talks, booth rotation, networking, closing.", officerAssignments: "Secretary: attendance; Treasurer: partner kits." },
     }, {
+      app: [attachment("app", "career-fair-app.pdf", 205_000, "2025-06-14T11:12:00.000Z", "Juan Reyes", 1, "uploaded")],
+      apf: [attachment("apf", "career-fair-apf.pdf", 356_000, "2025-06-14T11:13:00.000Z", "Juan Reyes", 1, "uploaded")],
+      verf: [attachment("verf", "career-fair-verf.jpg", 580_000, "2025-06-14T11:14:00.000Z", "Juan Reyes", 1, "uploaded")],
       proposal: [attachment("proposal", "career-fair-proposal.pdf", 482_000, "2025-06-14T11:15:00.000Z", "Juan Reyes", 1, "uploaded")],
       venue: [attachment("venue", "auditorium-facility-request.pdf", 238_000, "2025-06-14T11:18:00.000Z", "Juan Reyes", 1, "uploaded")],
       program: [attachment("program", "career-fair-program-flow.pdf", 184_000, "2025-06-14T11:21:00.000Z", "Juan Reyes", 1, "uploaded")],
@@ -413,6 +461,9 @@ export const seedApplications: EventApplication[] = [
       program: { callTime: "8:00 AM", programFlow: "Registration, keynote, panel, open forum, closing.", officerAssignments: "Juan: documentation; Treasurer: registration; President: host." },
       publicity: { channels: "Facebook page, org GC, campus bulletin", postingDate: "2025-07-22", materials: "Poster, caption, pubmat set" },
     }, {
+      app: [attachment("app", "leadership-summit-app.pdf", 205_000, "2025-06-14T15:29:00.000Z")],
+      apf: [attachment("apf", "leadership-summit-apf.pdf", 356_000, "2025-06-14T15:30:00.000Z")],
+      verf: [attachment("verf", "leadership-summit-verf.jpg", 580_000, "2025-06-14T15:31:00.000Z")],
       proposal: [attachment("proposal", "leadership-summit-proposal.pdf", 512_000, "2025-06-14T15:32:00.000Z")],
       budget: [attachment("budget", "leadership-summit-budget.xlsx", 96_000, "2025-06-14T15:34:00.000Z")],
       venue: [attachment("venue", "avr-facility-request.pdf", 244_000, "2025-06-14T15:35:00.000Z")],
@@ -447,6 +498,9 @@ export const seedApplications: EventApplication[] = [
       program: { callTime: "8:00 AM", programFlow: "Registration, opening, build sprint, judging, awarding.", officerAssignments: "All executive officers assigned." },
       publicity: { channels: "FB page and membership channels", postingDate: "2025-06-28", materials: "Event poster and reminders" },
     }, {
+      app: [attachment("app", "hackathon-app.pdf", 205_000, "2025-06-10T12:15:00.000Z", "Juan Reyes", 1, "accepted")],
+      apf: [attachment("apf", "hackathon-apf.pdf", 356_000, "2025-06-10T12:16:00.000Z", "Juan Reyes", 1, "accepted")],
+      verf: [attachment("verf", "hackathon-verf.jpg", 580_000, "2025-06-10T12:17:00.000Z", "Juan Reyes", 1, "accepted")],
       proposal: [attachment("proposal", "hackathon-proposal.pdf", 530_000, "2025-06-10T12:18:00.000Z", "Juan Reyes", 1, "accepted")],
       budget: [attachment("budget", "hackathon-budget.xlsx", 88_000, "2025-06-10T12:20:00.000Z", "Juan Reyes", 1, "accepted")],
       venue: [attachment("venue", "innovation-lab-request.pdf", 221_000, "2025-06-10T12:22:00.000Z", "Juan Reyes", 1, "accepted")],
@@ -502,6 +556,9 @@ export const seedApplications: EventApplication[] = [
       program: { callTime: "1:00 PM", programFlow: "Setup, fundamentals, exercises, sharing, closing.", officerAssignments: "Tech committee leads hands-on stations." },
       publicity: { channels: "FB page, org GC, class announcements", postingDate: "2025-06-21", materials: "Poster and registration link" },
     }, {
+      app: [attachment("app", "python-workshop-app.pdf", 205_000, "2025-05-30T12:15:00.000Z", "Juan Reyes", 1, "accepted")],
+      apf: [attachment("apf", "python-workshop-apf.pdf", 356_000, "2025-05-30T12:16:00.000Z", "Juan Reyes", 1, "accepted")],
+      verf: [attachment("verf", "python-workshop-verf.jpg", 580_000, "2025-05-30T12:17:00.000Z", "Juan Reyes", 1, "accepted")],
       proposal: [attachment("proposal", "python-workshop-proposal.pdf", 420_000, "2025-05-30T12:18:00.000Z", "Juan Reyes", 1, "accepted")],
       budget: [attachment("budget", "python-workshop-budget.xlsx", 74_000, "2025-05-30T12:19:00.000Z", "Juan Reyes", 1, "accepted")],
       venue: [attachment("venue", "computer-lab-request.pdf", 202_000, "2025-05-30T12:22:00.000Z", "Juan Reyes", 1, "accepted")],

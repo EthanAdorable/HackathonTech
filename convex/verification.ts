@@ -187,6 +187,7 @@ export const saveVerificationOutcome = mutation({
         method,
         confidence: v.number(),
         failureReason: v.optional(v.string()),
+        documentType: v.optional(v.string()),
       }),
     ),
     summary: v.object({
@@ -199,6 +200,9 @@ export const saveVerificationOutcome = mutation({
       currentFileSignature: v.string(),
       blockingFindings: v.array(v.any()),
       warnings: v.array(v.any()),
+      documentSummaries: v.optional(v.array(v.any())),
+      crossDocumentResults: v.optional(v.array(v.any())),
+      extractionRunIds: v.optional(v.array(v.id("extractionRuns"))),
       generatedAt: v.string(),
     }),
   },
@@ -250,7 +254,9 @@ export const saveVerificationOutcome = mutation({
       currentFileSignature: args.summary.currentFileSignature,
       blockingFindings: args.summary.blockingFindings,
       warnings: args.summary.warnings,
-      extractionRunIds: [args.extractionRunId],
+      documentSummaries: args.summary.documentSummaries,
+      crossDocumentResults: args.summary.crossDocumentResults,
+      extractionRunIds: args.summary.extractionRunIds ?? [args.extractionRunId],
       generatedAt: args.summary.generatedAt,
     });
 

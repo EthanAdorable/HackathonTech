@@ -165,6 +165,7 @@ export default defineSchema({
     method: v.union(v.literal("deterministic"), v.literal("ai_assisted")),
     confidence: v.number(),
     failureReason: v.optional(v.string()),
+    documentType: v.optional(v.string()),
     rubricVersionId: v.string(),
     createdAt: v.string(),
   })
@@ -193,6 +194,8 @@ export default defineSchema({
     currentFileSignature: v.string(),
     blockingFindings: v.array(v.any()),
     warnings: v.array(v.any()),
+    documentSummaries: v.optional(v.array(v.any())),
+    crossDocumentResults: v.optional(v.array(v.any())),
     extractionRunIds: v.array(v.id("extractionRuns")),
     generatedAt: v.string(),
   })

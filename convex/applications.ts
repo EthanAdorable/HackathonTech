@@ -30,9 +30,10 @@ const status = v.union(
   v.literal("Archived"),
 );
 
-const defaultRubricVersionId = "tams-placeholder-v1";
-const defaultExtractionSchemaVersion = "event-document-extraction-v1";
-const defaultPromptVersion = "document-verification-prompt-v1";
+const defaultRubricVersionId = "app-apf-verf-rubric-v1";
+const defaultExtractionSchemaVersion = "app-apf-verf-extraction-v1";
+const defaultPromptVersion = "app-apf-verf-prompt-v1";
+const verificationDocumentTypes = new Set(["app", "apf", "verf"]);
 
 async function addTimeline(ctx: any, applicationId: any, nextStatus: string, note: string, accessActor?: any) {
   await ctx.db.insert("timeline", {
@@ -170,6 +171,39 @@ const defaultRequirementDefinitionsByTemplate: Record<
     maxSizeBytes?: number;
   }>
 > = {
+  app: [
+    {
+      requirementKey: "completed-app",
+      label: "Completed APP",
+      description: "Activity / Program Proposal with event, schedule, venue, budget, and approval evidence.",
+      required: true,
+      visibleToReviewer: true,
+      accepts: ["application/pdf"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+  apf: [
+    {
+      requirementKey: "completed-apf",
+      label: "Completed APF",
+      description: "Activity Profile with programme, participants, budget, committees, and signatories.",
+      required: true,
+      visibleToReviewer: true,
+      accepts: ["application/pdf"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
+  verf: [
+    {
+      requirementKey: "completed-verf",
+      label: "Completed VERF",
+      description: "Venue and Equipment Reservation Form as a PDF or scanned image.",
+      required: true,
+      visibleToReviewer: true,
+      accepts: ["application/pdf", "image/png", "image/jpeg"],
+      maxSizeBytes: 10 * 1024 * 1024,
+    },
+  ],
   proposal: [
     {
       requirementKey: "signed-event-proposal",
@@ -308,6 +342,7 @@ async function latestVerificationSummaryForApplication(ctx: any, applicationId: 
 
 function activeDocumentSignature(documents: any[]) {
   const parts = documents
+    .filter((document) => verificationDocumentTypes.has(document.documentType))
     .map((document) => [
       document.documentType,
       document.sha256,

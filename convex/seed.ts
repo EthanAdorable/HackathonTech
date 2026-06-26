@@ -27,6 +27,10 @@ export const seedDemoData = mutation({
     }
 
     for (const table of [
+      "compiledVerificationSummaries",
+      "verificationResults",
+      "extractionRuns",
+      "uploadedDocuments",
       "guideLogs",
       "timeline",
       "messages",
@@ -123,6 +127,27 @@ function defaultRequirementForTemplate(templateId: string) {
       accepts: string[];
     }
   > = {
+    app: {
+      requirementKey: "completed-app",
+      label: "Completed APP",
+      description: "Activity / Program Proposal with event, schedule, venue, budget, and approval evidence.",
+      required: true,
+      accepts: ["application/pdf"],
+    },
+    apf: {
+      requirementKey: "completed-apf",
+      label: "Completed APF",
+      description: "Activity Profile with programme, participants, budget, committees, and signatories.",
+      required: true,
+      accepts: ["application/pdf"],
+    },
+    verf: {
+      requirementKey: "completed-verf",
+      label: "Completed VERF",
+      description: "Venue and Equipment Reservation Form as a PDF or scanned image.",
+      required: true,
+      accepts: ["application/pdf", "image/png", "image/jpeg"],
+    },
     proposal: {
       requirementKey: "signed-event-proposal",
       label: "Signed event proposal",

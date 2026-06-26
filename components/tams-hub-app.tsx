@@ -1723,6 +1723,9 @@ function FileEventView({
           <div className={verificationSummary.readyForSadu ? "verification-summary ok" : "verification-summary blocked"} role="status">
             <strong>{verificationSummary.readyForSadu ? "Verification ready" : "Verification blocked"}</strong>
             <span>{verificationSummary.rubricVersionId} - {verificationSummary.documentCount} document(s), {verificationSummary.criticalFailureCount} critical blocker(s), {verificationSummary.warningCount} warning(s)</span>
+            {verificationSummary.documentSummaries?.length ? (
+              <span>{verificationSummary.documentSummaries.map((item) => `${item.documentType.toUpperCase()}: ${item.extractionMode ?? item.status}`).join(" | ")}</span>
+            ) : null}
           </div>
         )}
         <div className="guide-says" role="status" aria-live="polite"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
@@ -1946,6 +1949,22 @@ function ReviewerInsightsPanel({ application, completionPercent }: { application
           <div className="verification-evidence">
             <p><strong>Rubric:</strong> {summary.rubricVersionId} - {formatShortDate(summary.generatedAt)}</p>
             <p><strong>Scope:</strong> {summary.documentCount} document(s), {summary.criticalFailureCount} critical blocker(s), {summary.warningCount} warning(s)</p>
+            {summary.documentSummaries?.length ? (
+              <ul className="review-focus-list">
+                {summary.documentSummaries.map((document) => (
+                  <li key={`${document.documentType}-${document.status}`}>
+                    {document.documentType.toUpperCase()}: {document.status.replace(/_/g, " ")} via {document.extractionMode ?? "extraction"}; {Math.round(document.confidence * 100)}% confidence; {document.blockerCount} blocker(s)
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {summary.crossDocumentResults?.length ? (
+              <ul className="review-focus-list">
+                {summary.crossDocumentResults.slice(0, 4).map((check) => (
+                  <li key={check.checkId}>{check.label}: {check.status === "pass" ? "compatible" : check.recommendation}</li>
+                ))}
+              </ul>
+            ) : null}
             <ul className="review-focus-list">
               {[...summary.blockingFindings, ...summary.warnings].slice(0, 5).map((finding) => (
                 <li key={`${finding.checkId}-${finding.label}`}>{finding.label}: {finding.recommendation}</li>
