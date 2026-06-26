@@ -88,7 +88,7 @@ export async function POST(request: Request) {
           },
         ],
       }),
-      Number(process.env.CODEX_LB_TIMEOUT_MS ?? process.env.OPENAI_TIMEOUT_MS ?? 8000),
+      Number(process.env.CODEX_LB_TIMEOUT_MS ?? 8000),
     );
 
     const text = completion.choices[0]?.message.content;
