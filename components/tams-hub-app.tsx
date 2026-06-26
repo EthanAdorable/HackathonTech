@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  type DemoUser,
   type EventApplication,
   type EventStatus,
   type Role,
@@ -67,6 +68,11 @@ type ConvexApplicationsResponse = {
   source: "convex" | "local";
   applications: EventApplication[];
   createdApplicationId?: string;
+};
+
+type ConvexUsersResponse = {
+  source: "convex" | "local";
+  users: DemoUser[];
 };
 
 type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
@@ -120,8 +126,9 @@ export function TamsHubApp() {
   const [messageDraft, setMessageDraft] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [applicationSource, setApplicationSource] = useState<"convex" | "local">("local");
+  const [roleUsers, setRoleUsers] = useState<DemoUser[]>(users);
 
-  const activeUser = users.find((user) => user.id === activeUserId) ?? users[0];
+  const activeUser = roleUsers.find((user) => user.id === activeUserId) ?? roleUsers[0] ?? users[0];
   const selectedApp = applications.find((application) => application.id === selectedAppId) ?? applications[0];
   const templateAvailability = useMemo(() => {
     return Object.fromEntries(
@@ -139,10 +146,27 @@ export function TamsHubApp() {
     return data.source === "convex" && data.applications.length ? data.applications : null;
   }, []);
 
+  const loadConvexUsers = useCallback(async () => {
+    const response = await fetch("/api/convex-users");
+    if (!response.ok) throw new Error("Convex users route unavailable");
+    const data = (await response.json()) as ConvexUsersResponse;
+    return data.source === "convex" && data.users.length ? data.users : null;
+  }, []);
+
   useEffect(() => {
     let active = true;
 
-    async function hydrateApplications() {
+    async function hydrateData() {
+      try {
+        const convexUsers = await loadConvexUsers();
+        if (active && convexUsers) {
+          setRoleUsers(convexUsers);
+          setActiveUserId((current) => (convexUsers.some((user) => user.id === current) ? current : convexUsers[0].id));
+        }
+      } catch {
+        // Keep local prototype role users.
+      }
+
       try {
         const convexApplications = await loadConvexApplications();
         if (active && convexApplications) {
@@ -174,12 +198,12 @@ export function TamsHubApp() {
       if (active) setHydrated(true);
     }
 
-    hydrateApplications();
+    hydrateData();
 
     return () => {
       active = false;
     };
-  }, [loadConvexApplications]);
+  }, [loadConvexApplications, loadConvexUsers]);
 
   useEffect(() => {
     if (hydrated && applicationSource === "local") {
@@ -474,7 +498,7 @@ export function TamsHubApp() {
   }
 
   if (!entered) {
-    return <AccessScreen activeUserId={activeUserId} setActiveUserId={setActiveUserId} onEnter={() => setEntered(true)} />;
+    return <AccessScreen users={roleUsers} activeUserId={activeUserId} setActiveUserId={setActiveUserId} onEnter={() => setEntered(true)} />;
   }
 
   return (
@@ -492,6 +516,7 @@ export function TamsHubApp() {
         {section === "dashboard" && (
           <DashboardView
             activeUser={activeUser}
+            users={roleUsers}
             applications={visibleApplications}
             queueCount={queueCount}
             onNewEvent={createApplication}
@@ -558,15 +583,17 @@ export function TamsHubApp() {
 }
 
 function AccessScreen({
+  users: roleUsers,
   activeUserId,
   setActiveUserId,
   onEnter,
 }: {
+  users: DemoUser[];
   activeUserId: string;
   setActiveUserId: (id: string) => void;
   onEnter: () => void;
 }) {
-  const activeUser = users.find((user) => user.id === activeUserId) ?? users[0];
+  const activeUser = roleUsers.find((user) => user.id === activeUserId) ?? roleUsers[0] ?? users[0];
   const [accessStep, setAccessStep] = useState<"login" | "otp" | "card">("login");
   const otpDigits = ["", "", "", "", "", ""];
 
@@ -613,7 +640,7 @@ function AccessScreen({
             <div className="access-login-card">
               <p className="label">Preview as role</p>
               <div className="role-choice-grid">
-                {users.map((user) => (
+                {roleUsers.map((user) => (
                   <button
                     key={user.id}
                     className={user.id === activeUserId ? "role-chip active" : "role-chip"}
@@ -665,7 +692,7 @@ function Sidebar({
   setSection,
   onSignOut,
 }: {
-  activeUser: (typeof users)[number];
+  activeUser: DemoUser;
   activeSection: Section;
   setSection: (section: Section) => void;
   onSignOut: () => void;
@@ -702,7 +729,7 @@ function Topbar({
   showNewEvent,
 }: {
   title: string;
-  activeUser: (typeof users)[number];
+  activeUser: DemoUser;
   onNewEvent: () => void;
   showNewEvent: boolean;
 }) {
@@ -744,6 +771,7 @@ function Topbar({
 
 function DashboardView({
   activeUser,
+  users: roleUsers,
   applications,
   queueCount,
   onNewEvent,
@@ -752,7 +780,8 @@ function DashboardView({
   onToggleTemplate,
   onSelect,
 }: {
-  activeUser: (typeof users)[number];
+  activeUser: DemoUser;
+  users: DemoUser[];
   applications: EventApplication[];
   queueCount: number;
   onNewEvent: () => void;
@@ -795,7 +824,7 @@ function DashboardView({
       )}
 
       {activeUser.role === "Admin" && <ServiceReadinessPanel onResetDemo={onResetDemo} />}
-      {activeUser.role === "Admin" && <AdminOperationsPanel templateAvailability={templateAvailability} onToggleTemplate={onToggleTemplate} />}
+      {activeUser.role === "Admin" && <AdminOperationsPanel users={roleUsers} templateAvailability={templateAvailability} onToggleTemplate={onToggleTemplate} />}
 
       <section className="table-card">
         <div className="table-header">
@@ -864,9 +893,11 @@ function getSubmittedDate(application: EventApplication) {
 }
 
 function AdminOperationsPanel({
+  users: roleUsers,
   templateAvailability,
   onToggleTemplate,
 }: {
+  users: DemoUser[];
   templateAvailability: Record<string, boolean>;
   onToggleTemplate: (templateId: string) => void;
 }) {
@@ -895,7 +926,7 @@ function AdminOperationsPanel({
       <article className="admin-card">
         <div className="admin-card-heading"><UsersRound size={18} /><div><strong>Users & Roles</strong><p>Demo accounts aligned with TAMS Access permissions.</p></div></div>
         <div className="admin-list">
-          {users.map((user) => (
+          {roleUsers.map((user) => (
             <div className="admin-row" key={user.id}>
               <div><strong>{user.name}</strong><span>{user.title}</span></div>
               <span className="role-badge">{roleDisplayName(user.role)}</span>
@@ -985,7 +1016,7 @@ function FileEventView({
   onGenerateGuide,
 }: {
   application: EventApplication;
-  activeUser: (typeof users)[number];
+  activeUser: DemoUser;
   completionPercent: number;
   guideOutput: string[];
   onTemplateChange: (templateId: string, fieldId: string, value: string) => void;
@@ -1110,7 +1141,7 @@ function ApplicationsView({
 }: {
   application: EventApplication;
   applications: EventApplication[];
-  activeUser: (typeof users)[number];
+  activeUser: DemoUser;
   completionPercent: number;
   messageDraft: string;
   setMessageDraft: (value: string) => void;
@@ -1266,7 +1297,7 @@ function MessagesView({
   onSend,
 }: {
   application: EventApplication;
-  activeUser: (typeof users)[number];
+  activeUser: DemoUser;
   messageDraft: string;
   setMessageDraft: (value: string) => void;
   onSend: () => void;

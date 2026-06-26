@@ -1,7 +1,15 @@
 import { query } from "./_generated/server";
 
+function accessIdForUser(document: any) {
+  if (document.role === "Student Officer") return "juan";
+  if (document.role === "SADU Associate") return "sadu";
+  if (document.role === "Faculty Adviser") return "adviser";
+  if (document.role === "Admin") return "admin";
+  return document._id;
+}
+
 function withUiId(document: any) {
-  return { id: document._id, ...document };
+  return { ...document, id: accessIdForUser(document), userDocumentId: document._id };
 }
 
 export const list = query({

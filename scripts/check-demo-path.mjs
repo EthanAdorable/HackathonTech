@@ -39,6 +39,7 @@ const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf
 const packageJson = readFileSync(new URL("../package.json", import.meta.url), "utf8");
 const nextConfig = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
 const convexApplicationsRoute = readFileSync(new URL("../app/api/convex-applications/route.ts", import.meta.url), "utf8");
+const convexUsersRoute = readFileSync(new URL("../app/api/convex-users/route.ts", import.meta.url), "utf8");
 const convexWorkflowRoute = readFileSync(new URL("../app/api/convex-workflow/route.ts", import.meta.url), "utf8");
 const convexSetup = readFileSync(new URL("../scripts/setup-convex.mjs", import.meta.url), "utf8");
 const railwaySetup = readFileSync(new URL("../scripts/setup-railway.mjs", import.meta.url), "utf8");
@@ -159,6 +160,11 @@ assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should 
 assert.match(appComponent, /data\.source === "convex" && data\.applications\.length/, "App should prefer populated Convex application data");
 assert.match(appComponent, /window\.localStorage\.getItem\(storageKey\)/, "App should keep local storage fallback for prototype edits");
 assert.match(appComponent, /applicationSource === "local"/, "App should avoid writing Convex-hydrated data back into local storage");
+assert.match(convexUsersRoute, /api\.users\.list/, "Frontend user route should read role users from Convex");
+assert.match(appComponent, /const \[roleUsers, setRoleUsers\] = useState<DemoUser\[\]>\(users\)/, "App should keep local role users as a fallback");
+assert.match(appComponent, /fetch\("\/api\/convex-users"\)/, "App should hydrate TAMS Access role users from Convex");
+assert.match(appComponent, /<AccessScreen users=\{roleUsers\}/, "Access screen should receive Convex-hydrated role users");
+assert.match(appComponent, /<AdminOperationsPanel users=\{roleUsers\}/, "Admin role list should receive Convex-hydrated role users");
 assert.match(appComponent, /const loadConvexApplications = useCallback/, "App should share the Convex application loader across hydration and reset");
 assert.match(appComponent, /if \(applicationSource === "convex"\)/, "Admin reset should preserve Convex-backed sessions when possible");
 assert.match(appComponent, /setApplicationSource\("local"\)/, "Admin reset should explicitly switch to local mode only after falling back to seed data");
@@ -233,7 +239,8 @@ assert.match(convexApplications, /return applications\.map\(withUiId\)/, "Convex
 assert.match(convexApplications, /messages: messages\.map\(withUiId\)/, "Convex detailed queries should expose message ids for React keys");
 assert.match(convexApplications, /timeline: timeline\.map\(withUiId\)/, "Convex detailed queries should expose timeline ids for workflow rendering");
 assert.match(convexApplications, /export const updateTemplateAvailability = mutation/, "Convex should expose an admin template availability mutation");
-assert.match(convexUsers, /return users\.map\(withUiId\)/, "Convex users query should expose user ids for role selection");
+assert.match(convexUsers, /function accessIdForUser/, "Convex users query should preserve stable TAMS access ids");
+assert.match(convexUsers, /userDocumentId: document\._id/, "Convex users query should also expose user document ids");
 
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
