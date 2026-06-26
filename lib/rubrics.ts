@@ -30,7 +30,7 @@ export type DocumentRubricProfile = {
 
 export const activeRubricVersionId = "app-apf-verf-rubric-v1";
 export const activeExtractionSchemaVersion = "app-apf-verf-extraction-v1";
-export const activePromptVersion = "app-apf-verf-prompt-v6";
+export const activePromptVersion = "app-apf-verf-prompt-v7";
 
 export const pdfMimeType = "application/pdf";
 export const jpegMimeType = "image/jpeg";
@@ -113,14 +113,6 @@ const sharedCriticalChecks: RubricCheckDefinition[] = [
     method: "deterministic",
     description: "End times cannot precede start times, and egress cannot precede ingress.",
   },
-  {
-    id: "signatures_detected",
-    label: "Required signatures or acknowledgements are detected",
-    severity: "critical",
-    blocking: true,
-    method: "deterministic",
-    description: "Required preparer, requester, reviewer, or acknowledgement signatures must be present.",
-  },
 ];
 
 const sharedWarningChecks: RubricCheckDefinition[] = [
@@ -139,6 +131,14 @@ const sharedWarningChecks: RubricCheckDefinition[] = [
     blocking: false,
     method: "deterministic",
     description: "Minor naming differences such as MPR versus Multi Purpose Room should be visible to reviewers.",
+  },
+  {
+    id: "signatures_detected",
+    label: "Signatures or acknowledgements need review",
+    severity: "warning",
+    blocking: false,
+    method: "deterministic",
+    description: "Missing preparer, requester, reviewer, or acknowledgement signatures are deferred to SADU review.",
   },
 ];
 
@@ -164,7 +164,6 @@ export const documentRubricProfiles: DocumentRubricProfile[] = [
       "objectives",
       "budgetCategories",
       "totalProposedBudget",
-      "preparedBy",
     ],
     signatureFieldIds: ["preparedBy"],
     dateTimeFieldIds: ["submissionDate", "startDateTime", "endDateTime"],
@@ -217,9 +216,6 @@ export const documentRubricProfiles: DocumentRubricProfile[] = [
       "expenseSections",
       "revenueSections",
       "workingCommittees",
-      "preparedBy",
-      "reviewedBy",
-      "notedBy",
     ],
     signatureFieldIds: ["preparedBy", "reviewedBy", "notedBy"],
     dateTimeFieldIds: ["startDateTime", "endDateTime"],
@@ -248,10 +244,6 @@ export const documentRubricProfiles: DocumentRubricProfile[] = [
       "equipmentReservations",
       "ingressDateTime",
       "egressDateTime",
-      "requesterSignatureName",
-      "directorSignatureName",
-      "facilitiesAcknowledgement",
-      "status",
     ],
     signatureFieldIds: ["requesterSignatureName", "directorSignatureName", "facilitiesAcknowledgement"],
     dateTimeFieldIds: ["requestDate", "activityDate", "activityTime", "ingressDateTime", "egressDateTime"],

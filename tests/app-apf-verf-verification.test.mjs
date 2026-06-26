@@ -141,6 +141,47 @@ test("APP page 2 is required only when cash advance evidence is present", () => 
   assert.equal(cashResults.find((result) => result.checkId === "app_page2_required_when_cash_advance").status, "fail");
 });
 
+test("missing signatures are deferred to SADU review instead of blocking submission", () => {
+  const profile = getRubricProfile("verf");
+  const extraction = extractionFromFields({
+    documentType: "verf",
+    completenessStatus: "filled",
+    confidence: 0.9,
+    fields: {
+      formCode: "FEUA-FO-INST-FO-001/07APRIL2026/REV 1",
+      requestDate: "June 1, 2026",
+      department: "CCSMA",
+      activityDate: "June 17, 2026",
+      activityTime: "9:00 AM - 2:00 PM",
+      activityName: "DevJam 2.0: Cybersecurity for Developers",
+      internalParticipantCount: 100,
+      venueReservations: ["MPR 203"],
+      equipmentReservations: ["Chairs", "Sound System"],
+      ingressDateTime: "June 17, 2026 8:00 AM",
+      egressDateTime: "June 17, 2026 3:00 PM",
+      requesterSignatureName: null,
+      directorSignatureName: null,
+      facilitiesAcknowledgement: null,
+    },
+    evidence: ["Filled VERF details; signatures pending SADU review."],
+  });
+  const results = runDeterministicVerification({ profile, mimeType: "image/jpeg", extraction });
+  const signatureResult = results.find((result) => result.checkId === "signatures_detected");
+  const summary = compileVerificationSummary({
+    rubricVersionId: activeRubricVersionId,
+    documentCount: 1,
+    fileSignature: "verf-signature-warning",
+    results,
+  });
+
+  assert.equal(signatureResult.status, "manual_review");
+  assert.equal(signatureResult.severity, "warning");
+  assert.equal(signatureResult.blocking, false);
+  assert.equal(results.some((result) => result.status === "fail" && result.blocking), false);
+  assert.equal(summary.readyForSadu, true);
+  assert.equal(summary.status, "needs_human_review");
+});
+
 test("stale versions and stale hashes fail closed through deterministic summary inputs", () => {
   const profile = getRubricProfile("app");
   const extraction = filledAppExtraction();

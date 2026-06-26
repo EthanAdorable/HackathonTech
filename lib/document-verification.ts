@@ -539,15 +539,15 @@ export function runDeterministicVerification(input: {
   results.push(result({
     documentType,
     checkId: "signatures_detected",
-    label: `${input.profile.label}: required signatures or acknowledgements are detected`,
-    status: missingSignatures.length ? "fail" : "pass",
-    severity: "critical",
-    blocking: missingSignatures.length > 0,
+    label: `${input.profile.label}: signatures or acknowledgements need review`,
+    status: missingSignatures.length ? "manual_review" : "pass",
+    severity: "warning",
+    blocking: false,
     evidence: missingSignatures.length ? missingSignatures.map((fieldId) => `Missing signature or acknowledgement: ${fieldId}`) : ["Required signature/acknowledgement fields contain evidence."],
-    recommendation: missingSignatures.length ? "Collect required signatures or acknowledgement before SADU submission." : "No action needed.",
+    recommendation: missingSignatures.length ? "SADU should confirm or collect signatures and acknowledgements during review." : "No action needed.",
     method: "deterministic",
     confidence: extraction.confidence,
-    failureReason: missingSignatures.length ? "Required signature evidence was missing." : undefined,
+    failureReason: missingSignatures.length ? "Signature evidence was deferred to SADU review." : undefined,
   }));
 
   if (documentType === "app") {
