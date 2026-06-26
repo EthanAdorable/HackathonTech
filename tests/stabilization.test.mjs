@@ -258,6 +258,7 @@ test("document verification rubrics cover every template and validate extraction
     documentData: {
       objectives: "Introduce cybersecurity fundamentals.",
       programTitle: "DevJam 2.0",
+      totalProposedBudget: { amount: 2900, currency: "PHP" },
     },
     normalizedFields: [{
       field: "programTitle",
@@ -269,7 +270,14 @@ test("document verification rubrics cover every template and validate extraction
   assert.equal(coerced.ok, true);
   assert.equal(coerced.extraction.documentType, "app");
   assert.deepEqual(coerced.extraction.documentData.objectives, ["Introduce cybersecurity fundamentals."]);
+  assert.equal(coerced.extraction.documentData.totalProposedBudget, 2900);
   assert.equal(coerced.extraction.normalizedFields[0].fieldId, "programTitle");
+
+  const nullableNumber = validateExtractionJson({
+    documentData: { externalParticipantCount: null },
+    normalizedFields: [{ fieldId: "externalParticipantCount", value: null }],
+  }, { documentType: "verf", extractionMode: "vision_ocr" });
+  assert.equal(nullableNumber.ok, true);
 });
 
 test("verification aggregation blocks critical failures and allows warning-only summaries", () => {

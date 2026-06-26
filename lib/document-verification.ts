@@ -261,6 +261,11 @@ function coerceExtractionCandidate(value: unknown, defaults: { documentType?: st
       documentData[field] = [documentData[field]];
     }
   }
+  for (const field of numericDocumentFields) {
+    if (documentData[field] !== undefined && documentData[field] !== null && typeof documentData[field] !== "number" && typeof documentData[field] !== "string") {
+      documentData[field] = extractNumericValue(documentData[field]);
+    }
+  }
 
   const rawFields = Array.isArray(raw.normalizedFields)
     ? raw.normalizedFields
@@ -271,10 +276,11 @@ function coerceExtractionCandidate(value: unknown, defaults: { documentType?: st
   const evidence = stringArray(raw.evidence);
   const sourceLocations = stringArray(raw.sourceLocations);
   const confidence = numberFromZeroToOne(raw.confidence) ?? averageConfidence(normalizedFields) ?? 0.75;
+  const filledSignalCount = Object.values(documentData).filter((item) => !isPlaceholderValue(item)).length;
   const completenessStatus =
-    raw.completenessStatus === "filled" || raw.completenessStatus === "blank_or_incomplete"
+    raw.completenessStatus === "filled" || (raw.completenessStatus === "blank_or_incomplete" && filledSignalCount < 3)
       ? raw.completenessStatus
-      : Object.values(documentData).some((item) => !isPlaceholderValue(item))
+      : filledSignalCount
         ? "filled"
         : "blank_or_incomplete";
 
@@ -328,6 +334,27 @@ function averageConfidence(fields: ExtractedField[]) {
   return fields.reduce((sum, field) => sum + field.confidence, 0) / fields.length;
 }
 
+const numericDocumentFields = ["targetParticipantCount", "internalParticipantCount", "externalParticipantCount", "totalProposedBudget"] as const;
+
+function extractNumericValue(value: unknown): number | string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number" || typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const parsed = extractNumericValue(item);
+      if (parsed !== null) return parsed;
+    }
+    return null;
+  }
+  if (typeof value === "object") {
+    for (const item of Object.values(value)) {
+      const parsed = extractNumericValue(item);
+      if (parsed !== null) return parsed;
+    }
+  }
+  return null;
+}
+
 function validateDocumentData(documentType: string, data?: Record<string, unknown>) {
   if (!data) return undefined;
   const schema = documentExtractionSchemas[documentType as keyof typeof documentExtractionSchemas];
@@ -335,8 +362,8 @@ function validateDocumentData(documentType: string, data?: Record<string, unknow
   for (const field of schema.arrays) {
     if (data[field] !== undefined && !Array.isArray(data[field])) return `${field} must be an array.`;
   }
-  for (const field of ["targetParticipantCount", "internalParticipantCount", "externalParticipantCount", "totalProposedBudget"]) {
-    if (data[field] !== undefined && typeof data[field] !== "number" && typeof data[field] !== "string") {
+  for (const field of numericDocumentFields) {
+    if (data[field] !== undefined && data[field] !== null && typeof data[field] !== "number" && typeof data[field] !== "string") {
       return `${field} must be a number or numeric string.`;
     }
   }
