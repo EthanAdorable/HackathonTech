@@ -574,6 +574,7 @@ p {
 
 .nav-button,
 .signout-button {
+  position: relative;
   gap: 9px;
   width: 100%;
   min-height: 38px;
@@ -595,8 +596,24 @@ p {
 }
 
 .nav-button.active {
-  background: linear-gradient(135deg, #f0b20a, #db9800);
-  box-shadow: 0 10px 22px rgba(226, 164, 0, 0.28);
+  background: rgba(1, 31, 18, 0.38);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.nav-button.active::before {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: var(--gold);
+  content: "";
+}
+
+.nav-button.active svg {
+  color: var(--gold);
 }
 
 .nav-button:hover,

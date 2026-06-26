@@ -101,6 +101,8 @@ assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should i
 assert.match(appComponent, /topbar-identity/, "Topbar user identity should be grouped like the reference header");
 assert.match(globalCss, /\.topbar-identity \.role-badge\s*\{[\s\S]*text-overflow: ellipsis/, "Topbar role badge should truncate inside compact headers");
 assert.match(globalCss, /\.sidebar \.brand \.mascot-logo/, "Sidebar mascot should match the larger reference app chrome");
+assert.match(globalCss, /\.nav-button\.active::before\s*\{[\s\S]*background: var\(--gold\)/, "Active sidebar navigation should use a small gold rail instead of a full gold fill");
+assert.doesNotMatch(globalCss, /\.nav-button\.active\s*\{[\s\S]*background: linear-gradient\(135deg, #f0b20a, #db9800\)/, "Active sidebar navigation should not compete with gold alert and action states");
 assert.match(appComponent, /"dashboard", label: "Dashboard", icon: <LayoutGrid size=\{18\} \/>/, "Sidebar dashboard icon should match the reference utility set");
 assert.match(appComponent, /"applications", label: "My Applications", icon: <ClipboardList size=\{18\} \/>/, "Sidebar applications icon should match the reference utility set");
 assert.match(appComponent, /"guide", label: "TAMS Guide", icon: <Sparkles size=\{18\} \/>/, "Sidebar guide icon should match the AI assistant icon language");
