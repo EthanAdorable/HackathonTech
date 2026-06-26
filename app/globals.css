@@ -2220,15 +2220,17 @@ p {
 
 .messages-layout {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(260px, 0.76fr) minmax(430px, 1.45fr) minmax(250px, 0.82fr);
+  grid-template-rows: minmax(600px, auto);
   gap: 14px;
   align-items: stretch;
 }
 
 .thread-list {
-  grid-row: 1 / span 2;
-  min-height: 100%;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
   padding: 10px;
 }
 
@@ -2247,23 +2249,37 @@ p {
   padding-inline: 0;
 }
 
+.thread-list-scroll {
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
 .thread-item {
   display: grid;
   gap: 6px;
   width: 100%;
-  border: 0;
-  border-top: 1px solid var(--line);
+  border: 1px solid transparent;
+  border-top-color: var(--line);
+  border-radius: 8px;
   background: transparent;
-  padding: 13px 4px;
+  padding: 11px 9px;
   text-align: left;
   transition:
+    border-color var(--motion-fast) ease,
     background-color var(--motion-fast) ease,
     color var(--motion-fast) ease,
     transform var(--motion-fast) var(--motion-ease);
 }
 
+.thread-item + .thread-item {
+  margin-top: 4px;
+}
+
 .thread-item.active {
+  border-color: #c8ded0;
   background: #eef4ef;
+  box-shadow: inset 3px 0 0 var(--green-700);
 }
 
 .thread-item:hover {
@@ -2276,9 +2292,9 @@ p {
 }
 
 .thread-meta {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   color: var(--muted);
   font-size: 11px;
@@ -2294,9 +2310,13 @@ p {
 
 .thread-meta > span {
   display: inline-flex;
+  min-width: 0;
+  max-width: 105px;
   align-items: center;
   gap: 7px;
   flex: 0 0 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -2331,8 +2351,9 @@ p {
 
 .chat-panel {
   display: flex;
+  min-height: 0;
+  overflow: hidden;
   flex-direction: column;
-  min-height: 100%;
 }
 
 .message-thread-header {
@@ -2347,12 +2368,14 @@ p {
 
 .chat-thread {
   flex: 1;
-  min-height: 280px;
-  align-content: start;
+  min-height: 0;
+  overflow: auto;
+  align-content: end;
+  padding-bottom: 14px;
 }
 
 .chat-thread.expanded {
-  min-height: 330px;
+  min-height: 0;
 }
 
 .empty-chat-state {
@@ -2405,7 +2428,7 @@ p {
 
 .composer-row {
   gap: 10px;
-  margin-top: auto;
+  margin-top: 0;
   border-top: 1px solid var(--line);
   padding-top: 12px;
 }
@@ -2415,12 +2438,18 @@ p {
 }
 
 .partner-card {
-  grid-column: 2;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  grid-column: 3;
+  display: grid;
+  min-height: 0;
+  align-self: start;
+  align-content: start;
+  align-items: start;
   gap: 10px;
-  padding: 12px;
+  padding: 14px;
+}
+
+.partner-card > svg {
+  color: var(--green-700);
 }
 
 .partner-card p {
@@ -2429,6 +2458,8 @@ p {
 }
 
 .partner-chip {
+  justify-content: space-between;
+  width: 100%;
   border: 1px solid transparent;
   border-radius: 999px;
   background: #eef4ef;
@@ -2887,6 +2918,35 @@ textarea[aria-invalid="true"] {
 
   .partner-card {
     grid-column: 1;
+    min-height: auto;
+    align-self: auto;
+  }
+
+  .messages-layout {
+    grid-template-rows: auto;
+  }
+
+  .thread-list {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .thread-list-scroll,
+  .chat-thread {
+    overflow: visible;
+  }
+
+  .chat-panel {
+    min-height: 420px;
+  }
+
+  .chat-thread {
+    min-height: 280px;
+    align-content: start;
+  }
+
+  .chat-thread.expanded {
+    min-height: 280px;
   }
 
   .guide-card {

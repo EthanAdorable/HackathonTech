@@ -2108,21 +2108,23 @@ function MessagesView({
     <section className="messages-layout">
       <aside className="thread-list panel">
         <div className="search-box"><Search size={16} aria-hidden="true" /><input aria-label="Search messages" value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder={"Search messages\u2026"} /></div>
-        {visibleThreads.map((thread) => (
-          <button
-            key={thread.id}
-            className={thread.id === selectedThread.id ? "thread-item active" : "thread-item"}
-            aria-pressed={thread.id === selectedThread.id}
-            onClick={() => {
-              setSelectedThreadId(thread.id);
-              onSelect(thread.id);
-            }}
-          >
-            <span className="thread-meta"><strong>{thread.title}</strong><span>{thread.count && <em>{thread.count}</em>}{thread.time}</span></span>
-            <small>{thread.preview}</small>
-          </button>
-        ))}
-        {!visibleThreads.length && <p className="empty-thread">No matching conversations.</p>}
+        <div className="thread-list-scroll">
+          {visibleThreads.map((thread) => (
+            <button
+              key={thread.id}
+              className={thread.id === selectedThread.id ? "thread-item active" : "thread-item"}
+              aria-pressed={thread.id === selectedThread.id}
+              onClick={() => {
+                setSelectedThreadId(thread.id);
+                onSelect(thread.id);
+              }}
+            >
+              <span className="thread-meta"><strong>{thread.title}</strong><span>{thread.count && <em>{thread.count}</em>}{thread.time}</span></span>
+              <small>{thread.preview}</small>
+            </button>
+          ))}
+          {!visibleThreads.length && <p className="empty-thread">No matching conversations.</p>}
+        </div>
       </aside>
       <section className="chat-panel panel">
         {selectedThread ? (
