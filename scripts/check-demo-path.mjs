@@ -22,11 +22,11 @@ assert.ok(!templateDefinitions.some((template) => template.id === "budget"), "Bu
 const byStatus = new Map(seedApplications.map((application) => [application.status, application]));
 assert.ok(byStatus.get("Draft"), "seed data should include a draft application");
 assert.ok(byStatus.get("Submitted to SADU"), "seed data should include a submitted application");
-assert.ok(byStatus.get("Revision Requested"), "seed data should include a revision-requested application");
 assert.ok(byStatus.get("SADU Approved"), "seed data should include an approved application");
+assert.ok(!seedApplications.some((application) => /Career Fair/i.test(application.title)), "removed career fair demo application should not be reseeded");
 assert.deepEqual(
   seedApplications.map((application) => application.title),
-  ["Tech Career Fair 2025", "Leadership Summit Vol.3", "FEU Hackathon 2025", "Org Anniversary Night", "Python Workshop Series"],
+  ["Leadership Summit Vol.3", "FEU Hackathon 2025", "Org Anniversary Night", "Python Workshop Series"],
   "dashboard seed rows should stay aligned with the reference screens",
 );
 assert.ok(
@@ -38,6 +38,7 @@ const appComponent = readFileSync(new URL("../components/tams-hub-app.tsx", impo
 const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 const convexSchema = readFileSync(new URL("../convex/schema.ts", import.meta.url), "utf8");
 const convexApplications = readFileSync(new URL("../convex/applications.ts", import.meta.url), "utf8");
+const convexSeed = readFileSync(new URL("../convex/seed.ts", import.meta.url), "utf8");
 const convexGuide = readFileSync(new URL("../convex/guide.ts", import.meta.url), "utf8");
 const convexUsers = readFileSync(new URL("../convex/users.ts", import.meta.url), "utf8");
 const authRoute = readFileSync(new URL("../app/api/auth/[...nextauth]/route.ts", import.meta.url), "utf8");
@@ -84,13 +85,14 @@ assert.match(appComponent, /const revisionAlertText = revisionApplication/, "Das
 assert.match(appComponent, /getApplicationCompletion\(revisionApplication\)/, "Revision alerts should use application completion data");
 assert.doesNotMatch(appComponent, /needs revised budget and participant clarification\. Deadline in 6 days\./, "Dashboard guide alert should not use fixed revision copy");
 assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
-assert.match(appComponent, /Revision Inconsistency/, "File event guide should show a reference-style revision alert");
+assert.match(appComponent, /SADU Revision Requested/, "File event guide should show a clear revision alert");
 assert.match(appComponent, /application\.status === "Revision Requested"/, "File event revision alert should only appear for applications with requested revisions");
 assert.match(appComponent, /revisionGuideDetail\(applicationCompletion\.missing, application\.messages\)/, "File event revision warning should derive detail from template gaps and thread messages");
 assert.doesNotMatch(appComponent, /Budget Estimate \(PHP\)/, "File event screen should not show a standalone Budget Request field");
 assert.doesNotMatch(appComponent, /budgetValues/, "File event screen should not derive UI from a standalone budget template");
 assert.match(appComponent, /value=\{proposalValues\.objectives \?\? ""\}/, "File event objectives summary should derive from the selected proposal template");
 assert.doesNotMatch(appComponent, /SADU flagged the budget breakdown and participant count/, "File event revision warning should not use fixed budget and participant copy");
+assert.doesNotMatch(JSON.stringify(seedApplications), /budget breakdown|requested budget|revise the budget/i, "Seed revision evidence should not refer to removed standalone budget requirements");
 assert.doesNotMatch(appComponent, /value="25,000\.00"/, "File event budget summary should not use a fixed sample amount");
 assert.match(appComponent, /required item\(s\) missing/, "File event guide should show a separate missing-requirements notice");
 assert.match(appComponent, /onRequirementUpload/, "File event requirements should expose upload and replace controls");
@@ -134,7 +136,6 @@ assert.match(appComponent, /id="notification-popover" role="region" aria-label="
 assert.match(appComponent, /const notificationItems = \[/, "Topbar notifications should derive from current app and service state");
 assert.match(appComponent, /const revisionNotification = revisionApplication/, "Topbar revision alerts should derive from the current revision application");
 assert.match(appComponent, /serviceStatus && !serviceStatus\.railwayProjectIdConfigured/, "Topbar setup alerts should derive from service readiness state");
-assert.doesNotMatch(appComponent, /<span>Tech Career Fair needs revised budget details\.<\/span>/, "Topbar notifications should not use hardcoded revision copy");
 assert.doesNotMatch(appComponent, /needs revised budget details/, "Topbar notifications should not assume a fixed revision reason");
 assert.match(appComponent, /showNewEvent=\{activeUser\.role === "Student Officer"\}/, "Topbar file-event CTA should be the single student officer create command");
 assert.doesNotMatch(appComponent, /activeUser\.role === "Student Officer" && <button className="primary-button" onClick=\{onNewEvent\}/, "Dashboard welcome panel should not duplicate the topbar file-event CTA");
@@ -216,6 +217,8 @@ assert.match(convexApplicationsRoute, /api\.applications\.listWithDetails/, "Fro
 assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should try to hydrate application data from Convex");
 assert.match(appComponent, /data\.source === "convex" && data\.applications\.length/, "App should prefer populated Convex application data");
 assert.match(appComponent, /window\.localStorage\.getItem\(storageKey\)/, "App should keep local storage fallback for prototype edits");
+assert.match(appComponent, /tams-hub-prototype-state-v3/, "App should use a fresh storage key after filing requirement changes");
+assert.match(appComponent, /legacyStorageKeys[\s\S]*window\.localStorage\.removeItem\(key\)/, "App should clear legacy browser state that may contain removed filing requirements");
 assert.match(appComponent, /applicationSource === "local"/, "App should avoid writing Convex-hydrated data back into local storage");
 assert.match(convexUsersRoute, /api\.users\.list/, "Frontend user route should read role users from Convex");
 assert.match(appComponent, /const \[roleUsers, setRoleUsers\] = useState<DemoUser\[\]>\(users\)/, "App should keep local role users as a fallback");
@@ -311,9 +314,11 @@ assert.match(convexSetup, /Convex setup dry-run complete/, "Convex setup dry-run
 assert.ok(existsSync("convex/_generated/api.js"), "Convex generated runtime API should be committed");
 assert.ok(existsSync("convex/_generated/dataModel.d.ts"), "Convex generated data model types should be committed");
 assert.match(convexApplications, /function withUiId/, "Convex detailed queries should normalize document IDs for the UI model");
-assert.match(convexApplications, /return applications\.map\(withUiId\)/, "Convex list query should expose application ids for UI selection");
+assert.match(convexApplications, /return applications\.map\(applicationWithUiId\)/, "Convex list query should expose application ids and endorsement state for UI selection");
+assert.match(convexApplications, /adviserEndorsement:\s*\{[\s\S]*required,[\s\S]*state:/, "Convex application reads should expose nested adviser endorsement state for the UI");
 assert.match(convexApplications, /messages: messages\.map\(withUiId\)/, "Convex detailed queries should expose message ids for React keys");
 assert.match(convexApplications, /timeline: timeline\.map\(withUiId\)/, "Convex detailed queries should expose timeline ids for workflow rendering");
+assert.match(convexSeed, /adviserEndorsementRequired: application\.adviserEndorsement\.required/, "Convex seed should persist adviser endorsement state for fresh demo resets");
 assert.match(convexApplications, /export const updateTemplateAvailability = mutation/, "Convex should expose an admin template availability mutation");
 assert.match(convexUsers, /function accessIdForUser/, "Convex users query should preserve stable TAMS access ids");
 assert.match(convexUsers, /userDocumentId: document\._id/, "Convex users query should also expose user document ids");

@@ -46,27 +46,46 @@ const otherStudent = { id: "other", name: "Other Officer", role: "Student Office
 const sadu = { id: "sadu", name: "SADU Associate", role: "SADU Associate" };
 const adviser = { id: "adviser", name: "Faculty Adviser", role: "Faculty Adviser" };
 const admin = { id: "admin", name: "TAMS Admin", role: "Admin" };
-const revisionApplication = seedApplications.find((application) => application.status === "Revision Requested");
 const submittedApplication = seedApplications.find((application) => application.status === "Submitted to SADU");
+assert.ok(submittedApplication);
+
+function makeIncompleteRevisionFixture() {
+  return {
+    ...submittedApplication,
+    id: "test-incomplete-revision",
+    status: "Revision Requested",
+    templates: submittedApplication.templates.map((template) =>
+      template.templateId === "publicity" ? { ...template, values: {}, attachments: [] } : template,
+    ),
+    messages: [
+      ...submittedApplication.messages,
+      { id: "test-revision-message", author: "SADU Associate", role: "SADU Associate", body: "Please revise the publicity materials before resubmission.", createdAt: "2025-06-17T10:32:00.000Z" },
+    ],
+    timeline: [
+      ...submittedApplication.timeline,
+      { id: "test-revision-timeline", status: "Revision Requested", note: "SADU requested revisions.", createdAt: "2025-06-17T10:32:00.000Z" },
+    ],
+  };
+}
 
 test("access policy enforces owner, adviser, SADU, and admin boundaries", () => {
-  assert.ok(canReadApplication(student, revisionApplication));
-  assert.ok(!canReadApplication(otherStudent, revisionApplication));
-  assert.ok(canReadApplication(sadu, revisionApplication));
-  assert.ok(canReadApplication(admin, revisionApplication));
-  assert.ok(canEditApplication(student, revisionApplication));
-  assert.ok(!canEditApplication(sadu, revisionApplication));
+  assert.ok(canReadApplication(student, submittedApplication));
+  assert.ok(!canReadApplication(otherStudent, submittedApplication));
+  assert.ok(canReadApplication(sadu, submittedApplication));
+  assert.ok(canReadApplication(admin, submittedApplication));
+  assert.ok(canEditApplication(student, submittedApplication));
+  assert.ok(!canEditApplication(sadu, submittedApplication));
   assert.ok(canCreateApplication(student));
   assert.ok(!canCreateApplication(admin));
   assert.ok(canReviewAsSadu(sadu));
   assert.ok(!canReviewAsSadu(adviser));
-  assert.ok(canEndorseApplication(adviser, revisionApplication));
+  assert.ok(canEndorseApplication(adviser, submittedApplication));
   assert.ok(canAdministerDemoData(admin));
   assert.ok(canAdministerTemplates(admin));
 });
 
 test("workflow rejects incomplete resubmission and unendorsed SADU submission", () => {
-  const incomplete = tryTransitionApplication(revisionApplication, "Resubmitted", "Student resubmitted.", student);
+  const incomplete = tryTransitionApplication(makeIncompleteRevisionFixture(), "Resubmitted", "Student resubmitted.", student);
   assert.equal(incomplete.ok, false);
   assert.match(incomplete.errors.join(" "), /Publicity/);
 
@@ -149,7 +168,7 @@ test("role-specific UI scopes creation, admin, review, and adviser affordances",
 });
 
 test("submission readiness includes required attachments", () => {
-  const readiness = getSubmissionReadiness(revisionApplication);
+  const readiness = getSubmissionReadiness(makeIncompleteRevisionFixture());
   assert.equal(readiness.ready, false);
   assert.ok(!readiness.missing.some((item) => item.includes("Budget worksheet or quotation file")));
   assert.ok(readiness.missing.some((item) => item.includes("Draft publication material")));
@@ -169,20 +188,20 @@ test("document verification rubrics cover every template and validate extraction
     extractionMode: "text_pdf",
     documentData: {
       formCode: "FEUA-FO-FIN-ACC-005/012623/Rev1",
-      programTitle: "Career expo",
+      programTitle: "Campus workshop",
     },
     normalizedFields: [{
       fieldId: "programTitle",
       label: "Program title",
-      value: "Career expo",
+      value: "Campus workshop",
       confidence: 0.94,
-      evidence: ["Career expo"],
+      evidence: ["Campus workshop"],
       sourceLocations: ["page 1"],
     }],
     missingFields: [],
     unknownFields: [],
     confidence: 0.94,
-    evidence: ["Career expo"],
+    evidence: ["Campus workshop"],
     sourceLocations: ["page 1"],
   });
   assert.equal(valid.ok, true);

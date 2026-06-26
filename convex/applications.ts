@@ -405,6 +405,22 @@ function withUiId(document: any) {
   return { ...document, id: document._id };
 }
 
+function applicationWithUiId(document: any) {
+  const required = document.adviserEndorsementRequired ?? (document.expectedParticipants >= 100 || document.riskLevel !== "Low");
+  return {
+    ...withUiId(document),
+    adviserEndorsement: {
+      required,
+      state: document.adviserEndorsementState ?? (required ? "Pending" : "Not Required"),
+      actorId: document.adviserEndorsementActorId,
+      actorName: document.adviserEndorsementActorName,
+      actorRole: document.adviserEndorsementActorRole,
+      timestamp: document.adviserEndorsementTimestamp,
+      notes: document.adviserEndorsementNotes,
+    },
+  };
+}
+
 function attachmentWithUiId(document: any, url?: string | null) {
   return {
     ...document,
@@ -490,7 +506,7 @@ async function hydrateApplication(ctx: any, application: any) {
   }
 
   return {
-    ...withUiId(application),
+    ...applicationWithUiId(application),
     templates: templates.map((template: any) => templateWithUiId(template, requirementsByTemplate.get(template._id) ?? [])),
     requirements: requirements.map((requirement: any) => {
       const activeAttachment = activeByRequirement.get(requirement._id) as any | undefined;
@@ -516,7 +532,7 @@ export const list = query({
   },
   handler: async (ctx, args) => {
     const applications = await applicationsForActor(ctx, args.actor);
-    return applications.map(withUiId);
+    return applications.map(applicationWithUiId);
   },
 });
 

@@ -56,7 +56,8 @@ import { addMessage, endorseApplication as endorseWorkflowApplication, tryTransi
 import { GsapMotionScope } from "./gsap-motion";
 import { localRequirementUploadAdapter } from "./requirement-upload-adapter";
 
-const storageKey = "tams-hub-prototype-state";
+const legacyStorageKeys = ["tams-hub-prototype-state", "tams-hub-prototype-state-v2"];
+const storageKey = "tams-hub-prototype-state-v3";
 const defaultApplicationId = seedApplications.find((application) => application.status === "Revision Requested")?.id ?? seedApplications[0].id;
 
 type ServiceStatus = {
@@ -227,6 +228,10 @@ export function TamsHubApp() {
     let active = true;
 
     async function hydrateData() {
+      for (const key of legacyStorageKeys) {
+        window.localStorage.removeItem(key);
+      }
+
       try {
         const convexUsers = await loadConvexUsers();
         if (active && convexUsers) {
@@ -1766,7 +1771,7 @@ function FileEventView({
             return <li key={template.id} className={status.complete ? "ok" : "missing"}>{template.name.replace(" Template", "")}</li>;
           })}
         </ul>
-        {revisionAlert && <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>Revision Inconsistency</strong><p>{revisionDetail}</p></div></div>}
+        {revisionAlert && <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>SADU Revision Requested</strong><p>{revisionDetail}</p></div></div>}
         <div className="warning-box amber" role="status" aria-live="polite"><CircleAlert size={16} /><div><strong>{submissionReadiness.missing.length || "No"} required item(s) missing</strong><p>{submissionReadiness.ready ? `${completionPercent}% of required fields and attachments are complete.` : submissionReadiness.missing.slice(0, 2).join(" ") || `${requiredAttachmentMissing} required attachment(s) still need a file.`}</p></div></div>
         <button className="gold-button full" onClick={onPrecheck}><Sparkles size={16} /> Run AI Completeness Check</button>
         <button className="secondary-button full" disabled={verificationPending || !canManageUploads} onClick={onVerifyDocuments}><ShieldCheck size={16} /> {verificationPending ? "Verifying Documents" : "Verify Documents"}</button>

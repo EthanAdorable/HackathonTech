@@ -67,6 +67,13 @@ export const seedDemoData = mutation({
         adviserId: application.adviserId,
         status: application.status,
         riskLevel: application.riskLevel,
+        adviserEndorsementRequired: application.adviserEndorsement.required,
+        adviserEndorsementState: application.adviserEndorsement.state,
+        adviserEndorsementActorId: application.adviserEndorsement.actorId,
+        adviserEndorsementActorName: application.adviserEndorsement.actorName,
+        adviserEndorsementActorRole: application.adviserEndorsement.actorRole,
+        adviserEndorsementTimestamp: application.adviserEndorsement.timestamp,
+        adviserEndorsementNotes: application.adviserEndorsement.notes,
       });
 
       for (const [index, template] of application.templates.entries()) {

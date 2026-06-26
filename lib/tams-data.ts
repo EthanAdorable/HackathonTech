@@ -393,44 +393,6 @@ function makeEndorsement(required: boolean, endorsed = false, timestamp = "2025-
 
 export const seedApplications: EventApplication[] = [
   {
-    id: "app-revision",
-    title: "Tech Career Fair 2025",
-    organization: "Junior Philippine Computer Society",
-    eventType: "Career Expo",
-    venue: "FEU Alabang Auditorium",
-    eventDate: "2025-07-15",
-    expectedParticipants: 150,
-    ownerId: "juan",
-    adviserId: "adviser",
-    status: "Revision Requested",
-    riskLevel: "Medium",
-    templates: makeTemplates({
-      proposal: { overview: "Career expo connecting FEU Alabang students with industry partners.", objectives: "Expose students to internship and employment pathways.", targetAudience: "IT, CS, and engineering students", successMeasure: "At least 150 participants and employer feedback forms." },
-      venue: { preferredVenue: "FEU Alabang Auditorium", setupNeeds: "Registration desk, booths, and stage seating" },
-      program: { callTime: "8:00 AM", programFlow: "Registration, employer talks, booth rotation, networking, closing.", officerAssignments: "Secretary: attendance; Treasurer: partner kits." },
-    }, {
-      app: [attachment("app", "career-fair-app.pdf", 205_000, "2025-06-14T11:12:00.000Z", "Juan Reyes", 1, "uploaded")],
-      apf: [attachment("apf", "career-fair-apf.pdf", 356_000, "2025-06-14T11:13:00.000Z", "Juan Reyes", 1, "uploaded")],
-      verf: [attachment("verf", "career-fair-verf.jpg", 580_000, "2025-06-14T11:14:00.000Z", "Juan Reyes", 1, "uploaded")],
-      proposal: [attachment("proposal", "career-fair-proposal.pdf", 482_000, "2025-06-14T11:15:00.000Z", "Juan Reyes", 1, "uploaded")],
-      venue: [attachment("venue", "auditorium-facility-request.pdf", 238_000, "2025-06-14T11:18:00.000Z", "Juan Reyes", 1, "uploaded")],
-      program: [attachment("program", "career-fair-program-flow.pdf", 184_000, "2025-06-14T11:21:00.000Z", "Juan Reyes", 1, "uploaded")],
-    }),
-    adviserEndorsement: makeEndorsement(true, true, "2025-06-14T11:35:00.000Z"),
-    messages: [
-      { id: "m1", author: "SADU Review", role: "SADU Associate", body: "The budget breakdown is incomplete. Please revise and resubmit. Also clarify the expected number of participants - the proposal says 120 but the registration form says 150.", createdAt: "2025-06-17T10:32:00.000Z" },
-      { id: "m2", author: "FEU Alabang SC", role: "Student Officer", body: "Understood. We will revise the budget and update participant count. May we know the specific budget categories we should follow?", createdAt: "2025-06-17T10:45:00.000Z" },
-    ],
-    timeline: [
-      { id: "t1", status: "Draft", note: "Application created.", createdAt: "2025-06-10T09:00:00.000Z" },
-      { id: "t-precheck", status: "AI Pre-check", note: "TAMS Guide pre-check completed.", createdAt: "2025-06-14T11:25:00.000Z" },
-      { id: "t-endorse", status: "Pending Adviser Endorsement", note: "Faculty adviser endorsed the application for SADU review.", createdAt: "2025-06-14T11:35:00.000Z", actorId: "adviser", actorName: "Faculty Adviser", actorRole: "Faculty Adviser" },
-      { id: "t2", status: "Submitted to SADU", note: "Application submitted.", createdAt: "2025-06-14T12:00:00.000Z" },
-      { id: "t3", status: "Under Review", note: "SADU opened the application for review.", createdAt: "2025-06-15T09:00:00.000Z" },
-      { id: "t4", status: "Revision Requested", note: "SADU requested budget and participant revisions.", createdAt: "2025-06-17T10:32:00.000Z" },
-    ],
-  },
-  {
     id: "app-submitted",
     title: "Leadership Summit Vol.3",
     organization: "Junior Philippine Computer Society",
