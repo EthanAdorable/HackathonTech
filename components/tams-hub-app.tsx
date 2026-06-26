@@ -55,6 +55,8 @@ const storageKey = "tams-hub-prototype-state";
 const defaultApplicationId = seedApplications.find((application) => application.status === "Revision Requested")?.id ?? seedApplications[0].id;
 
 type ServiceStatus = {
+  authReadyForDeploy: boolean;
+  authWarnings: string[];
   convexConfigured: boolean;
   convexHost: string;
   convexProject: string;
@@ -1000,6 +1002,7 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
   }, []);
 
   const convexReady = status?.convexConfigured ?? false;
+  const authReady = status?.authReadyForDeploy ?? false;
   const railwayReady = status?.railwayConfigured ?? false;
   const railwayProjectReady = status?.railwayProjectIdConfigured ?? false;
   const openAiReady = status?.openAiConfigured ?? false;
@@ -1007,6 +1010,7 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
   const railwayProject = status?.railwayProject ?? "tams-hub-prototype";
   const convexHost = status?.convexHost || "not configured";
   const railwayProjectId = status?.railwayProjectId ?? "missing";
+  const authWarnings = status?.authWarnings ?? [];
 
   return (
     <section className="service-grid">
@@ -1039,6 +1043,15 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
           <p>{openAiReady ? "OPENAI_API_KEY is configured for live guidance." : "Using deterministic mock guidance fallback."}</p>
         </div>
         <span className={openAiReady ? "status-pill green" : "status-pill neutral"}>{openAiReady ? "Live" : "Mock"}</span>
+      </article>
+      <article className="service-card">
+        <span className={authReady ? "service-icon ready" : "service-icon waiting"}><KeyRound size={18} /></span>
+        <div>
+          <strong>Auth Safety</strong>
+          <p>{authReady ? "Auth callback and demo access settings are deploy-ready." : "Local prototype auth settings need production values before Railway deploy."}</p>
+          <span className="service-detail">Checks: {authWarnings.length ? authWarnings.join(", ") : "passed"}</span>
+        </div>
+        <span className={authReady ? "status-pill green" : "status-pill gold"}>{authReady ? "Ready" : "Review"}</span>
       </article>
       <article className="service-card">
         <span className="service-icon ready"><RotateCcw size={18} /></span>

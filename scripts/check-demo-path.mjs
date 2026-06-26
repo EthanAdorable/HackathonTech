@@ -216,6 +216,10 @@ assert.match(serviceCheckScript, /missing\.length \? \(deployCheck \? "fail" : "
 assert.match(serviceCheckScript, /function projectTargetSummary\(\)/, "Service checks should summarize dedicated Convex and Railway project targets");
 assert.match(serviceCheckScript, /TAMS_RAILWAY_PROJECT_ID/, "Service checks should require an explicit Railway project ID for deploy readiness");
 assert.match(serviceCheckScript, /label: "Dedicated project target"/, "Service checks should report dedicated project targeting status");
+assert.match(serviceStatusRoute, /authReadyForDeploy/, "Service status API should expose deploy auth readiness");
+assert.match(serviceStatusRoute, /authWarnings/, "Service status API should expose deploy auth warning labels");
+assert.match(serviceStatusRoute, /isPrototypeSecret/, "Service status API should detect local prototype auth secrets");
+assert.match(serviceStatusRoute, /isLoopbackUrl/, "Service status API should detect localhost auth callbacks");
 assert.match(serviceStatusRoute, /convexProject/, "Service status API should expose the target Convex project");
 assert.match(serviceStatusRoute, /convexHost/, "Service status API should expose the configured Convex host");
 assert.match(serviceStatusRoute, /railwayProjectId: railwayProjectId \? "set" : "missing"/, "Service status API should expose redacted Railway project ID state");
@@ -224,7 +228,10 @@ assert.match(appComponent, /Target project: \$\{convexProject\}/, "Admin service
 assert.match(appComponent, /Target project: \$\{railwayProject\}/, "Admin service cards should show the dedicated Railway target");
 assert.match(appComponent, /Host: \{convexHost\}/, "Admin service cards should show the configured Convex host");
 assert.match(appComponent, /Project ID: \{railwayProjectId\}/, "Admin service cards should show redacted Railway project ID state");
+assert.match(appComponent, /Auth Safety/, "Admin service cards should show deploy auth safety");
+assert.match(appComponent, /authWarnings\.length \? authWarnings\.join/, "Admin service cards should list deploy auth warning labels");
 assert.match(globalCss, /\.service-detail\s*\{[\s\S]*text-overflow: ellipsis/, "Admin service readiness metadata should stay compact");
+assert.match(globalCss, /\.service-grid\s*\{[\s\S]*repeat\(auto-fit, minmax\(220px, 1fr\)\)/, "Service readiness cards should wrap cleanly as checks grow");
 assert.match(appComponent, /railwayReady && railwayProjectReady/, "Admin service cards should require both Railway runtime and explicit project ID readiness");
 assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
