@@ -63,11 +63,11 @@ assert.match(convexApplications, /assertCanEditApplication\(args\.actor, applica
 assert.match(workflowRoute, /Only the application owner can edit event details/, "Workflow detail edits must reject non-owners.");
 
 assert.match(usersRoute, /api\.users\.list, \{ actor \}/, "User API route must pass the verified actor.");
-assert.match(convexUsers, /args\.actor\.role === "Admin"[\s\S]*return mapped[\s\S]*filter\(\(user\) => user\.id === args\.actor\.id\)/, "Convex user list must scope non-admin reads to the current user.");
+assert.match(convexUsers, /args\.actor\.role !== "Admin"[\s\S]*filter\(\(user\) => user\.id === args\.actor\.id\)/, "Convex user list must scope non-admin reads to the current user.");
 assert.match(guideLogsRoute, /api\.guide\.listForApplication[\s\S]*actor/, "Guide log reads must pass the verified actor.");
 assert.match(guideRoute, /withAuthorizedApplication\(body, actor\)/, "TAMS Guide must authorize the selected application before guidance.");
-assert.match(guideRoute, /applicationId: string/, "TAMS Guide requests must identify applications by id only.");
-assert.doesNotMatch(guideRoute, /type GuideRequest = \{[\s\S]*application: EventApplication/, "TAMS Guide route must not trust client-supplied application objects.");
+assert.match(guideRoute, /type GuideRequest = \{[\s\S]*applicationId: string;[\s\S]*\};/, "TAMS Guide requests must identify applications by id only.");
+assert.doesNotMatch(guideRoute, /type GuideRequest = \{[^}]*application: EventApplication[^}]*\};/, "TAMS Guide route must not trust client-supplied application objects.");
 assert.match(guideRoute, /seedApplications\.find/, "Local demo guide data must be fetched server-side from canonical seed data.");
 assert.match(guideRoute, /client\.query\(api\.applications\.get,[\s\S]*actor/, "Convex guide data must be fetched through actor-scoped application reads.");
 assert.match(guideRoute, /OPENAI_TIMEOUT_MS/, "OpenAI calls must have an explicit configurable timeout.");

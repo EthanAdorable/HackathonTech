@@ -8,7 +8,7 @@
     "start": "node scripts/start.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm access:check && pnpm access:convex-check && pnpm ux:a11y:check && pnpm demo:check",
+    "test": "corepack pnpm access:check && corepack pnpm access:convex-check && corepack pnpm ux:a11y:check && corepack pnpm demo:check",
     "ux:a11y:check": "node scripts/check-ux-a11y.mjs",
     "demo:check": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./scripts/ts-extension-loader.mjs scripts/check-demo-path.mjs",
     "access:check": "node scripts/check-access-auth.mjs",
