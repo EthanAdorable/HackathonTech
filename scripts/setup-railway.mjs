@@ -204,7 +204,7 @@ if (createDomain) {
 }
 
 if (deploy) {
-  run("Deploy to Railway", "railway", ["up", ...railwayContextArgs, "--detach", "-y", "-m", "Deploy TAMS Hub prototype"]);
+  run("Deploy to Railway", "railway", ["up", ...railwayContextArgs, "--detach", "-m", "deploy-tams-hub-prototype"]);
 } else {
   console.log("[INFO] Skipped deployment. Re-run with --deploy after variables and domain are ready.");
 }
