@@ -9,7 +9,7 @@ The current source of truth is `C:/Users/kdrf/Downloads/Tams-Hub.docx`.
 - Next.js App Router with TypeScript
 - Convex schema/functions provisioned on a dedicated prototype project
 - NextAuth credentials structure for future real providers
-- OpenAI API route abstraction with deterministic mock fallback
+- codex-lb API route abstraction with deterministic mock fallback
 - Railway-ready configuration
 
 ## Run Locally
@@ -38,8 +38,9 @@ NEXTAUTH_URL=http://127.0.0.1:3000
 TAMS_DEMO_AUTH_ENABLED=true
 # Optional override for services:check
 # TAMS_HUB_HEALTH_URL=http://127.0.0.1:3000
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o-mini
+CODEX_LB_API_KEY=
+CODEX_LB_BASE_URL=https://codex-lb-production-6b47.up.railway.app/v1
+CODEX_LB_MODEL=gpt-5.4-mini
 CONVEX_DEPLOYMENT=dev:zealous-ocelot-537
 NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud
 TAMS_CONVEX_PROJECT=tams-hub-prototype
@@ -47,7 +48,7 @@ TAMS_RAILWAY_PROJECT=TAMS Hub
 TAMS_RAILWAY_PROJECT_ID=
 ```
 
-`OPENAI_API_KEY` is optional. Without it, TAMS Guide returns deterministic mock guidance so the demo still works.
+`CODEX_LB_API_KEY` is optional. Without it, TAMS Guide returns deterministic mock guidance so the demo still works.
 
 ## Prototype Users
 
@@ -108,8 +109,9 @@ Set these Railway variables:
 
 - `NEXTAUTH_SECRET`
 - `NEXTAUTH_URL`
-- `OPENAI_API_KEY`, optional
-- `OPENAI_MODEL`, optional
+- `CODEX_LB_API_KEY`, optional
+- `CODEX_LB_BASE_URL`, optional
+- `CODEX_LB_MODEL`, optional
 - `NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud`
 - `TAMS_RAILWAY_PROJECT_ID`, set to the dedicated Railway project target
 

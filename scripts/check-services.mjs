@@ -45,7 +45,7 @@ function sanitize(value) {
   return value
     .replace(/accessToken["'\s:=]+[A-Za-z0-9._-]+/gi, "accessToken=<redacted>")
     .replace(/CONVEX_DEPLOY_KEY=[^\s]+/gi, "CONVEX_DEPLOY_KEY=<redacted>")
-    .replace(/OPENAI_API_KEY=[^\s]+/gi, "OPENAI_API_KEY=<redacted>");
+    .replace(/CODEX_LB_API_KEY=[^\s]+/gi, "CODEX_LB_API_KEY=<redacted>");
 }
 
 function envSummary() {
@@ -143,9 +143,11 @@ checks.push({ label: "Local env", ...envSummary() });
 checks.push({ label: "Dedicated project target", ...projectTargetSummary() });
 checks.push({ label: "App health", ...(await healthSummary()) });
 checks.push({
-  label: "OpenAI env",
+  label: "codex-lb env",
   status: "info",
-  output: process.env.OPENAI_API_KEY || localEnv.OPENAI_API_KEY ? "OPENAI_API_KEY is set" : "OPENAI_API_KEY is not set; mock guide fallback will be used",
+  output: process.env.CODEX_LB_API_KEY || localEnv.CODEX_LB_API_KEY
+    ? `CODEX_LB_API_KEY is set; model: ${envValue("CODEX_LB_MODEL") || "gpt-5.4-mini"}`
+    : "CODEX_LB_API_KEY is not set; mock guide fallback will be used",
 });
 checks.push({
   label: "Railway runtime env",

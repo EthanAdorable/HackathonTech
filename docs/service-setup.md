@@ -102,14 +102,15 @@ Set the initial variables after Convex provides a URL:
 ```powershell
 railway variable set NEXTAUTH_SECRET=<production-secret>
 railway variable set TAMS_DEMO_AUTH_ENABLED=false
-railway variable set OPENAI_MODEL=gpt-4o-mini
+railway variable set CODEX_LB_BASE_URL=https://codex-lb-production-6b47.up.railway.app/v1
+railway variable set CODEX_LB_MODEL=gpt-5.4-mini
 railway variable set NEXT_PUBLIC_CONVEX_URL=<convex-url>
 ```
 
-`OPENAI_API_KEY` is optional for the prototype because TAMS Guide has a mock fallback:
+`CODEX_LB_API_KEY` is optional for the prototype because TAMS Guide has a mock fallback:
 
 ```powershell
-railway variable set OPENAI_API_KEY=<optional-key>
+railway variable set CODEX_LB_API_KEY=<optional-key>
 ```
 
 Create a Railway-provided domain, then deploy with the public auth callback URL:

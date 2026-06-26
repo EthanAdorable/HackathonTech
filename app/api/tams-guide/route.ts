@@ -29,6 +29,9 @@ type AuthorizedGuideRequest = GuideRequest & {
   dataSource: "convex" | "local-demo";
 };
 
+const defaultCodexLbBaseUrl = "https://codex-lb-production-6b47.up.railway.app/v1";
+const defaultCodexLbModel = "gpt-5.4-mini";
+
 export async function POST(request: Request) {
   const actor = await getAccessActor();
   if (!actor) {
@@ -42,24 +45,28 @@ export async function POST(request: Request) {
   }
 
   const mockLines = getMockLines(authorizedBody);
+  const codexLbApiKey = process.env.CODEX_LB_API_KEY;
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!codexLbApiKey) {
     const source = authorizedBody.dataSource === "local-demo" ? "local-demo" : "mock-no-key";
     await recordGuideLog(authorizedBody, actor, source, mockLines);
     return NextResponse.json({ source, lines: mockLines, dataSource: authorizedBody.dataSource });
   }
 
   try {
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const client = new OpenAI({
+      apiKey: codexLbApiKey,
+      baseURL: normalizeBaseUrl(process.env.CODEX_LB_BASE_URL || defaultCodexLbBaseUrl),
+    });
     const completion = await withTimeout(
       client.chat.completions.create({
-        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        model: process.env.CODEX_LB_MODEL ?? defaultCodexLbModel,
         temperature: 0.2,
         messages: [
           {
             role: "system",
             content:
-              `You are TAMS Guide for a campus event filing assistant. Use ${saduGuidePolicy.sourceLabel} as the structured guidance source. Provide concise operational guidance only. Always state that final approval belongs to SADU human reviewers.`,
+              `You are TAMS Guide for a campus event filing assistant. Use ${saduGuidePolicy.sourceLabel} as the structured guidance source. Provide concise operational guidance only. Always state that final approval belongs to SADU human reviewers. Do not invent formal compliance policy.`,
           },
           {
             role: "user",
@@ -81,7 +88,7 @@ export async function POST(request: Request) {
           },
         ],
       }),
-      Number(process.env.OPENAI_TIMEOUT_MS ?? 8000),
+      Number(process.env.CODEX_LB_TIMEOUT_MS ?? process.env.OPENAI_TIMEOUT_MS ?? 8000),
     );
 
     const text = completion.choices[0]?.message.content;
@@ -89,18 +96,26 @@ export async function POST(request: Request) {
       ? text.split(/\n+/).map((line) => line.replace(/^[-*]\s*/, "").trim()).filter(Boolean).slice(0, 6)
       : mockLines;
 
-    await recordGuideLog(authorizedBody, actor, "openai", lines);
-    return NextResponse.json({ source: "openai", lines, dataSource: authorizedBody.dataSource });
+    await recordGuideLog(authorizedBody, actor, "codex-lb", lines);
+    return NextResponse.json({ source: "codex-lb", lines, dataSource: authorizedBody.dataSource });
   } catch (error) {
-    const source = error instanceof Error && /timed out/i.test(error.message) ? "mock-openai-timeout" : "mock-openai-error";
+    console.warn(
+      "TAMS Guide codex-lb request failed; using mock fallback.",
+      error instanceof Error ? error.message : String(error),
+    );
+    const source = error instanceof Error && /timed out/i.test(error.message) ? "mock-codex-lb-timeout" : "mock-codex-lb-error";
     await recordGuideLog(authorizedBody, actor, source, mockLines);
     return NextResponse.json({
       source,
       lines: mockLines,
       dataSource: authorizedBody.dataSource,
-      error: error instanceof Error ? error.message : "OpenAI request failed.",
+      error: error instanceof Error ? error.message : "Codex-LB request failed.",
     });
   }
+}
+
+function normalizeBaseUrl(value: string) {
+  return value.replace(/\/+$/, "");
 }
 
 async function withAuthorizedApplication(request: GuideRequest, actor: AccessActor) {

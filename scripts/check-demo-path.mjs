@@ -197,7 +197,7 @@ assert.match(convexSchema, /guideLogs: defineTable/, "Convex schema should inclu
 assert.match(convexGuide, /export const record = mutation/, "Convex guide function should record generated guidance");
 assert.match(convexGuide, /export const listForApplication = query/, "Convex guide function should expose guidance logs by application");
 assert.match(tamsGuideRoute, /recordGuideLog\(authorizedBody, actor, source, mockLines\)/, "Mock guide responses should be audit logged when Convex is configured");
-assert.match(tamsGuideRoute, /recordGuideLog\(authorizedBody, actor, "openai", lines\)/, "OpenAI guide responses should be audit logged when Convex is configured");
+assert.match(tamsGuideRoute, /recordGuideLog\(authorizedBody, actor, "codex-lb", lines\)/, "codex-lb guide responses should be audit logged when Convex is configured");
 assert.match(tamsGuideRoute, /applicationId\.startsWith\("app-"\)/, "Guide logging should skip local prototype draft ids");
 assert.match(guideLogsRoute, /api\.guide\.listForApplication/, "Guide logs route should read auditable guidance history from Convex");
 assert.match(appComponent, /fetch\(`\/api\/guide-logs\?applicationId=\$\{encodeURIComponent\(applicationId\)\}`\)/, "Guide view should load guidance history for the selected application");

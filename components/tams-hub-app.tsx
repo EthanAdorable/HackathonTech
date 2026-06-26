@@ -67,7 +67,9 @@ type ServiceStatus = {
   convexConfigured: boolean;
   convexHost: string;
   convexProject: string;
-  openAiConfigured: boolean;
+  codexLbConfigured: boolean;
+  codexLbBaseHost: string;
+  codexLbModel: string;
   railwayConfigured: boolean;
   railwayEnvironment?: string;
   railwayProject: string;
@@ -1085,7 +1087,7 @@ function Topbar({
     draftCount ? `${draftCount} application${draftCount === 1 ? "" : "s"} still need template completion.` : "",
     serviceStatus && !serviceStatus.railwayProjectIdConfigured ? "Railway is waiting for login and a dedicated project ID." : "",
     serviceStatus?.authWarnings.length ? `Auth safety review: ${serviceStatus.authWarnings.join(", ")}.` : "",
-    serviceStatus && !serviceStatus.openAiConfigured ? "TAMS Guide is using mock guidance until OPENAI_API_KEY is set." : "",
+    serviceStatus && !serviceStatus.codexLbConfigured ? "TAMS Guide is using mock guidance until CODEX_LB_API_KEY is set." : "",
   ].filter(Boolean);
 
   useEffect(() => {
@@ -1338,10 +1340,12 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
   const authReady = status?.authReadyForDeploy ?? false;
   const railwayReady = status?.railwayConfigured ?? false;
   const railwayProjectReady = status?.railwayProjectIdConfigured ?? false;
-  const openAiReady = status?.openAiConfigured ?? false;
+  const codexLbReady = status?.codexLbConfigured ?? false;
   const convexProject = status?.convexProject ?? "tams-hub-prototype";
   const railwayProject = status?.railwayProject ?? "TAMS Hub";
   const convexHost = status?.convexHost || "not configured";
+  const codexLbHost = status?.codexLbBaseHost || "codex-lb-production-6b47.up.railway.app";
+  const codexLbModel = status?.codexLbModel || "gpt-5.4-mini";
   const railwayProjectId = status?.railwayProjectId ?? "missing";
   const authWarnings = status?.authWarnings ?? [];
 
@@ -1375,12 +1379,17 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
         <span className={railwayReady && railwayProjectReady ? "status-pill green" : "status-pill gold"}>{railwayReady && railwayProjectReady ? "Ready" : "Waiting"}</span>
       </article>
       <article className="service-card">
-        <span className={openAiReady ? "service-icon ready" : "service-icon waiting"}><Bot size={18} /></span>
+        <span className={codexLbReady ? "service-icon ready" : "service-icon waiting"}><Bot size={18} /></span>
         <div>
-          <strong>OpenAI Guide</strong>
-          <p>{openAiReady ? "OPENAI_API_KEY is configured for live guidance." : "Using deterministic mock guidance fallback."}</p>
+          <strong>codex-lb Guide</strong>
+          <p>
+            {codexLbReady
+              ? `CODEX_LB_API_KEY is configured for ${codexLbModel}.`
+              : "Using deterministic mock guidance fallback."}
+          </p>
+          <span className="service-detail">Host: {codexLbHost}</span>
         </div>
-        <span className={openAiReady ? "status-pill green" : "status-pill neutral"}>{openAiReady ? "Live" : "Mock"}</span>
+        <span className={codexLbReady ? "status-pill green" : "status-pill neutral"}>{codexLbReady ? "Live" : "Mock"}</span>
       </article>
       <article className="service-card">
         <span className={authReady ? "service-icon ready" : "service-icon waiting"}><KeyRound size={18} /></span>

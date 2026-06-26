@@ -30,9 +30,10 @@ optionally creates a Railway domain or starts a detached deployment.
 Environment read from process env or .env.local:
   NEXTAUTH_SECRET
   NEXTAUTH_URL or TAMS_RAILWAY_APP_URL / --app-url for Railway auth callbacks
-  OPENAI_MODEL
+  CODEX_LB_BASE_URL
+  CODEX_LB_MODEL
   NEXT_PUBLIC_CONVEX_URL
-  OPENAI_API_KEY (optional, set only when present)
+  CODEX_LB_API_KEY (optional, set only when present)
 
 Use --project-id to target an existing dedicated Railway project. Without it,
 the helper creates a project named ${project} and uses the returned project ID
@@ -172,9 +173,11 @@ const variables = {
   NEXTAUTH_SECRET: envValue("NEXTAUTH_SECRET"),
   NEXTAUTH_URL: nextAuthUrl,
   TAMS_DEMO_AUTH_ENABLED: "false",
-  OPENAI_MODEL: envValue("OPENAI_MODEL") || "gpt-4o-mini",
+  CODEX_LB_BASE_URL:
+    envValue("CODEX_LB_BASE_URL") || "https://codex-lb-production-6b47.up.railway.app/v1",
+  CODEX_LB_MODEL: envValue("CODEX_LB_MODEL") || "gpt-5.4-mini",
   NEXT_PUBLIC_CONVEX_URL: envValue("NEXT_PUBLIC_CONVEX_URL"),
-  OPENAI_API_KEY: envValue("OPENAI_API_KEY"),
+  CODEX_LB_API_KEY: envValue("CODEX_LB_API_KEY"),
 };
 
 for (const [key, value] of Object.entries(variables)) {
