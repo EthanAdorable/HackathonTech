@@ -16,6 +16,12 @@
   --red: #df3f42;
   --blue: #286cf4;
   --shadow: 0 18px 42px rgba(15, 34, 25, 0.08);
+  --shadow-lift: 0 20px 44px rgba(15, 34, 25, 0.12);
+  --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-fast: 140ms;
+  --motion-base: 190ms;
+  --motion-lift: translate3d(0, -2px, 0);
+  --motion-press: translate3d(0, 1px, 0) scale(0.99);
   --sidebar: 188px;
 }
 
@@ -60,6 +66,7 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:disabled {
@@ -102,6 +109,50 @@ button svg,
   stroke-width: 2.15;
 }
 
+.gsap-target,
+.motion-target,
+[data-motion],
+[data-gsap],
+.access-login-card,
+.access-method,
+.panel,
+.table-card,
+.status-card,
+.stat-card,
+.feature-card,
+.service-card,
+.admin-card,
+.reviewer-card,
+.guide-card,
+.requirement-upload-card,
+.template-card,
+.application-card,
+.thread-item,
+.partner-chip,
+.role-chip,
+.primary-button,
+.gold-button,
+.secondary-button,
+.danger-button,
+.ghost-button,
+.send-button,
+.toggle-button,
+.nav-button,
+.signout-button,
+.notification-button {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  transform-origin: center;
+}
+
+.gsap-target,
+.motion-target,
+[data-motion],
+[data-gsap],
+.motion-stagger > * {
+  will-change: transform, opacity;
+}
+
 textarea {
   min-height: 86px;
   resize: vertical;
@@ -133,7 +184,7 @@ td:first-child {
 }
 
 tr {
-  transition: background 160ms ease;
+  transition: background var(--motion-fast) ease;
 }
 
 tbody tr {
@@ -142,6 +193,10 @@ tbody tr {
 
 tbody tr:hover {
   background: #f5f8f4;
+}
+
+tbody tr:active {
+  background: #eef7f1;
 }
 
 tbody tr:focus-visible {
@@ -328,6 +383,37 @@ p {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) ease;
+}
+
+.access-login-card:hover,
+.access-method:hover,
+.table-card:hover,
+.status-card:hover,
+.stat-card:hover,
+.feature-card:hover,
+.partner-card:hover,
+.guide-card:hover,
+.service-card:hover,
+.admin-card:hover,
+.reviewer-card:hover {
+  border-color: #cdded3;
+  box-shadow: var(--shadow-lift);
+  transform: var(--motion-lift);
+}
+
+.panel:focus-within,
+.table-card:focus-within,
+.status-card:focus-within,
+.guide-card:focus-within,
+.admin-card:focus-within,
+.reviewer-card:focus-within {
+  border-color: rgba(15, 122, 70, 0.38);
+  box-shadow: 0 0 0 3px rgba(15, 122, 70, 0.08), var(--shadow);
 }
 
 .access-login-card {
@@ -480,12 +566,28 @@ p {
   color: #24342f;
   font-size: 12px;
   font-weight: 850;
+  transition:
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .role-chip.active {
   border-color: var(--green-700);
   background: var(--green-700);
   color: #ffffff;
+}
+
+.role-chip:hover {
+  border-color: #b8d9c5;
+  background: #e7f2ec;
+  transform: translate3d(0, -1px, 0);
+}
+
+.role-chip.active:hover {
+  border-color: var(--green-600);
+  background: var(--green-600);
 }
 
 .secure-note {
@@ -605,6 +707,11 @@ p {
   font-size: 13px;
   font-weight: 820;
   text-align: left;
+  transition:
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .nav-button span {
@@ -638,6 +745,12 @@ p {
 .nav-button:hover,
 .signout-button:hover {
   background: rgba(255, 255, 255, 0.1);
+  transform: translate3d(2px, 0, 0);
+}
+
+.nav-button:active,
+.signout-button:active {
+  transform: translate3d(1px, 0, 0) scale(0.99);
 }
 
 .signout-button {
@@ -703,10 +816,19 @@ p {
   border-radius: 999px;
   background: transparent;
   color: var(--green-700);
+  transition:
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .notification-button:hover {
   background: #eef6f1;
+  transform: translate3d(0, -1px, 0);
+}
+
+.notification-button:active {
+  transform: var(--motion-press);
 }
 
 .notification-dot {
@@ -778,6 +900,10 @@ p {
   font-size: 11px;
   font-weight: 900;
   white-space: nowrap;
+  transition:
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .role-badge {
@@ -915,6 +1041,11 @@ p {
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 14px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) ease;
 }
 
 .service-card > .status-pill,
@@ -968,6 +1099,11 @@ p {
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 16px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) ease;
 }
 
 .admin-card-heading {
@@ -1005,6 +1141,16 @@ p {
   border-radius: 8px;
   background: #fbfcfb;
   padding: 10px 12px;
+  transition:
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.admin-row:hover {
+  border-color: #cdded3;
+  background: #f5faf7;
+  transform: translate3d(0, -1px, 0);
 }
 
 .admin-row strong,
@@ -1027,6 +1173,12 @@ p {
   padding: 7px 11px;
   font-size: 12px;
   font-weight: 900;
+  transition:
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .toggle-button.active {
@@ -1103,6 +1255,13 @@ p {
   padding: 9px 13px;
   font-size: 13px;
   font-weight: 900;
+  box-shadow: 0 0 0 rgba(15, 34, 25, 0);
+  transition:
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .primary-button {
@@ -1149,6 +1308,47 @@ p {
   padding: 0;
   background: var(--green-700);
   color: #ffffff;
+}
+
+.primary-button:not(:disabled):hover,
+.gold-button:not(:disabled):hover,
+.secondary-button:not(:disabled):hover,
+.danger-button:not(:disabled):hover,
+.ghost-button:not(:disabled):hover,
+.send-button:not(:disabled):hover,
+.toggle-button:not(:disabled):hover {
+  box-shadow: 0 9px 18px rgba(15, 34, 25, 0.12);
+  transform: var(--motion-lift);
+}
+
+.primary-button:not(:disabled):hover,
+.send-button:not(:disabled):hover {
+  background: linear-gradient(180deg, #11864e, #08683a);
+}
+
+.gold-button:not(:disabled):hover {
+  background: linear-gradient(180deg, #f6bf22, #e2a000);
+}
+
+.secondary-button:not(:disabled):hover,
+.ghost-button:not(:disabled):hover {
+  border-color: #c8d9ce;
+  background: #eef6f1;
+}
+
+.danger-button:not(:disabled):hover {
+  background: #ffdddd;
+}
+
+.primary-button:not(:disabled):active,
+.gold-button:not(:disabled):active,
+.secondary-button:not(:disabled):active,
+.danger-button:not(:disabled):active,
+.ghost-button:not(:disabled):active,
+.send-button:not(:disabled):active,
+.toggle-button:not(:disabled):active {
+  box-shadow: 0 3px 8px rgba(15, 34, 25, 0.1);
+  transform: var(--motion-press);
 }
 
 .full {
@@ -1287,10 +1487,26 @@ p {
   border-radius: 8px;
   background: #fbfcfb;
   padding: 12px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) ease;
 }
 
 .requirement-upload-card.unavailable {
   background: #f5f7f6;
+}
+
+.requirement-upload-card:hover {
+  border-color: #cdded3;
+  box-shadow: 0 12px 28px rgba(15, 34, 25, 0.08);
+  transform: translate3d(0, -1px, 0);
+}
+
+.requirement-upload-card.unavailable:hover {
+  box-shadow: none;
+  transform: translateZ(0);
 }
 
 .requirement-upload-main,
@@ -1594,10 +1810,26 @@ p {
   border-radius: 8px;
   background: #fbfcfb;
   padding: 13px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) ease;
 }
 
 .template-card.unavailable {
   background: #f5f7f6;
+}
+
+.template-card:hover {
+  border-color: #cdded3;
+  box-shadow: 0 12px 28px rgba(15, 34, 25, 0.08);
+  transform: translate3d(0, -1px, 0);
+}
+
+.template-card.unavailable:hover {
+  box-shadow: none;
+  transform: translateZ(0);
 }
 
 .template-card summary {
@@ -1665,6 +1897,11 @@ p {
   border-radius: 8px;
   background: #f7faf8;
   padding: 16px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) ease;
 }
 
 .reviewer-card p {
@@ -1898,11 +2135,31 @@ p {
   background: #fbfcfb;
   padding: 13px;
   text-align: left;
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .application-card.active {
   border-color: var(--green-700);
   box-shadow: inset 4px 0 0 var(--green-700);
+}
+
+.application-card:hover {
+  border-color: #cdded3;
+  background: #f5faf7;
+  transform: translate3d(0, -1px, 0);
+}
+
+.application-card.active:hover {
+  border-color: var(--green-700);
+  box-shadow: inset 4px 0 0 var(--green-700), 0 10px 22px rgba(15, 34, 25, 0.08);
+}
+
+.application-card:active {
+  transform: var(--motion-press);
 }
 
 .application-card strong,
@@ -1956,10 +2213,23 @@ p {
   background: transparent;
   padding: 13px 4px;
   text-align: left;
+  transition:
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .thread-item.active {
   background: #eef4ef;
+}
+
+.thread-item:hover {
+  background: #f5faf7;
+  transform: translate3d(2px, 0, 0);
+}
+
+.thread-item:active {
+  transform: translate3d(1px, 0, 0) scale(0.99);
 }
 
 .thread-meta {
@@ -2122,6 +2392,11 @@ p {
   gap: 7px;
   font-size: 12px;
   font-weight: 850;
+  transition:
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .partner-chip svg {
@@ -2132,6 +2407,7 @@ p {
 .partner-chip:hover {
   border-color: #c8ded0;
   background: #e4f0e8;
+  transform: translate3d(0, -1px, 0);
 }
 
 .partner-chip.active {
@@ -2142,6 +2418,10 @@ p {
 
 .partner-chip.active svg {
   color: var(--gold);
+}
+
+.partner-chip:active {
+  transform: var(--motion-press);
 }
 
 .guide-hero {
@@ -2270,6 +2550,17 @@ p {
   box-shadow: var(--shadow);
   min-height: 66px;
   padding: 12px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) ease;
+}
+
+.sdg-card:hover {
+  border-color: #cdded3;
+  box-shadow: var(--shadow-lift);
+  transform: var(--motion-lift);
 }
 
 .sdg-number {
@@ -2426,6 +2717,16 @@ p {
   border-radius: 8px;
   background: #ffffff;
   padding: 9px 10px;
+  transition:
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.guide-history-item:hover {
+  border-color: #cdded3;
+  background: #f7faf8;
+  transform: translate3d(0, -1px, 0);
 }
 
 .guide-history-item span {
@@ -2487,6 +2788,44 @@ textarea[aria-invalid="true"] {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .gsap-target,
+  .motion-target,
+  [data-motion],
+  [data-gsap],
+  .motion-stagger > *,
+  .access-login-card,
+  .access-method,
+  .panel,
+  .table-card,
+  .status-card,
+  .stat-card,
+  .feature-card,
+  .service-card,
+  .admin-card,
+  .reviewer-card,
+  .guide-card,
+  .requirement-upload-card,
+  .template-card,
+  .application-card,
+  .thread-item,
+  .partner-chip,
+  .role-chip,
+  .sdg-card,
+  .guide-history-item,
+  .primary-button,
+  .gold-button,
+  .secondary-button,
+  .danger-button,
+  .ghost-button,
+  .send-button,
+  .toggle-button,
+  .nav-button,
+  .signout-button,
+  .notification-button {
+    transform: none !important;
+    will-change: auto !important;
   }
 }
 

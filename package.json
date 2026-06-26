@@ -21,7 +21,9 @@
     "convex:dev-once": "convex dev --once"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "convex": "^1.19.4",
+    "gsap": "^3.15.0",
     "lucide-react": "^0.468.0",
     "next": "^15.0.4",
     "next-auth": "^4.24.11",

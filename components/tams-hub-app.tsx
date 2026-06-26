@@ -53,6 +53,7 @@ import {
   users,
 } from "@/lib/tams-data";
 import { addMessage, endorseApplication as endorseWorkflowApplication, tryTransitionApplication } from "@/lib/workflow";
+import { GsapMotionScope } from "./gsap-motion";
 import { localRequirementUploadAdapter } from "./requirement-upload-adapter";
 
 const storageKey = "tams-hub-prototype-state";
@@ -295,6 +296,39 @@ export function TamsHubApp() {
   const queueCount = applications.filter((application) =>
     ["Submitted to SADU", "Resubmitted", "Under Review"].includes(application.status),
   ).length;
+  const motionKey = useMemo(() => {
+    const attachmentKey = selectedApp.templates
+      .map((template) => `${template.templateId}:${template.attachments?.length ?? 0}:${template.attachments?.[0]?.status ?? "none"}`)
+      .join(",");
+    const uploadKey = Object.values(uploadState).some((state) => state.loading) ? "uploading" : "settled";
+    return [
+      section,
+      selectedApp.id,
+      selectedApp.status,
+      completion.percent,
+      selectedApp.messages.length,
+      selectedApp.timeline.length,
+      attachmentKey,
+      uploadKey,
+      guideMode,
+      guideOutput.join("|"),
+      guideLogs.length,
+      visibleApplications.length,
+    ].join(":");
+  }, [
+    completion.percent,
+    guideLogs.length,
+    guideMode,
+    guideOutput,
+    section,
+    selectedApp.id,
+    selectedApp.messages.length,
+    selectedApp.status,
+    selectedApp.templates,
+    selectedApp.timeline.length,
+    uploadState,
+    visibleApplications.length,
+  ]);
 
   function updateApplication(next: EventApplication) {
     setApplications((current) => current.map((application) => (application.id === next.id ? next : application)));
@@ -840,99 +874,101 @@ export function TamsHubApp() {
   }
 
   return (
-    <main className="app-shell" id="main-content">
-      <Sidebar activeUser={activeUser} activeSection={section} setSection={setSection} onSignOut={() => void signOut()} />
+    <GsapMotionScope motionKey={motionKey}>
+      <main className="app-shell" id="main-content">
+        <Sidebar activeUser={activeUser} activeSection={section} setSection={setSection} onSignOut={() => void signOut()} />
 
-      <section className="workspace">
-        <Topbar
-          title={sectionTitle(section)}
-          activeUser={activeUser}
-          applications={visibleApplications}
-          onNewEvent={createApplication}
-          showNewEvent={activeUser.role === "Student Officer"}
-        />
-
-        {section === "dashboard" && (
-          <DashboardView
+        <section className="workspace">
+          <Topbar
+            title={sectionTitle(section)}
             activeUser={activeUser}
-            users={roleUsers}
             applications={visibleApplications}
-            queueCount={queueCount}
-            onResetDemo={resetDemoData}
-            templateAvailability={templateAvailability}
-            onToggleTemplate={toggleTemplateAvailability}
-            onSelect={(id) => {
-              setSelectedAppId(id);
-              setSection("applications");
-            }}
+            onNewEvent={createApplication}
+            showNewEvent={activeUser.role === "Student Officer"}
           />
-        )}
 
-        {section === "file" && (
-          <FileEventView
-            application={selectedApp}
-            activeUser={activeUser}
-            completionPercent={completion.percent}
-            guideOutput={guideOutput}
-            onApplicationChange={updateApplicationDetails}
-            onTemplateChange={updateTemplateValue}
-            onRequirementUpload={uploadRequirement}
-            onRequirementRemove={removeRequirement}
-            uploadState={uploadState}
-            onPrecheck={runComplianceCheck}
-            onVerifyDocuments={verifyDocuments}
-            verificationPending={verificationPending}
-            onSubmit={submitApplication}
-            onResubmit={resubmitApplication}
-          />
-        )}
+          {section === "dashboard" && (
+            <DashboardView
+              activeUser={activeUser}
+              users={roleUsers}
+              applications={visibleApplications}
+              queueCount={queueCount}
+              onResetDemo={resetDemoData}
+              templateAvailability={templateAvailability}
+              onToggleTemplate={toggleTemplateAvailability}
+              onSelect={(id) => {
+                setSelectedAppId(id);
+                setSection("applications");
+              }}
+            />
+          )}
 
-        {section === "applications" && (
-          <ApplicationsView
-            application={selectedApp}
-            applications={visibleApplications}
-            activeUser={activeUser}
-            completionPercent={completion.percent}
-            messageDraft={messageDraft}
-            setMessageDraft={setMessageDraft}
-            onSelect={setSelectedAppId}
-            onReview={() => setStatus("Under Review", "SADU opened the application for review.")}
-            onRevision={requestRevision}
-            onResubmit={resubmitApplication}
-            onApprove={approveApplication}
-            onReject={rejectApplication}
-            onEndorse={endorseApplication}
-            onSend={() => sendMessage()}
-          />
-        )}
+          {section === "file" && (
+            <FileEventView
+              application={selectedApp}
+              activeUser={activeUser}
+              completionPercent={completion.percent}
+              guideOutput={guideOutput}
+              onApplicationChange={updateApplicationDetails}
+              onTemplateChange={updateTemplateValue}
+              onRequirementUpload={uploadRequirement}
+              onRequirementRemove={removeRequirement}
+              uploadState={uploadState}
+              onPrecheck={runComplianceCheck}
+              onVerifyDocuments={verifyDocuments}
+              verificationPending={verificationPending}
+              onSubmit={submitApplication}
+              onResubmit={resubmitApplication}
+            />
+          )}
 
-        {section === "messages" && (
-          <MessagesView
-            application={selectedApp}
-            applications={visibleApplications}
-            activeUser={activeUser}
-            messageDraft={messageDraft}
-            setMessageDraft={setMessageDraft}
-            onSelect={setSelectedAppId}
-            onSend={() => sendMessage()}
-          />
-        )}
+          {section === "applications" && (
+            <ApplicationsView
+              application={selectedApp}
+              applications={visibleApplications}
+              activeUser={activeUser}
+              completionPercent={completion.percent}
+              messageDraft={messageDraft}
+              setMessageDraft={setMessageDraft}
+              onSelect={setSelectedAppId}
+              onReview={() => setStatus("Under Review", "SADU opened the application for review.")}
+              onRevision={requestRevision}
+              onResubmit={resubmitApplication}
+              onApprove={approveApplication}
+              onReject={rejectApplication}
+              onEndorse={endorseApplication}
+              onSend={() => sendMessage()}
+            />
+          )}
 
-        {section === "guide" && (
-          <GuideView
-            application={selectedApp}
-            guideMode={guideMode}
-            setGuideMode={setGuideMode}
-            guideQuestion={guideQuestion}
-            setGuideQuestion={setGuideQuestion}
-            guideOutput={guideOutput}
-            guideSource={guideSource}
-            guideLogs={guideLogs}
-            onGenerateGuide={generateGuide}
-          />
-        )}
-      </section>
-    </main>
+          {section === "messages" && (
+            <MessagesView
+              application={selectedApp}
+              applications={visibleApplications}
+              activeUser={activeUser}
+              messageDraft={messageDraft}
+              setMessageDraft={setMessageDraft}
+              onSelect={setSelectedAppId}
+              onSend={() => sendMessage()}
+            />
+          )}
+
+          {section === "guide" && (
+            <GuideView
+              application={selectedApp}
+              guideMode={guideMode}
+              setGuideMode={setGuideMode}
+              guideQuestion={guideQuestion}
+              setGuideQuestion={setGuideQuestion}
+              guideOutput={guideOutput}
+              guideSource={guideSource}
+              guideLogs={guideLogs}
+              onGenerateGuide={generateGuide}
+            />
+          )}
+        </section>
+      </main>
+    </GsapMotionScope>
   );
 }
 
@@ -993,87 +1029,91 @@ function AccessScreen({ users }: { users: DemoUser[] }) {
   }
 
   return (
-    <main className="access-shell" id="main-content">
-      <section className="access-hero">
-        <div className="brand wide">
-          <MascotLogo />
-          <strong>TAMS Hub</strong>
-        </div>
-        <h1>
-          Smarter campus workflows for <span>FEU organizations.</span>
-        </h1>
-        <p>TAMS Hub helps FEU Alabang student organizations submit event requirements, track SADU approvals, and collaborate in one secure platform.</p>
-        <div className="hero-metrics">
-          <Metric value="48" label="Active Organizations" />
-          <Metric value="213" label="Events Filed This Sem" />
-          <Metric value="91%" label="Approval Rate" />
-          <Metric value="2.3 days" label="Avg. Review Time" />
-        </div>
-      </section>
-
-      <section className="access-panel-wrap">
-        <div className="access-heading">
-          <MascotLogo />
-          <div>
-            <h2>Access TAMS Hub</h2>
-            <p>Secure AI-assisted campus workflow platform</p>
+    <GsapMotionScope motionKey={`access:${activeUserId}:${demoAuthEnabled}:${loginPending}`}>
+      <main className="access-shell" id="main-content">
+        <section className="access-hero">
+          <div className="brand wide">
+            <MascotLogo />
+            <strong>TAMS Hub</strong>
           </div>
-        </div>
+          <h1>
+            Smarter campus workflows for <span>FEU organizations.</span>
+          </h1>
+          <p>TAMS Hub helps FEU Alabang student organizations submit event requirements, track SADU approvals, and collaborate in one secure platform.</p>
+          <div className="hero-metrics">
+            <Metric value="48" label="Active Organizations" />
+            <Metric value="213" label="Events Filed This Sem" />
+            <Metric value="91%" label="Approval Rate" />
+            <Metric value="2.3 days" label="Avg. Review Time" />
+          </div>
+        </section>
 
-        <div className="access-login-card">
-          <p className="label">FEU account login</p>
-          <input value={feuLoginEmail} readOnly aria-label="FEU email" />
-          <input value={feuLoginPassword} readOnly aria-label="Password" type="password" />
-          <button className="primary-button full" disabled={loginPending} onClick={() => void enterWithFeuAccount()}>
-            {loginPending ? "Signing in..." : "Continue with FEU Account"}
-          </button>
-          {loginError && <p className="fine-print" role="alert">{loginError}</p>}
-        </div>
+        <section className="access-panel-wrap">
+          <div className="access-heading">
+            <MascotLogo />
+            <div>
+              <h2>Access TAMS Hub</h2>
+              <p>Secure AI-assisted campus workflow platform</p>
+            </div>
+          </div>
 
-        <div className="access-login-card">
-          <p className="label">Prototype demo access</p>
-          {demoAuthEnabled ? (
-            <>
-              <div className="role-choice-grid">
-                {users.map((user) => (
-                  <button
-                    key={user.id}
-                    className={user.id === activeUserId ? "role-chip active" : "role-chip"}
-                    aria-pressed={user.id === activeUserId}
-                    onClick={() => setActiveUserId(user.id)}
-                  >
-                    {roleIcons[user.role]}
-                    {roleDisplayName(user.role)}
-                  </button>
-                ))}
-              </div>
-              <button className="gold-button full" disabled={loginPending} onClick={() => void enterWithDemoUser()}>
-                {loginPending ? "Verifying..." : `Enter as ${roleDisplayName(activeUser.role)}`}
-              </button>
-            </>
-          ) : (
-            <p className="fine-print">Demo role login is disabled for this environment.</p>
-          )}
-        </div>
+          <div className="access-login-card">
+            <p className="label">FEU account login</p>
+            <input value={feuLoginEmail} readOnly aria-label="FEU email" />
+            <input value={feuLoginPassword} readOnly aria-label="Password" type="password" />
+            <button className="primary-button full" disabled={loginPending} onClick={() => void enterWithFeuAccount()}>
+              {loginPending ? "Signing in..." : "Continue with FEU Account"}
+            </button>
+            {loginError && <p className="fine-print" role="alert">{loginError}</p>}
+          </div>
 
-        <p className="secure-note"><KeyRound size={14} /> Access is based on verified campus role.</p>
-      </section>
-    </main>
+          <div className="access-login-card">
+            <p className="label">Prototype demo access</p>
+            {demoAuthEnabled ? (
+              <>
+                <div className="role-choice-grid">
+                  {users.map((user) => (
+                    <button
+                      key={user.id}
+                      className={user.id === activeUserId ? "role-chip active" : "role-chip"}
+                      aria-pressed={user.id === activeUserId}
+                      onClick={() => setActiveUserId(user.id)}
+                    >
+                      {roleIcons[user.role]}
+                      {roleDisplayName(user.role)}
+                    </button>
+                  ))}
+                </div>
+                <button className="gold-button full" disabled={loginPending} onClick={() => void enterWithDemoUser()}>
+                  {loginPending ? "Verifying..." : `Enter as ${roleDisplayName(activeUser.role)}`}
+                </button>
+              </>
+            ) : (
+              <p className="fine-print">Demo role login is disabled for this environment.</p>
+            )}
+          </div>
+
+          <p className="secure-note"><KeyRound size={14} /> Access is based on verified campus role.</p>
+        </section>
+      </main>
+    </GsapMotionScope>
   );
 }
 
 function AccessShellMessage({ title, message }: { title: string; message: string }) {
   return (
-    <main className="access-shell" id="main-content">
-      <section className="access-hero">
-        <div className="brand wide">
-          <MascotLogo />
-          <strong>TAMS Hub</strong>
-        </div>
-        <h1>{title}</h1>
-        <p>{message}</p>
-      </section>
-    </main>
+    <GsapMotionScope motionKey={`access-message:${title}`}>
+      <main className="access-shell" id="main-content">
+        <section className="access-hero">
+          <div className="brand wide">
+            <MascotLogo />
+            <strong>TAMS Hub</strong>
+          </div>
+          <h1>{title}</h1>
+          <p>{message}</p>
+        </section>
+      </main>
+    </GsapMotionScope>
   );
 }
 
