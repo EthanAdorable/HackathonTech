@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -77,6 +77,21 @@ const interactiveSelector = [
   ".partner-chip",
   ".role-chip",
   ".access-method",
+].join(",");
+
+const sectionLayoutSelector = ".screen-stack, .file-layout, .messages-layout";
+const sectionPayloadSelector = [
+  ".dashboard-welcome",
+  ".stats-grid",
+  ".form-column",
+  ".guide-card",
+  ".application-title-row",
+  ".status-card",
+  ".applications-layout",
+  ".thread-list",
+  ".chat-panel",
+  ".guide-hero",
+  ".feature-grid",
 ].join(",");
 
 function prefersReducedMotion() {
@@ -177,10 +192,9 @@ function animatePopover(scope: HTMLElement) {
   );
 }
 
-export function GsapMotionScope({ children, motionKey }: { children: ReactNode; motionKey: string }) {
+export function GsapMotionScope({ children }: { children: ReactNode; motionKey: string }) {
   const scopeRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
-  const stableMotionKey = useMemo(() => motionKey, [motionKey]);
 
   useGSAP(
     () => {
@@ -197,7 +211,7 @@ export function GsapMotionScope({ children, motionKey }: { children: ReactNode; 
       animateNumbers(scope);
       animatePopover(scope);
     },
-    { scope: scopeRef, dependencies: [stableMotionKey, reducedMotion], revertOnUpdate: true },
+    { scope: scopeRef, dependencies: [reducedMotion], revertOnUpdate: true },
   );
 
   useEffect(() => {
@@ -205,6 +219,20 @@ export function GsapMotionScope({ children, motionKey }: { children: ReactNode; 
     if (!scope || reducedMotion) return;
 
     const observer = new MutationObserver((mutations) => {
+      const sectionSwapped = mutations.some((mutation) =>
+        Array.from(mutation.addedNodes).some(
+          (node) =>
+            node instanceof HTMLElement &&
+            (node.matches(`${sectionLayoutSelector}, ${sectionPayloadSelector}`) ||
+              Boolean(node.querySelector(`${sectionLayoutSelector}, ${sectionPayloadSelector}`))),
+        ),
+      );
+
+      if (sectionSwapped) {
+        animatePopover(scope);
+        return;
+      }
+
       const addedTargets = mutations.flatMap((mutation) =>
         Array.from(mutation.addedNodes).flatMap((node) => {
           if (!(node instanceof HTMLElement)) return [];
