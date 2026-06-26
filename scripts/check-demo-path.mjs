@@ -93,6 +93,10 @@ assert.match(appComponent, /aria-pressed=\{onlyActionItems\}/, "Dashboard filter
 assert.match(appComponent, /disabled=\{!onlyActionItems\} onClick=\{\(\) => setOnlyActionItems\(false\)\}/, "Dashboard View All should clear the action filter instead of opening an arbitrary row");
 assert.match(appComponent, /aria-label=\{`Open \$\{app\.title\}`\}/, "Dashboard table rows should expose their open action");
 assert.match(appComponent, /onKeyDown=\{\(event\) =>/, "Dashboard table rows should support keyboard selection");
+assert.match(appComponent, /requiredActionLabel\(app\)/, "Dashboard required action cells should use computed workflow labels");
+assert.match(appComponent, /function requiredActionLabel\(application: EventApplication\)/, "Dashboard required actions should be centralized by application state");
+assert.match(appComponent, /getApplicationCompletion\(application\)\.missing\[0\]/, "Revision action labels should derive from current template gaps");
+assert.doesNotMatch(appComponent, /Revise budget/, "Dashboard required actions should not assume every revision is a budget issue");
 assert.match(appComponent, /className="table-scroll"/, "Dashboard table should remain horizontally accessible on narrow screens");
 assert.match(globalCss, /tbody tr:focus-visible/, "Dashboard table rows should show focus affordance");
 assert.match(globalCss, /\.table-scroll\s*\{[\s\S]*overflow-x: auto/, "Dashboard table wrapper should allow horizontal scrolling");

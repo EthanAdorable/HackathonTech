@@ -940,7 +940,7 @@ function DashboardView({
                   <td>{app.eventType}</td>
                   <td>{formatShortDate(getSubmittedDate(app))}</td>
                   <td><span className={`status-pill ${statusTone[app.status]}`}>{shortStatus(app.status)}</span></td>
-                  <td className="action-text">{app.status === "Revision Requested" ? "Revise budget" : app.status === "Draft" ? "Complete form" : app.status.includes("Submitted") ? "Awaiting SADU" : "-"}</td>
+                  <td className="action-text">{requiredActionLabel(app)}</td>
                 </tr>
               ))}
               {!displayedApplications.length && (
@@ -1740,4 +1740,15 @@ function shortStatus(status: EventStatus) {
   if (status === "Submitted to SADU" || status === "Under Review" || status === "Resubmitted") return "For Review";
   if (status === "SADU Approved") return "Approved";
   return status;
+}
+
+function requiredActionLabel(application: EventApplication) {
+  if (application.status === "Revision Requested") {
+    const firstMissingTemplate = getApplicationCompletion(application).missing[0]?.split(":")[0]?.replace(" Template", "");
+    return firstMissingTemplate ? `Revise ${firstMissingTemplate}` : "Respond to SADU";
+  }
+  if (application.status === "Draft" || application.status === "Template Completion") return "Complete form";
+  if (application.status === "AI Pre-check") return "Submit to SADU";
+  if (application.status === "Submitted to SADU" || application.status === "Under Review" || application.status === "Resubmitted") return "Awaiting SADU";
+  return "-";
 }
