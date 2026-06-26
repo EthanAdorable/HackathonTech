@@ -206,6 +206,37 @@ export function TamsHubApp() {
     setApplications((current) => current.map((application) => (application.id === next.id ? next : application)));
   }
 
+  function applyRemoteApplications(nextApplications: EventApplication[]) {
+    if (!nextApplications.length) return;
+    setApplications(nextApplications);
+    setSelectedAppId((current) =>
+      nextApplications.some((application) => application.id === current)
+        ? current
+        : nextApplications.find((application) => application.status === "Revision Requested")?.id ?? nextApplications[0].id,
+    );
+  }
+
+  function isConvexApplicationId(id: string) {
+    return !id.startsWith("app-");
+  }
+
+  async function syncConvexWorkflow(payload: Record<string, unknown>) {
+    if (applicationSource !== "convex") return;
+    if (!isConvexApplicationId(selectedApp.id)) return;
+    try {
+      const response = await fetch("/api/convex-workflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId: selectedApp.id, ...payload }),
+      });
+      if (!response.ok) return;
+      const data = (await response.json()) as ConvexApplicationsResponse;
+      if (data.source === "convex") applyRemoteApplications(data.applications);
+    } catch {
+      // Keep optimistic local prototype state if Convex sync is unavailable.
+    }
+  }
+
   function resetDemoData() {
     window.localStorage.removeItem(storageKey);
     setApplications(seedApplications);
@@ -268,6 +299,7 @@ export function TamsHubApp() {
 
   function setStatus(status: EventStatus, note: string) {
     updateApplication(transitionApplication(selectedApp, status, note));
+    void syncConvexWorkflow({ action: "updateStatus", status, note });
   }
 
   function resubmitApplication() {
@@ -280,7 +312,8 @@ export function TamsHubApp() {
       setSection("file");
       return;
     }
-    setStatus("Resubmitted", "Student resubmitted after revision.");
+    updateApplication(transitionApplication(selectedApp, "Resubmitted", "Student resubmitted after revision."));
+    void syncConvexWorkflow({ action: "resubmit", note: "Student resubmitted after revision." });
   }
 
   async function generateGuide() {
@@ -303,6 +336,12 @@ export function TamsHubApp() {
   function sendMessage(body = messageDraft) {
     if (!body.trim()) return;
     updateApplication(addMessage(selectedApp, activeUser.name, activeUser.role, body.trim()));
+    void syncConvexWorkflow({
+      action: "addMessage",
+      author: activeUser.name,
+      role: activeUser.role,
+      body: body.trim(),
+    });
     setMessageDraft("");
   }
 
@@ -310,27 +349,53 @@ export function TamsHubApp() {
     const body = makeRevisionDraft(selectedApp);
     const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body);
     updateApplication(transitionApplication(withMessage, "Revision Requested", "SADU requested revisions."));
+    void syncConvexWorkflow({
+      action: "requestRevision",
+      author: activeUser.name,
+      role: activeUser.role,
+      body,
+    });
   }
 
   function approveApplication() {
-    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, "Approved. Final decision recorded by SADU reviewer.");
+    const body = "Approved. Final decision recorded by SADU reviewer.";
+    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body);
     updateApplication(transitionApplication(withMessage, "SADU Approved", "SADU approved the application."));
+    void syncConvexWorkflow({
+      action: "approve",
+      author: activeUser.name,
+      role: activeUser.role,
+      body,
+    });
   }
 
   function rejectApplication() {
-    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, "Rejected by SADU after human review. Please coordinate before filing again.");
+    const body = "Rejected by SADU after human review. Please coordinate before filing again.";
+    const withMessage = addMessage(selectedApp, activeUser.name, activeUser.role, body);
     updateApplication(transitionApplication(withMessage, "Rejected", "SADU rejected the application."));
+    void syncConvexWorkflow({
+      action: "reject",
+      author: activeUser.name,
+      role: activeUser.role,
+      body,
+    });
   }
 
   function endorseApplication() {
+    const body = "Faculty adviser note: Reviewed for organization coordination. Endorsement placeholder recorded for SADU visibility.";
     updateApplication(
       addMessage(
         selectedApp,
         activeUser.name,
         activeUser.role,
-        "Faculty adviser note: Reviewed for organization coordination. Endorsement placeholder recorded for SADU visibility.",
+        body,
       ),
     );
+    void syncConvexWorkflow({
+      action: "addEndorsement",
+      author: activeUser.name,
+      body,
+    });
   }
 
   if (!entered) {

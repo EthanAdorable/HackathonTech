@@ -39,6 +39,7 @@ const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf
 const packageJson = readFileSync(new URL("../package.json", import.meta.url), "utf8");
 const nextConfig = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
 const convexApplicationsRoute = readFileSync(new URL("../app/api/convex-applications/route.ts", import.meta.url), "utf8");
+const convexWorkflowRoute = readFileSync(new URL("../app/api/convex-workflow/route.ts", import.meta.url), "utf8");
 const convexSetup = readFileSync(new URL("../scripts/setup-convex.mjs", import.meta.url), "utf8");
 const railwaySetup = readFileSync(new URL("../scripts/setup-railway.mjs", import.meta.url), "utf8");
 const serviceRunbook = readFileSync(new URL("../docs/service-setup.md", import.meta.url), "utf8");
@@ -158,6 +159,13 @@ assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should 
 assert.match(appComponent, /data\.source === "convex" && data\.applications\.length/, "App should prefer populated Convex application data");
 assert.match(appComponent, /window\.localStorage\.getItem\(storageKey\)/, "App should keep local storage fallback for prototype edits");
 assert.match(appComponent, /applicationSource === "local"/, "App should avoid writing Convex-hydrated data back into local storage");
+assert.match(convexWorkflowRoute, /api\.applications\.addMessage/, "Convex workflow route should sync message actions");
+assert.match(convexWorkflowRoute, /api\.applications\.requestRevision/, "Convex workflow route should sync revision requests");
+assert.match(convexWorkflowRoute, /api\.applications\.approve/, "Convex workflow route should sync SADU approvals");
+assert.match(appComponent, /fetch\("\/api\/convex-workflow"/, "App should sync workflow actions through the Convex workflow route");
+assert.match(appComponent, /if \(applicationSource !== "convex"\) return/, "App should keep workflow sync scoped to Convex-hydrated data");
+assert.match(appComponent, /function isConvexApplicationId\(id: string\)/, "App should distinguish Convex-hydrated applications from local prototype drafts");
+assert.match(appComponent, /if \(!isConvexApplicationId\(selectedApp\.id\)\) return/, "App should avoid syncing local prototype drafts to Convex workflow mutations");
 const serviceCheckScript = readFileSync("scripts/check-services.mjs", "utf8");
 const serviceStatusRoute = readFileSync("app/api/service-status/route.ts", "utf8");
 assert.match(serviceCheckScript, /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
