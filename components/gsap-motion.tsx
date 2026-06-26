@@ -201,8 +201,10 @@ export function GsapMotionScope({ children }: { children: ReactNode; motionKey: 
       const scope = scopeRef.current;
       if (!scope) return;
       if (reducedMotion) {
-        gsap.set(collectRevealTargets(scope), { clearProps: "all" });
-        gsap.set(scope.querySelectorAll(".progress-track span"), { clearProps: "all" });
+        const revealTargets = collectRevealTargets(scope);
+        const progressBars = Array.from(scope.querySelectorAll(".progress-track span"));
+        if (revealTargets.length) gsap.set(revealTargets, { clearProps: "all" });
+        if (progressBars.length) gsap.set(progressBars, { clearProps: "all" });
         return;
       }
 

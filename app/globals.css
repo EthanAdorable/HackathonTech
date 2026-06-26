@@ -1440,15 +1440,16 @@ p {
 
 .file-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 16px;
+  grid-template-columns: minmax(620px, 1fr) minmax(300px, 0.34fr);
+  gap: 18px;
   align-items: start;
   margin-top: 12px;
 }
 
 .form-column {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .section-heading {
@@ -1507,7 +1508,7 @@ p {
 }
 
 .file-layout .panel {
-  padding: 12px 18px;
+  padding: 14px 18px;
 }
 
 .file-layout h3 {
@@ -1560,16 +1561,16 @@ p {
 .requirement-upload-stack,
 .review-file-list {
   display: grid;
-  gap: 10px;
+  gap: 9px;
 }
 
 .requirement-upload-card {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfb;
-  padding: 12px;
+  padding: 10px 12px;
   transition:
     border-color var(--motion-base) var(--motion-ease),
     box-shadow var(--motion-base) var(--motion-ease),
@@ -1616,6 +1617,7 @@ p {
 .requirement-upload-main p {
   margin: 2px 0 0;
   font-size: 12px;
+  line-height: 1.35;
 }
 
 .requirement-icon {
@@ -1707,7 +1709,7 @@ p {
   border-radius: 8px;
   background: #f8faf8;
   color: var(--muted);
-  padding: 10px;
+  padding: 9px 10px;
   font-size: 12px;
   font-weight: 850;
 }
@@ -1763,14 +1765,16 @@ p {
   position: sticky;
   top: 76px;
   overflow: hidden;
+  max-height: calc(100vh - 92px);
+  overflow-y: auto;
 }
 
 .guide-card-title {
   gap: 9px;
   background: linear-gradient(180deg, var(--green-800), var(--green-950));
   color: #ffffff;
-  margin: -1px -1px 14px;
-  padding: 13px 14px;
+  margin: -1px -1px 12px;
+  padding: 12px 14px;
 }
 
 .guide-card-title span {
@@ -1782,13 +1786,14 @@ p {
 
 .guide-card > :not(.guide-card-title) {
   margin-inline: 14px;
+  min-width: 0;
 }
 
 .guide-checklist {
   display: grid;
-  gap: 7px;
+  gap: 6px;
   list-style: none;
-  margin: 0 14px 14px;
+  margin: 0 14px 12px;
   padding: 0;
   font-size: 12px;
   font-weight: 850;
@@ -1814,8 +1819,8 @@ p {
 .warning-box,
 .guide-says {
   border-radius: 8px;
-  padding: 11px;
-  margin-bottom: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 
 .warning-box {
@@ -1843,10 +1848,22 @@ p {
 .guide-says p {
   margin: 4px 0 0;
   font-size: 12px;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
 }
 
 .guide-says {
   background: #edf2ef;
+  max-height: 238px;
+  overflow-y: auto;
+}
+
+.guide-card .full {
+  justify-content: center;
+  width: calc(100% - 28px);
+  margin-bottom: 8px;
+  white-space: normal;
+  text-align: center;
 }
 
 .verification-summary {

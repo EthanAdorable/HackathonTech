@@ -167,7 +167,10 @@ export function useTamsGsap<TElement extends HTMLElement = HTMLElement>(
   useGSAP(
     (context, contextSafe) => {
       if (skipWhenReducedMotion && prefersReducedMotion) {
-        gsap.set(context.selector?.("[data-gsap-reveal]") ?? [], { clearProps: "all" });
+        const revealTargets = context.selector?.("[data-gsap-reveal]") ?? [];
+        if (revealTargets.length) {
+          gsap.set(revealTargets, { clearProps: "all" });
+        }
         return undefined;
       }
 
@@ -211,8 +214,13 @@ export function createRevealTimeline(
   } = {},
 ) {
   const targets = gsap.utils.toArray<HTMLElement>(selector, scope);
+  const timeline = gsap.timeline();
 
-  return gsap.timeline().from(targets, {
+  if (!targets.length) {
+    return timeline;
+  }
+
+  return timeline.from(targets, {
     autoAlpha: 0,
     duration,
     ease,
