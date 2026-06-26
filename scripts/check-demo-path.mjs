@@ -328,6 +328,7 @@ assert.ok(existsSync("convex/_generated/dataModel.d.ts"), "Convex generated data
 assert.match(convexApplications, /function withUiId/, "Convex detailed queries should normalize document IDs for the UI model");
 assert.match(convexApplications, /return applications\.map\(applicationWithUiId\)/, "Convex list query should expose application ids and endorsement state for UI selection");
 assert.match(convexApplications, /adviserEndorsement:\s*\{[\s\S]*required,[\s\S]*state:/, "Convex application reads should expose nested adviser endorsement state for the UI");
+assert.match(convexApplications, /attachments = requirements[\s\S]*activeAttachment/, "Convex template hydration should expose active requirement uploads on template attachments");
 assert.match(convexApplications, /messages: messages\.map\(withUiId\)/, "Convex detailed queries should expose message ids for React keys");
 assert.match(convexApplications, /timeline: timeline\.map\(withUiId\)/, "Convex detailed queries should expose timeline ids for workflow rendering");
 assert.match(convexSeed, /adviserEndorsementRequired: application\.adviserEndorsement\.required/, "Convex seed should persist adviser endorsement state for fresh demo resets");

@@ -375,10 +375,26 @@ function applicationWithUiId(document: any) {
 }
 
 function attachmentWithUiId(document: any, url?: string | null) {
+  const version = {
+    id: `${document._id}-v${document.revision}`,
+    fileName: document.fileName,
+    size: document.sizeBytes,
+    uploadedAt: document.createdAt,
+    uploadedBy: document.uploadedBy,
+    revision: document.revision,
+    note: document.revision > 1 ? "Replacement uploaded after revision." : "Initial upload.",
+  };
+
   return {
     ...document,
     id: document._id,
     attachmentId: document._id,
+    size: document.sizeBytes,
+    mimeType: document.contentType,
+    uploadedAt: document.createdAt,
+    status: document.status === "active" ? "uploaded" : document.status,
+    reviewerVisible: true,
+    versions: [version],
     url,
   };
 }
@@ -394,6 +410,10 @@ function requirementWithUiId(document: any, activeAttachment?: any, url?: string
 }
 
 function templateWithUiId(document: any, requirements: any[] = []) {
+  const attachments = requirements
+    .map((requirement: any) => requirement.activeAttachment)
+    .filter(Boolean);
+
   return {
     _creationTime: document._creationTime,
     _id: document._id,
@@ -403,6 +423,7 @@ function templateWithUiId(document: any, requirements: any[] = []) {
     templateId: document.templateId,
     enabled: document.enabled,
     values: document.values,
+    attachments,
     requirements,
   };
 }
