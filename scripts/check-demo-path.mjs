@@ -38,6 +38,7 @@ const authRoute = readFileSync(new URL("../app/api/auth/[...nextauth]/route.ts",
 const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf8");
 const packageJson = readFileSync(new URL("../package.json", import.meta.url), "utf8");
 const nextConfig = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
+const convexApplicationsRoute = readFileSync(new URL("../app/api/convex-applications/route.ts", import.meta.url), "utf8");
 const convexSetup = readFileSync(new URL("../scripts/setup-convex.mjs", import.meta.url), "utf8");
 const railwaySetup = readFileSync(new URL("../scripts/setup-railway.mjs", import.meta.url), "utf8");
 const serviceRunbook = readFileSync(new URL("../docs/service-setup.md", import.meta.url), "utf8");
@@ -151,6 +152,12 @@ assert.match(appComponent, /guideModeLabels/, "Guide output should identify the 
 assert.match(appComponent, /className="guide-output" role="status" aria-live="polite"/, "Guide workbench output should be announced politely");
 assert.doesNotMatch(globalCss, /var\(--green\)/, "Guide styles should use defined green tokens");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
+assert.match(convexApplicationsRoute, /ConvexHttpClient/, "Frontend hydration route should read from the configured Convex deployment");
+assert.match(convexApplicationsRoute, /api\.applications\.listWithDetails/, "Frontend hydration route should load detailed Convex applications");
+assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should try to hydrate application data from Convex");
+assert.match(appComponent, /data\.source === "convex" && data\.applications\.length/, "App should prefer populated Convex application data");
+assert.match(appComponent, /window\.localStorage\.getItem\(storageKey\)/, "App should keep local storage fallback for prototype edits");
+assert.match(appComponent, /applicationSource === "local"/, "App should avoid writing Convex-hydrated data back into local storage");
 const serviceCheckScript = readFileSync("scripts/check-services.mjs", "utf8");
 const serviceStatusRoute = readFileSync("app/api/service-status/route.ts", "utf8");
 assert.match(serviceCheckScript, /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
@@ -174,6 +181,8 @@ assert.match(serviceRunbook, /setup:railway -- --workspace <workspace> --dry-run
 assert.match(readme, /Convex schema\/functions provisioned on a dedicated prototype project/, "README should describe current Convex provisioning state");
 assert.match(readme, /conneura\/tams-hub-prototype/, "README should record the dedicated Convex project");
 assert.match(readme, /zealous-ocelot-537\.convex\.cloud/, "README should record the configured Convex client URL");
+assert.match(readme, /loads seeded applications from the dedicated Convex deployment/, "README should describe Convex-backed application reads");
+assert.match(readme, /create\/edit\/status\/message actions are still local prototype state/, "README should describe remaining local prototype mutations");
 assert.match(readme, /Railway is still waiting for CLI login and a dedicated Railway project ID/, "README should describe current Railway setup blocker");
 assert.match(readme, /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
 assert.match(readme, /setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run/, "README should show explicit Railway project targeting for dry-runs");

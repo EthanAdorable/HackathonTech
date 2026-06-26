@@ -63,6 +63,11 @@ type ServiceStatus = {
   railwayProjectIdConfigured: boolean;
 };
 
+type ConvexApplicationsResponse = {
+  source: "convex" | "local";
+  applications: EventApplication[];
+};
+
 type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
 type GuideMode = "checklist" | "missing" | "summary" | "revision" | "question";
 
@@ -113,6 +118,7 @@ export function TamsHubApp() {
   const [guideOutput, setGuideOutput] = useState<string[]>([]);
   const [messageDraft, setMessageDraft] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [applicationSource, setApplicationSource] = useState<"convex" | "local">("local");
 
   const activeUser = users.find((user) => user.id === activeUserId) ?? users[0];
   const selectedApp = applications.find((application) => application.id === selectedAppId) ?? applications[0];
@@ -126,24 +132,54 @@ export function TamsHubApp() {
   }, [applications]);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(storageKey);
-    if (stored) {
+    let active = true;
+
+    async function hydrateApplications() {
       try {
-        const parsed = JSON.parse(stored) as EventApplication[];
-        setApplications(parsed);
-        setSelectedAppId(parsed.find((app) => app.status === "Revision Requested")?.id ?? parsed[0]?.id ?? seedApplications[0].id);
+        const response = await fetch("/api/convex-applications");
+        if (!response.ok) throw new Error("Convex applications route unavailable");
+        const data = (await response.json()) as ConvexApplicationsResponse;
+        if (active && data.source === "convex" && data.applications.length) {
+          setApplications(data.applications);
+          setSelectedAppId(data.applications.find((app) => app.status === "Revision Requested")?.id ?? data.applications[0].id);
+          setApplicationSource("convex");
+          setHydrated(true);
+          return;
+        }
       } catch {
-        setApplications(seedApplications);
+        // Fall back to local prototype state below.
       }
+
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as EventApplication[];
+          if (!active) return;
+          setApplications(parsed);
+          setSelectedAppId(parsed.find((app) => app.status === "Revision Requested")?.id ?? parsed[0]?.id ?? seedApplications[0].id);
+          setApplicationSource("local");
+        } catch {
+          if (active) {
+            setApplications(seedApplications);
+            setApplicationSource("local");
+          }
+        }
+      }
+      if (active) setHydrated(true);
     }
-    setHydrated(true);
+
+    hydrateApplications();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (hydrated) {
+    if (hydrated && applicationSource === "local") {
       window.localStorage.setItem(storageKey, JSON.stringify(applications));
     }
-  }, [applications, hydrated]);
+  }, [applicationSource, applications, hydrated]);
 
   const visibleApplications = useMemo(() => {
     if (activeUser.role === "Student Officer") {

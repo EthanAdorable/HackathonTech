@@ -92,7 +92,7 @@ Convex files live in `convex/`:
 
 The dedicated Convex project is configured under `conneura/tams-hub-prototype` with dev deployment `dev:zealous-ocelot-537` and `NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud`. Convex functions have been generated, pushed, and seeded.
 
-The running MVP still uses local browser storage for demo speed. `app/providers.tsx` enables `ConvexProvider` when `NEXT_PUBLIC_CONVEX_URL` exists, so the next migration step is replacing local state in `components/tams-hub-app.tsx` with Convex hooks.
+The running MVP loads seeded applications from the dedicated Convex deployment when `NEXT_PUBLIC_CONVEX_URL` is configured, then keeps prototype edits local for demo speed. The next migration step is wiring create/edit/status/message actions to Convex mutations.
 
 ## Railway Notes
 
@@ -144,5 +144,5 @@ When checking a running deployment, set `TAMS_HUB_HEALTH_URL` to the app URL so 
 - Compliance and formal policy validation are intentionally future scope.
 - TAMS Guide is guidance only and never final approval.
 - Final approval, rejection, and revision decisions remain with SADU and human reviewers.
-- Persistence is local browser storage in the UI until Convex is wired into the frontend.
+- Seeded application reads come from Convex when configured; create/edit/status/message actions are still local prototype state.
 - OTP/NFC access is simulated for the prototype.
