@@ -91,6 +91,13 @@ export async function POST(request: Request) {
         extractionSchemaVersion: document.extractionSchemaVersion,
         promptVersion: document.promptVersion,
       });
+      const cached = await withTimeout(
+        client.query(api.verification.getCachedExtraction, {
+          actor,
+          uploadedDocumentId: document.id,
+          cacheKey,
+        }),
+      );
       const { runId } = await withTimeout(
         client.mutation(api.verification.beginExtractionRun, {
           actor,
@@ -106,6 +113,26 @@ export async function POST(request: Request) {
       let status: VerificationRunStatus = "verifying";
       let model: string | undefined;
       let aiSource: string | undefined;
+
+      if (cached?.run && cached.results.length) {
+        extraction = cached.run.extractionJson as DocumentExtraction | undefined;
+        extractedTextPreview = cached.run.extractedTextPreview ?? "";
+        extractionError = cached.run.failureReason;
+        status = cached.run.status as VerificationRunStatus;
+        model = cached.run.model;
+        aiSource = cached.run.aiSource ? `${cached.run.aiSource}:cache` : "cache";
+        outcomes.push({
+          runId,
+          status,
+          extraction,
+          extractedTextPreview,
+          extractionError,
+          model,
+          aiSource,
+          results: normalizeCachedResults(cached.results),
+        });
+        continue;
+      }
 
       if (!profile) {
         extractionError = `No rubric profile is registered for ${document.documentType}.`;
@@ -245,6 +272,21 @@ function activeDocumentSignature(documents: ActiveDocument[]) {
     ].join(":"))
     .sort();
   return parts.length ? parts.join("|") : "no-files";
+}
+
+function normalizeCachedResults(results: Array<Record<string, unknown>>): VerificationResult[] {
+  return results.map((result) => ({
+    checkId: String(result.checkId),
+    label: String(result.label),
+    status: result.status as VerificationResult["status"],
+    severity: result.severity as VerificationResult["severity"],
+    blocking: Boolean(result.blocking),
+    evidence: Array.isArray(result.evidence) ? result.evidence.map(String) : [],
+    recommendation: String(result.recommendation),
+    method: result.method as VerificationResult["method"],
+    confidence: typeof result.confidence === "number" ? result.confidence : 0,
+    failureReason: typeof result.failureReason === "string" ? result.failureReason : undefined,
+  }));
 }
 
 async function fetchDocumentSource(url: string, mimeType: string) {

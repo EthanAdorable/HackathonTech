@@ -232,6 +232,8 @@ test("verification aggregation blocks critical failures and allows warning-only 
 
 test("document verification route is separate, Codex-LB only, and fail-closed", () => {
   assert.match(sources.verificationRoute, /api\.verification\.listActiveDocuments/);
+  assert.match(sources.verificationRoute, /api\.verification\.getCachedExtraction/);
+  assert.match(sources.verificationRoute, /normalizeCachedResults/);
   assert.match(sources.verificationRoute, /CODEX_LB_API_KEY is required; verification fails closed/);
   assert.match(sources.verificationRoute, /validateExtractionJson/);
   assert.match(sources.verificationRoute, /response_format: \{ type: "json_object" \}/);
@@ -245,4 +247,6 @@ test("document verification route is separate, Codex-LB only, and fail-closed", 
   assert.match(sources.convexSchema, /verificationResults/);
   assert.match(sources.convexSchema, /compiledVerificationSummaries/);
   assert.match(sources.convexVerification, /saveVerificationOutcome/);
+  assert.match(sources.convexVerification, /getCachedExtraction/);
+  assert.match(sources.convexVerification, /by_cache_key/);
 });

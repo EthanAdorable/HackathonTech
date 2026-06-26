@@ -131,6 +131,40 @@ export const beginExtractionRun = mutation({
   },
 });
 
+export const getCachedExtraction = query({
+  args: {
+    actor,
+    uploadedDocumentId: v.id("uploadedDocuments"),
+    cacheKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const document = await ctx.db.get(args.uploadedDocumentId);
+    if (!document) throw new Error("Uploaded document not found.");
+    const application = await ctx.db.get(document.applicationId);
+    if (!application) throw new Error("Application not found.");
+    assertCanReadApplication(args.actor, application);
+
+    const runs = await ctx.db
+      .query("extractionRuns")
+      .withIndex("by_cache_key", (q: any) => q.eq("cacheKey", args.cacheKey))
+      .collect();
+    const reusableRun = runs
+      .filter((run: any) => run.status !== "extracting" && run.status !== "queued" && run.status !== "failed_ai_timeout")
+      .sort((a: any, b: any) => (b.completedAt ?? b.startedAt).localeCompare(a.completedAt ?? a.startedAt))[0];
+    if (!reusableRun) return null;
+
+    const results = await ctx.db
+      .query("verificationResults")
+      .withIndex("by_extraction_run", (q: any) => q.eq("extractionRunId", reusableRun._id))
+      .collect();
+
+    return {
+      run: withUiId(reusableRun),
+      results: results.map(withUiId),
+    };
+  },
+});
+
 export const saveVerificationOutcome = mutation({
   args: {
     actor,
