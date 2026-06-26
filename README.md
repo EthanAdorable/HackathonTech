@@ -42,6 +42,7 @@ CODEX_LB_API_KEY=
 CODEX_LB_BASE_URL=https://codex-lb-production-6b47.up.railway.app/v1
 CODEX_LB_MODEL=gpt-5.5
 CODEX_LB_REASONING_EFFORT=medium
+CODEX_LB_EXTRACTION_REASONING_EFFORT=low
 CODEX_LB_TIMEOUT_MS=45000
 CONVEX_DEPLOYMENT=dev:zealous-ocelot-537
 NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud
@@ -115,6 +116,7 @@ Set these Railway variables:
 - `CODEX_LB_BASE_URL`, optional
 - `CODEX_LB_MODEL`, optional
 - `CODEX_LB_REASONING_EFFORT`, optional
+- `CODEX_LB_EXTRACTION_REASONING_EFFORT`, optional
 - `CODEX_LB_TIMEOUT_MS`, optional
 - `NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud`
 - `TAMS_RAILWAY_PROJECT_ID`, set to the dedicated Railway project target

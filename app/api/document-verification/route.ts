@@ -200,7 +200,10 @@ export async function POST(request: Request) {
               sourceLocations: source.locations,
               requiredFieldIds: profile.requiredFieldIds,
             });
-            const validation = validateExtractionJson(aiJson);
+            const validation = validateExtractionJson(aiJson, {
+              documentType: document.documentType,
+              extractionMode: source.mode,
+            });
             if (validation.ok) {
               extraction = validation.extraction;
             } else {
@@ -385,17 +388,18 @@ function missingRequiredDocumentResults(documents: ActiveDocument[]): Verificati
 }
 
 async function fetchDocumentSource(url: string, mimeType: string): Promise<DocumentSource> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Unable to fetch uploaded document: ${response.status}`);
-  const buffer = Buffer.from(await response.arrayBuffer());
   if (mimeType === "image/jpeg" || mimeType === "image/png") {
     return {
       text: "",
       locations: [`image:${mimeType}`],
       mode: "vision_ocr" as ExtractionMode,
-      mediaDataUrl: `data:${mimeType};base64,${buffer.toString("base64")}`,
+      mediaDataUrl: url,
     };
   }
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Unable to fetch uploaded document: ${response.status}`);
+  const buffer = Buffer.from(await response.arrayBuffer());
   if (mimeType === "text/csv") {
     return { text: buffer.toString("utf8"), locations: ["csv:rows"], mode: "text_csv" as ExtractionMode };
   }
@@ -514,14 +518,14 @@ async function extractWithCodexLb(input: {
   const completion = await withTimeout(
     client.chat.completions.create({
       model: input.model,
-      reasoning_effort: codexLbReasoningEffort(),
+      reasoning_effort: codexLbReasoningEffort(process.env.CODEX_LB_EXTRACTION_REASONING_EFFORT ?? "low"),
       temperature: 0,
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content:
-            "Extract factual document data only. Return strict JSON with no recommendations. Do not infer facts that are not evidenced in the supplied text.",
+            "Extract factual document data only. Return strict compact json with no recommendations. Do not infer facts that are not evidenced in the supplied text.",
         },
         {
           role: "user",
@@ -546,7 +550,7 @@ function codexLbUserContent(input: {
   const schema = documentExtractionSchemas[input.documentType as keyof typeof documentExtractionSchemas];
   const payload = {
     instruction:
-      "Return only JSON. Extract factual APP/APF/VERF data. Mark blank templates as completenessStatus=blank_or_incomplete. Include documentData with the profile fields, normalizedFields with evidence, and do not invent missing values.",
+      "Return only compact json. Extract factual APP/APF/VERF data. Mark blank templates as completenessStatus=blank_or_incomplete. Include documentData and normalizedFields. normalizedFields must use fieldId, label, value, confidence, evidence, sourceLocations. Use null for unknown values and do not explain.",
     requiredSchema: {
       documentType: input.documentType,
       schemaVersion: activeExtractionSchemaVersion,
@@ -581,7 +585,7 @@ function codexLbUserContent(input: {
     documentExtractionSchema: schema,
     sourceMode: input.source.mode,
     sourceLocations: input.sourceLocations,
-    extractedText: input.source.text.slice(0, 14000),
+    extractedText: compactSourceText(input.source.text),
     sourceFileBase64:
       input.source.sourceFileBase64 && !input.source.mediaDataUrl
         ? {
@@ -605,4 +609,13 @@ function codexLbUserContent(input: {
       },
     },
   ] satisfies CodexLbContentPart[];
+}
+
+function compactSourceText(text: string) {
+  return text
+    .replace(/\b[A-Za-z0-9+/=]{80,}\b/g, " ")
+    .replace(/[^\x20-\x7E\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 2200);
 }

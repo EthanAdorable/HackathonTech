@@ -203,9 +203,10 @@ export function makeVerificationCacheKey(input: {
 
 export function validateExtractionJson(
   value: unknown,
+  defaults: { documentType?: string; extractionMode?: ExtractionMode } = {},
 ): { ok: true; extraction: DocumentExtraction } | { ok: false; error: string } {
   if (!value || typeof value !== "object") return { ok: false, error: "Extraction must be a JSON object." };
-  const candidate = value as Partial<DocumentExtraction>;
+  const candidate = coerceExtractionCandidate(value, defaults);
   if (typeof candidate.documentType !== "string") return { ok: false, error: "documentType is required." };
   if (candidate.schemaVersion !== activeExtractionSchemaVersion) {
     return { ok: false, error: `schemaVersion must be ${activeExtractionSchemaVersion}.` };
@@ -245,6 +246,86 @@ export function validateExtractionJson(
   if (typedError) return { ok: false, error: typedError };
 
   return { ok: true, extraction: candidate as DocumentExtraction };
+}
+
+function coerceExtractionCandidate(value: unknown, defaults: { documentType?: string; extractionMode?: ExtractionMode }) {
+  const raw = value as Record<string, unknown>;
+  const documentType = typeof raw.documentType === "string" ? raw.documentType.toLowerCase() : defaults.documentType;
+  const documentData = raw.documentData && typeof raw.documentData === "object" && !Array.isArray(raw.documentData)
+    ? { ...(raw.documentData as Record<string, unknown>) }
+    : {};
+  const schema = documentType ? documentExtractionSchemas[documentType as keyof typeof documentExtractionSchemas] : undefined;
+
+  for (const field of schema?.arrays ?? []) {
+    if (documentData[field] !== undefined && !Array.isArray(documentData[field])) {
+      documentData[field] = [documentData[field]];
+    }
+  }
+
+  const rawFields = Array.isArray(raw.normalizedFields)
+    ? raw.normalizedFields
+    : Object.entries(documentData).map(([fieldId, fieldValue]) => ({ fieldId, value: fieldValue }));
+  const normalizedFields = rawFields
+    .map((field) => coerceExtractedField(field, raw.confidence))
+    .filter(Boolean) as ExtractedField[];
+  const evidence = stringArray(raw.evidence);
+  const sourceLocations = stringArray(raw.sourceLocations);
+  const confidence = numberFromZeroToOne(raw.confidence) ?? averageConfidence(normalizedFields) ?? 0.75;
+  const completenessStatus =
+    raw.completenessStatus === "filled" || raw.completenessStatus === "blank_or_incomplete"
+      ? raw.completenessStatus
+      : Object.values(documentData).some((item) => !isPlaceholderValue(item))
+        ? "filled"
+        : "blank_or_incomplete";
+
+  return {
+    ...raw,
+    documentType,
+    schemaVersion: raw.schemaVersion ?? activeExtractionSchemaVersion,
+    completenessStatus,
+    extractionMode: raw.extractionMode ?? defaults.extractionMode,
+    documentData,
+    normalizedFields,
+    missingFields: Array.isArray(raw.missingFields) ? raw.missingFields.map(String) : [],
+    unknownFields: Array.isArray(raw.unknownFields) ? raw.unknownFields.map(String) : [],
+    confidence,
+    evidence,
+    sourceLocations,
+  } as Partial<DocumentExtraction>;
+}
+
+function coerceExtractedField(value: unknown, fallbackConfidence: unknown): ExtractedField | null {
+  if (!value || typeof value !== "object") return null;
+  const field = value as Record<string, unknown>;
+  const fieldId = stringValue(field.fieldId) ?? stringValue(field.field) ?? stringValue(field.id) ?? stringValue(field.name);
+  if (!fieldId) return null;
+  return {
+    fieldId,
+    label: stringValue(field.label) ?? fieldId,
+    value: normalizeFieldValue(field.value ?? field.normalizedValue ?? null),
+    confidence: numberFromZeroToOne(field.confidence) ?? numberFromZeroToOne(fallbackConfidence) ?? 0.75,
+    evidence: stringArray(field.evidence),
+    sourceLocations: stringArray(field.sourceLocations),
+  };
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function stringArray(value: unknown) {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  return [];
+}
+
+function numberFromZeroToOne(value: unknown) {
+  return typeof value === "number" && value >= 0 && value <= 1 ? value : undefined;
+}
+
+function averageConfidence(fields: ExtractedField[]) {
+  if (!fields.length) return undefined;
+  return fields.reduce((sum, field) => sum + field.confidence, 0) / fields.length;
 }
 
 function validateDocumentData(documentType: string, data?: Record<string, unknown>) {

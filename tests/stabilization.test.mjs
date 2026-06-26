@@ -253,6 +253,23 @@ test("document verification rubrics cover every template and validate extraction
     sourceLocations: ["page 1"],
   });
   assert.equal(valid.ok, true);
+
+  const coerced = validateExtractionJson({
+    documentData: {
+      objectives: "Introduce cybersecurity fundamentals.",
+      programTitle: "DevJam 2.0",
+    },
+    normalizedFields: [{
+      field: "programTitle",
+      value: "DevJam 2.0",
+      confidence: 0.9,
+      evidence: "DevJam 2.0",
+    }],
+  }, { documentType: "app", extractionMode: "text_pdf" });
+  assert.equal(coerced.ok, true);
+  assert.equal(coerced.extraction.documentType, "app");
+  assert.deepEqual(coerced.extraction.documentData.objectives, ["Introduce cybersecurity fundamentals."]);
+  assert.equal(coerced.extraction.normalizedFields[0].fieldId, "programTitle");
 });
 
 test("verification aggregation blocks critical failures and allows warning-only summaries", () => {
