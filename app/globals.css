@@ -38,6 +38,11 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 
+html {
+  scroll-padding-top: 80px;
+  scroll-padding-bottom: 96px;
+}
+
 .skip-link {
   position: fixed;
   top: 12px;
@@ -53,8 +58,9 @@ body {
   transition: transform 160ms ease;
 }
 
+.skip-link:focus,
 .skip-link:focus-visible {
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0) !important;
 }
 
 button,
@@ -90,8 +96,31 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(226, 164, 0, 0.38);
-  outline-offset: 2px;
+  outline: 3px solid rgba(226, 164, 0, 0.38) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(226, 164, 0, 0.14);
+  scroll-margin-top: 76px;
+  scroll-margin-bottom: 84px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 3px solid rgba(226, 164, 0, 0.38) !important;
+  outline-offset: 2px !important;
+  border-color: rgba(226, 164, 0, 0.72);
+  box-shadow: 0 0 0 3px rgba(226, 164, 0, 0.14);
+}
+
+button,
+input,
+select,
+textarea,
+summary,
+[tabindex],
+tbody tr[role="button"] {
+  scroll-margin-top: 76px;
+  scroll-margin-bottom: 96px;
 }
 
 button svg,
@@ -200,9 +229,9 @@ tbody tr:active {
 }
 
 tbody tr:focus-visible {
-  outline: 2px solid rgba(15, 122, 70, 0.35);
-  outline-offset: -2px;
+  outline: 0;
   background: #eef7f1;
+  box-shadow: inset 0 0 0 2px rgba(15, 122, 70, 0.35);
 }
 
 h1,
@@ -325,7 +354,7 @@ p {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 9px;
+  gap: 12px;
   width: min(430px, calc(100% - 48px));
   margin: 0 auto;
 }
@@ -417,12 +446,14 @@ p {
 }
 
 .access-login-card {
-  padding: 12px 18px;
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
 }
 
 .access-login-card input + input,
 .access-login-card input + button {
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .label {
@@ -553,19 +584,23 @@ p {
 .role-choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .role-chip {
   justify-content: center;
-  gap: 7px;
-  min-height: 32px;
+  gap: 8px;
+  min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--field);
   color: #24342f;
+  padding: 8px 10px;
   font-size: 12px;
   font-weight: 850;
+  line-height: 1.2;
+  white-space: normal;
   transition:
     border-color var(--motion-fast) ease,
     background-color var(--motion-fast) ease,
@@ -928,10 +963,16 @@ p {
 .screen-stack {
   display: grid;
   gap: 18px;
+  min-height: calc(100vh - 98px);
 }
 
 .guide-screen {
   gap: 12px;
+}
+
+.screen-stack:not(.guide-screen) > .table-card:last-child,
+.messages-layout {
+  min-height: calc(100vh - 98px);
 }
 
 .dashboard-welcome,
@@ -2180,12 +2221,14 @@ p {
 .messages-layout {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 14px;
+  align-items: stretch;
 }
 
 .thread-list {
   grid-row: 1 / span 2;
-  min-height: 500px;
+  min-height: 100%;
   padding: 10px;
 }
 
@@ -2287,7 +2330,9 @@ p {
 }
 
 .chat-panel {
-  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
 .message-thread-header {
@@ -2301,12 +2346,13 @@ p {
 }
 
 .chat-thread {
-  min-height: 210px;
+  flex: 1;
+  min-height: 280px;
   align-content: start;
 }
 
 .chat-thread.expanded {
-  min-height: 240px;
+  min-height: 330px;
 }
 
 .empty-chat-state {
@@ -2359,6 +2405,7 @@ p {
 
 .composer-row {
   gap: 10px;
+  margin-top: auto;
   border-top: 1px solid var(--line);
   padding-top: 12px;
 }
@@ -2850,6 +2897,15 @@ textarea[aria-invalid="true"] {
 @media (max-width: 780px) {
   :root {
     --sidebar: 1fr;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  .notification-popover:focus-visible,
+  tbody tr:focus-visible {
+    outline-offset: -2px !important;
   }
 
   .app-shell {

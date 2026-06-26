@@ -272,6 +272,26 @@ export function GsapMotionScope({ children, motionKey }: { children: ReactNode; 
     };
   }, [reducedMotion]);
 
+  useEffect(() => {
+    const scope = scopeRef.current;
+    if (!scope) return;
+
+    function keepFocusVisible(event: FocusEvent) {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.classList.contains("skip-link")) return;
+      const rect = target.getBoundingClientRect();
+      const topMargin = 78;
+      const bottomMargin = 86;
+      if (rect.top < topMargin || rect.bottom > window.innerHeight - bottomMargin) {
+        target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+      }
+    }
+
+    scope.addEventListener("focusin", keepFocusVisible);
+    return () => scope.removeEventListener("focusin", keepFocusVisible);
+  }, []);
+
   return (
     <div className="gsap-motion-scope" data-reduced-motion={reducedMotion ? "true" : "false"} ref={scopeRef}>
       {children}
