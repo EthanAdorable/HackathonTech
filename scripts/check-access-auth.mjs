@@ -75,10 +75,10 @@ assert.match(guideRequestBlock, /applicationId: string;/, "TAMS Guide requests m
 assert.doesNotMatch(guideRequestBlock, /application: EventApplication/, "TAMS Guide route must not trust client-supplied application objects.");
 assert.match(guideRoute, /seedApplications\.find/, "Local demo guide data must be fetched server-side from canonical seed data.");
 assert.match(guideRoute, /client\.query\(api\.applications\.get,[\s\S]*actor/, "Convex guide data must be fetched through actor-scoped application reads.");
-assert.match(guideRoute, /OPENAI_TIMEOUT_MS/, "OpenAI calls must have an explicit configurable timeout.");
-assert.match(guideRoute, /mock-openai-timeout/, "OpenAI timeout fallback must be observable in the response source.");
-assert.match(guideRoute, /mock-openai-error/, "OpenAI error fallback must be observable in the response source.");
-assert.match(guideRoute, /mock-no-key/, "Missing OpenAI key fallback must be labeled separately from live OpenAI.");
+assert.match(guideRoute, /CODEX_LB_TIMEOUT_MS/, "Codex-LB calls must have an explicit configurable timeout.");
+assert.match(guideRoute, /mock-codex-lb-timeout/, "Codex-LB timeout fallback must be observable in the response source.");
+assert.match(guideRoute, /mock-codex-lb-error/, "Codex-LB error fallback must be observable in the response source.");
+assert.match(guideRoute, /mock-no-key/, "Missing Codex-LB key fallback must be labeled separately from live Codex-LB.");
 assert.match(guideRoute, /saduGuidePolicy\.sourceLabel/, "OpenAI prompts must reference the structured SADU policy source.");
 assert.match(saduGuidePolicy, /saduGuidePolicy/, "A structured SADU guide policy source must exist.");
 assert.match(saduGuidePolicy, /makePolicyChecklist/, "Checklist generation must use the policy source.");
