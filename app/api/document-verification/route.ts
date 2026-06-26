@@ -115,11 +115,10 @@ export async function POST(request: Request) {
 
     const urlsByAttachment = collectAttachmentUrls(application);
 
-    const outcomes = [];
     const codexLbApiKey = process.env.CODEX_LB_API_KEY;
     const fileSignature = activeDocumentSignature(verificationDocuments);
     const missingDocumentResults = missingRequiredDocumentResults(verificationDocuments);
-    for (const document of verificationDocuments) {
+    const outcomes = await Promise.all(verificationDocuments.map(async (document) => {
       const profile = getRubricProfile(document.documentType);
       const cacheKey = makeVerificationCacheKey({
         sha256: document.sha256,
@@ -157,7 +156,7 @@ export async function POST(request: Request) {
         status = cached.run.status as VerificationRunStatus;
         model = cached.run.model;
         aiSource = cached.run.aiSource ? `${cached.run.aiSource}:cache` : "cache";
-        outcomes.push({
+        return {
           documentType: document.documentType,
           runId,
           status,
@@ -167,8 +166,7 @@ export async function POST(request: Request) {
           model,
           aiSource,
           results: normalizeCachedResults(cached.results),
-        });
-        continue;
+        };
       }
 
       if (!profile) {
@@ -250,7 +248,7 @@ export async function POST(request: Request) {
             : "ready_for_sadu";
       }
 
-      outcomes.push({
+      return {
         documentType: document.documentType,
         runId,
         status,
@@ -260,8 +258,8 @@ export async function POST(request: Request) {
         model,
         aiSource,
         results,
-      });
-    }
+      };
+    }));
 
     const crossDocumentResults = runCrossDocumentVerification(
       outcomes.flatMap((outcome) => (outcome.extraction ? [outcome.extraction] : [])),
