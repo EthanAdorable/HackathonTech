@@ -147,6 +147,15 @@ const guideModeLabels: Record<GuideMode, string> = {
 export function TamsHubApp() {
   const { data: session, status: sessionStatus } = useSession();
   const [section, setSection] = useState<Section>("dashboard");
+  const sectionRef = useRef<Section>("dashboard");
+  const sectionScrollPositions = useRef<Record<Section, number>>({
+    dashboard: 0,
+    file: 0,
+    applications: 0,
+    messages: 0,
+    guide: 0,
+  });
+  const restoringSectionScroll = useRef(false);
   const [applications, setApplications] = useState<EventApplication[]>(seedApplications);
   const [selectedAppId, setSelectedAppId] = useState(defaultApplicationId);
   const [guideMode, setGuideMode] = useState<GuideMode>("checklist");
@@ -291,6 +300,50 @@ export function TamsHubApp() {
       setSelectedAppId(visibleApplications[0].id);
     }
   }, [selectedAppId, visibleApplications]);
+
+  const rememberCurrentSectionScroll = useCallback(() => {
+    sectionScrollPositions.current[sectionRef.current] = Math.max(0, window.scrollY);
+  }, []);
+
+  const changeSection = useCallback((nextSection: Section) => {
+    rememberCurrentSectionScroll();
+    setSection((current) => {
+      if (current === nextSection) return current;
+      restoringSectionScroll.current = true;
+      return nextSection;
+    });
+  }, [rememberCurrentSectionScroll]);
+
+  useEffect(() => {
+    function saveScrollPosition() {
+      if (restoringSectionScroll.current) return;
+      sectionScrollPositions.current[sectionRef.current] = Math.max(0, window.scrollY);
+    }
+
+    window.addEventListener("scroll", saveScrollPosition, { passive: true });
+    window.addEventListener("beforeunload", saveScrollPosition);
+
+    return () => {
+      window.removeEventListener("scroll", saveScrollPosition);
+      window.removeEventListener("beforeunload", saveScrollPosition);
+    };
+  }, []);
+
+  useEffect(() => {
+    const nextScrollPosition = sectionScrollPositions.current[section] ?? 0;
+    restoringSectionScroll.current = true;
+    sectionRef.current = section;
+    const frame = window.requestAnimationFrame(() => {
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      window.scrollTo({ top: Math.min(nextScrollPosition, maxScroll), left: 0, behavior: "auto" });
+      window.requestAnimationFrame(() => {
+        restoringSectionScroll.current = false;
+        sectionScrollPositions.current[section] = Math.max(0, window.scrollY);
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [section]);
 
   const completion = getApplicationCompletion(selectedApp);
   const queueCount = applications.filter((application) =>
@@ -690,7 +743,7 @@ export function TamsHubApp() {
     };
     setApplications((current) => [next, ...current]);
     setSelectedAppId(id);
-    setSection("file");
+    changeSection("file");
     void syncConvexCreate(next);
   }
 
@@ -751,7 +804,7 @@ export function TamsHubApp() {
     const missingBeforeEndorsement = readinessBeforeEndorsement.missing.filter((item) => !item.includes("Faculty adviser endorsement"));
     if (missingBeforeEndorsement.length) {
       setGuideOutput(["Submission paused until requirements are complete.", ...missingBeforeEndorsement.slice(0, 4)]);
-      setSection("file");
+      changeSection("file");
       return;
     }
 
@@ -770,7 +823,7 @@ export function TamsHubApp() {
         "Revision upload paused until required fields and attachments are complete.",
         ...currentCompletion.missing.slice(0, 4),
       ]);
-      setSection("file");
+      changeSection("file");
       return;
     }
     if (!applyWorkflowResult(tryTransitionApplication(selectedApp, "Resubmitted", "Student resubmitted after revision.", workflowActor()))) return;
@@ -876,7 +929,7 @@ export function TamsHubApp() {
   return (
     <GsapMotionScope motionKey={motionKey}>
       <main className="app-shell" id="main-content">
-        <Sidebar activeUser={activeUser} activeSection={section} setSection={setSection} onSignOut={() => void signOut()} />
+        <Sidebar activeUser={activeUser} activeSection={section} setSection={changeSection} onSignOut={() => void signOut()} />
 
         <section className="workspace">
           <Topbar
@@ -898,7 +951,7 @@ export function TamsHubApp() {
               onToggleTemplate={toggleTemplateAvailability}
               onSelect={(id) => {
                 setSelectedAppId(id);
-                setSection("applications");
+                changeSection("applications");
               }}
             />
           )}
