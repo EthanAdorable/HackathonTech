@@ -1,5 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
+import { ConvexHttpClient } from "convex/browser";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { api } from "@/convex/_generated/api";
 import { users, type DemoUser } from "@/lib/tams-data";
 
 function toAuthUser(user: DemoUser) {
@@ -21,6 +23,19 @@ function isDemoAuthEnabled() {
   return process.env.NODE_ENV !== "production" && !process.env.RAILWAY_ENVIRONMENT;
 }
 
+async function loadAuthUsers() {
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!convexUrl) return users;
+
+  try {
+    const client = new ConvexHttpClient(convexUrl);
+    const convexUsers = await client.query(api.users.list, {});
+    return convexUsers.length ? convexUsers : users;
+  } catch {
+    return users;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -30,7 +45,8 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!isDemoAuthEnabled()) return null;
-        const user = users.find((item) => item.id === credentials?.userId);
+        const authUsers = await loadAuthUsers();
+        const user = authUsers.find((item) => item.id === credentials?.userId);
         if (!user) return null;
         return toAuthUser(user);
       },

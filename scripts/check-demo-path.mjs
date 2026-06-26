@@ -59,6 +59,9 @@ assert.match(
 assert.match(appComponent, /applications\.reduce\(\(sum, app\) => sum \+ app\.messages\.length, 0\)/, "dashboard message metric should derive from current message data");
 assert.match(authRoute, /NextAuth\(authOptions\)/, "NextAuth route should use the shared auth options");
 assert.match(authConfig, /CredentialsProvider/, "NextAuth credentials provider should be wired for TAMS Access");
+assert.match(authConfig, /ConvexHttpClient/, "NextAuth credentials should be able to load role users from Convex");
+assert.match(authConfig, /api\.users\.list/, "NextAuth credentials should query Convex users when configured");
+assert.match(authConfig, /const authUsers = await loadAuthUsers\(\)/, "NextAuth credentials should use the Convex-aware auth user loader");
 assert.match(authConfig, /isDemoAuthEnabled/, "NextAuth demo credentials should be gated for public deploys");
 assert.match(authConfig, /session\.user\.role = token\.role/, "NextAuth session should expose the demo user role");
 assert.match(authConfig, /session\.user\.title = token\.title/, "NextAuth session should expose the demo user title");
