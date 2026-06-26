@@ -55,9 +55,12 @@ const defaultApplicationId = seedApplications.find((application) => application.
 
 type ServiceStatus = {
   convexConfigured: boolean;
+  convexProject: string;
   openAiConfigured: boolean;
   railwayConfigured: boolean;
   railwayEnvironment?: string;
+  railwayProject: string;
+  railwayProjectIdConfigured: boolean;
 };
 
 type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
@@ -748,7 +751,10 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
 
   const convexReady = status?.convexConfigured ?? false;
   const railwayReady = status?.railwayConfigured ?? false;
+  const railwayProjectReady = status?.railwayProjectIdConfigured ?? false;
   const openAiReady = status?.openAiConfigured ?? false;
+  const convexProject = status?.convexProject ?? "tams-hub-prototype";
+  const railwayProject = status?.railwayProject ?? "tams-hub-prototype";
 
   return (
     <section className="service-grid">
@@ -756,17 +762,21 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
         <span className={convexReady ? "service-icon ready" : "service-icon waiting"}><Database size={18} /></span>
         <div>
           <strong>Convex Project</strong>
-          <p>{convexReady ? "Runtime Convex URL is configured." : "Waiting for Convex team/project selection."}</p>
+          <p>{convexReady ? `Runtime URL configured for ${convexProject}.` : `Target project: ${convexProject}. Waiting for Convex deployment URL.`}</p>
         </div>
         <span className={convexReady ? "status-pill green" : "status-pill gold"}>{convexReady ? "Ready" : "Waiting"}</span>
       </article>
       <article className="service-card">
-        <span className={railwayReady ? "service-icon ready" : "service-icon waiting"}><ShieldCheck size={18} /></span>
+        <span className={railwayReady && railwayProjectReady ? "service-icon ready" : "service-icon waiting"}><ShieldCheck size={18} /></span>
         <div>
           <strong>Railway Project</strong>
-          <p>{railwayReady ? `Running on Railway${status?.railwayEnvironment ? ` (${status.railwayEnvironment})` : ""}.` : "Railway CLI is installed; OAuth account selection is still pending."}</p>
+          <p>
+            {railwayReady && railwayProjectReady
+              ? `Running on ${railwayProject}${status?.railwayEnvironment ? ` (${status.railwayEnvironment})` : ""}.`
+              : `Target project: ${railwayProject}. ${railwayProjectReady ? "Project ID is configured." : "Waiting for Railway login and project ID."}`}
+          </p>
         </div>
-        <span className={railwayReady ? "status-pill green" : "status-pill gold"}>{railwayReady ? "Ready" : "Waiting"}</span>
+        <span className={railwayReady && railwayProjectReady ? "status-pill green" : "status-pill gold"}>{railwayReady && railwayProjectReady ? "Ready" : "Waiting"}</span>
       </article>
       <article className="service-card">
         <span className={openAiReady ? "service-icon ready" : "service-icon waiting"}><Bot size={18} /></span>

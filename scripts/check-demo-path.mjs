@@ -151,6 +151,7 @@ assert.match(appComponent, /className="guide-output" role="status" aria-live="po
 assert.doesNotMatch(globalCss, /var\(--green\)/, "Guide styles should use defined green tokens");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
 const serviceCheckScript = readFileSync("scripts/check-services.mjs", "utf8");
+const serviceStatusRoute = readFileSync("app/api/service-status/route.ts", "utf8");
 assert.match(serviceCheckScript, /TAMS_DEPLOY_CHECK/, "Service checks should support deployment readiness validation");
 assert.match(serviceCheckScript, /TAMS_DEMO_AUTH_ENABLED/, "Service checks should warn when demo auth is exposed for deployment");
 assert.match(serviceCheckScript, /function envValue\(key\)/, "Service checks should read Railway-provided process env values");
@@ -158,6 +159,11 @@ assert.match(serviceCheckScript, /missing\.length \? \(deployCheck \? "fail" : "
 assert.match(serviceCheckScript, /function projectTargetSummary\(\)/, "Service checks should summarize dedicated Convex and Railway project targets");
 assert.match(serviceCheckScript, /TAMS_RAILWAY_PROJECT_ID/, "Service checks should require an explicit Railway project ID for deploy readiness");
 assert.match(serviceCheckScript, /label: "Dedicated project target"/, "Service checks should report dedicated project targeting status");
+assert.match(serviceStatusRoute, /convexProject/, "Service status API should expose the target Convex project");
+assert.match(serviceStatusRoute, /railwayProjectIdConfigured/, "Service status API should expose explicit Railway project ID readiness");
+assert.match(appComponent, /Target project: \$\{convexProject\}/, "Admin service cards should show the dedicated Convex target");
+assert.match(appComponent, /Target project: \$\{railwayProject\}/, "Admin service cards should show the dedicated Railway target");
+assert.match(appComponent, /railwayReady && railwayProjectReady/, "Admin service cards should require both Railway runtime and explicit project ID readiness");
 assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
 assert.match(serviceRunbook, /setup:railway -- --workspace <workspace> --dry-run/, "Railway runbook should require explicit workspace selection in setup examples");
