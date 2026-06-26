@@ -159,6 +159,9 @@ assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should 
 assert.match(appComponent, /data\.source === "convex" && data\.applications\.length/, "App should prefer populated Convex application data");
 assert.match(appComponent, /window\.localStorage\.getItem\(storageKey\)/, "App should keep local storage fallback for prototype edits");
 assert.match(appComponent, /applicationSource === "local"/, "App should avoid writing Convex-hydrated data back into local storage");
+assert.match(appComponent, /const loadConvexApplications = useCallback/, "App should share the Convex application loader across hydration and reset");
+assert.match(appComponent, /if \(applicationSource === "convex"\)/, "Admin reset should preserve Convex-backed sessions when possible");
+assert.match(appComponent, /setApplicationSource\("local"\)/, "Admin reset should explicitly switch to local mode only after falling back to seed data");
 assert.match(convexApplications, /templates: templates\.map\(templateWithUiId\)/, "Convex detailed queries should expose template document ids for updates");
 assert.match(convexApplications, /templateDocumentId: document\._id/, "Convex template rows should carry explicit document ids for updates");
 assert.match(convexWorkflowRoute, /api\.applications\.create/, "Convex workflow route should sync new application creation");

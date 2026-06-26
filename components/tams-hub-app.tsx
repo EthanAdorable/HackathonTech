@@ -34,7 +34,7 @@ import {
   UsersRound,
   RotateCcw,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   type EventApplication,
   type EventStatus,
@@ -132,17 +132,22 @@ export function TamsHubApp() {
     );
   }, [applications]);
 
+  const loadConvexApplications = useCallback(async () => {
+    const response = await fetch("/api/convex-applications");
+    if (!response.ok) throw new Error("Convex applications route unavailable");
+    const data = (await response.json()) as ConvexApplicationsResponse;
+    return data.source === "convex" && data.applications.length ? data.applications : null;
+  }, []);
+
   useEffect(() => {
     let active = true;
 
     async function hydrateApplications() {
       try {
-        const response = await fetch("/api/convex-applications");
-        if (!response.ok) throw new Error("Convex applications route unavailable");
-        const data = (await response.json()) as ConvexApplicationsResponse;
-        if (active && data.source === "convex" && data.applications.length) {
-          setApplications(data.applications);
-          setSelectedAppId(data.applications.find((app) => app.status === "Revision Requested")?.id ?? data.applications[0].id);
+        const convexApplications = await loadConvexApplications();
+        if (active && convexApplications) {
+          setApplications(convexApplications);
+          setSelectedAppId(convexApplications.find((app) => app.status === "Revision Requested")?.id ?? convexApplications[0].id);
           setApplicationSource("convex");
           setHydrated(true);
           return;
@@ -174,7 +179,7 @@ export function TamsHubApp() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadConvexApplications]);
 
   useEffect(() => {
     if (hydrated && applicationSource === "local") {
@@ -290,12 +295,24 @@ export function TamsHubApp() {
     }
   }
 
-  function resetDemoData() {
+  async function resetDemoData() {
     window.localStorage.removeItem(storageKey);
-    setApplications(seedApplications);
-    setSelectedAppId(defaultApplicationId);
     setGuideOutput([]);
     setMessageDraft("");
+    if (applicationSource === "convex") {
+      try {
+        const convexApplications = await loadConvexApplications();
+        if (convexApplications) {
+          applyRemoteApplications(convexApplications);
+          return;
+        }
+      } catch {
+        // Fall back to local seed data below when Convex is unavailable.
+      }
+    }
+    setApplications(seedApplications);
+    setSelectedAppId(defaultApplicationId);
+    setApplicationSource("local");
   }
 
   function toggleTemplateAvailability(templateId: string) {
