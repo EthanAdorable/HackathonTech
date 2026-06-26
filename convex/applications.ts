@@ -34,7 +34,20 @@ async function addWorkflowMessage(ctx: any, applicationId: any, author: string, 
 }
 
 function withUiId(document: any) {
-  return { id: document._id, ...document };
+  return { ...document, id: document._id };
+}
+
+function templateWithUiId(document: any) {
+  return {
+    _creationTime: document._creationTime,
+    _id: document._id,
+    id: document._id,
+    templateDocumentId: document._id,
+    applicationId: document.applicationId,
+    templateId: document.templateId,
+    enabled: document.enabled,
+    values: document.values,
+  };
 }
 
 export const list = query({
@@ -102,7 +115,7 @@ export const listWithDetails = query({
 
         return {
           ...withUiId(application),
-          templates,
+          templates: templates.map(templateWithUiId),
           messages: messages.map(withUiId),
           timeline: timeline.map(withUiId),
         };
@@ -136,7 +149,7 @@ export const get = query({
 
     return {
       ...withUiId(application),
-      templates,
+      templates: templates.map(templateWithUiId),
       messages: messages.map(withUiId),
       timeline: timeline.map(withUiId),
     };

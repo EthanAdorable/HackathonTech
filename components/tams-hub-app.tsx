@@ -66,6 +66,7 @@ type ServiceStatus = {
 type ConvexApplicationsResponse = {
   source: "convex" | "local";
   applications: EventApplication[];
+  createdApplicationId?: string;
 };
 
 type Section = "dashboard" | "file" | "applications" | "messages" | "guide";
@@ -220,20 +221,62 @@ export function TamsHubApp() {
     return !id.startsWith("app-");
   }
 
+  async function postConvexWorkflow(payload: Record<string, unknown>) {
+    const response = await fetch("/api/convex-workflow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as ConvexApplicationsResponse;
+  }
+
   async function syncConvexWorkflow(payload: Record<string, unknown>) {
     if (applicationSource !== "convex") return;
     if (!isConvexApplicationId(selectedApp.id)) return;
     try {
-      const response = await fetch("/api/convex-workflow", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ applicationId: selectedApp.id, ...payload }),
-      });
-      if (!response.ok) return;
-      const data = (await response.json()) as ConvexApplicationsResponse;
-      if (data.source === "convex") applyRemoteApplications(data.applications);
+      const data = await postConvexWorkflow({ applicationId: selectedApp.id, ...payload });
+      if (data?.source === "convex") applyRemoteApplications(data.applications);
     } catch {
       // Keep optimistic local prototype state if Convex sync is unavailable.
+    }
+  }
+
+  async function syncConvexTemplate(templateId: string, values: Record<string, string>) {
+    if (applicationSource !== "convex") return;
+    const template = selectedApp.templates.find((item) => item.templateId === templateId);
+    const templateDocumentId = template?.templateDocumentId ?? template?.id;
+    if (!templateDocumentId) return;
+    try {
+      const data = await postConvexWorkflow({ action: "updateTemplate", templateDocumentId, values });
+      if (data?.source === "convex") applyRemoteApplications(data.applications);
+    } catch {
+      // Keep optimistic local prototype state if Convex sync is unavailable.
+    }
+  }
+
+  async function syncConvexCreate(next: EventApplication) {
+    if (applicationSource !== "convex") return;
+    try {
+      const data = await postConvexWorkflow({
+        action: "create",
+        title: next.title,
+        organization: next.organization,
+        eventType: next.eventType,
+        venue: next.venue,
+        eventDate: next.eventDate,
+        expectedParticipants: next.expectedParticipants,
+        ownerId: next.ownerId,
+        adviserId: next.adviserId,
+        riskLevel: next.riskLevel,
+        templates: next.templates,
+      });
+      if (data?.source === "convex") {
+        applyRemoteApplications(data.applications);
+        if (data.createdApplicationId) setSelectedAppId(data.createdApplicationId);
+      }
+    } catch {
+      // Keep the optimistic local draft if Convex creation is unavailable.
     }
   }
 
@@ -258,13 +301,16 @@ export function TamsHubApp() {
   }
 
   function updateTemplateValue(templateId: string, fieldId: string, value: string) {
+    const nextTemplates = selectedApp.templates.map((template) =>
+      template.templateId === templateId ? { ...template, values: { ...template.values, [fieldId]: value } } : template,
+    );
+    const nextTemplate = nextTemplates.find((template) => template.templateId === templateId);
     updateApplication({
       ...selectedApp,
       status: selectedApp.status === "Draft" ? "Template Completion" : selectedApp.status,
-      templates: selectedApp.templates.map((template) =>
-        template.templateId === templateId ? { ...template, values: { ...template.values, [fieldId]: value } } : template,
-      ),
+      templates: nextTemplates,
     });
+    if (nextTemplate) void syncConvexTemplate(templateId, nextTemplate.values);
   }
 
   function createApplication() {
@@ -295,6 +341,7 @@ export function TamsHubApp() {
     setApplications((current) => [next, ...current]);
     setSelectedAppId(id);
     setSection("file");
+    void syncConvexCreate(next);
   }
 
   function setStatus(status: EventStatus, note: string) {

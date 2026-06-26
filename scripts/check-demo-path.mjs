@@ -159,10 +159,17 @@ assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should 
 assert.match(appComponent, /data\.source === "convex" && data\.applications\.length/, "App should prefer populated Convex application data");
 assert.match(appComponent, /window\.localStorage\.getItem\(storageKey\)/, "App should keep local storage fallback for prototype edits");
 assert.match(appComponent, /applicationSource === "local"/, "App should avoid writing Convex-hydrated data back into local storage");
+assert.match(convexApplications, /templates: templates\.map\(templateWithUiId\)/, "Convex detailed queries should expose template document ids for updates");
+assert.match(convexApplications, /templateDocumentId: document\._id/, "Convex template rows should carry explicit document ids for updates");
+assert.match(convexWorkflowRoute, /api\.applications\.create/, "Convex workflow route should sync new application creation");
+assert.match(convexWorkflowRoute, /api\.applications\.updateTemplate/, "Convex workflow route should sync template field edits");
 assert.match(convexWorkflowRoute, /api\.applications\.addMessage/, "Convex workflow route should sync message actions");
 assert.match(convexWorkflowRoute, /api\.applications\.requestRevision/, "Convex workflow route should sync revision requests");
 assert.match(convexWorkflowRoute, /api\.applications\.approve/, "Convex workflow route should sync SADU approvals");
 assert.match(appComponent, /fetch\("\/api\/convex-workflow"/, "App should sync workflow actions through the Convex workflow route");
+assert.match(appComponent, /function syncConvexCreate\(next: EventApplication\)/, "App should sync newly-created applications to Convex");
+assert.match(appComponent, /function syncConvexTemplate\(templateId: string, values: Record<string, string>\)/, "App should sync template field changes to Convex");
+assert.match(appComponent, /template\?\.templateDocumentId \?\? template\?\.id/, "App should use Convex template document ids when syncing field changes");
 assert.match(appComponent, /if \(applicationSource !== "convex"\) return/, "App should keep workflow sync scoped to Convex-hydrated data");
 assert.match(appComponent, /function isConvexApplicationId\(id: string\)/, "App should distinguish Convex-hydrated applications from local prototype drafts");
 assert.match(appComponent, /if \(!isConvexApplicationId\(selectedApp\.id\)\) return/, "App should avoid syncing local prototype drafts to Convex workflow mutations");
@@ -190,8 +197,8 @@ assert.match(readme, /Convex schema\/functions provisioned on a dedicated protot
 assert.match(readme, /conneura\/tams-hub-prototype/, "README should record the dedicated Convex project");
 assert.match(readme, /zealous-ocelot-537\.convex\.cloud/, "README should record the configured Convex client URL");
 assert.match(readme, /loads seeded applications from the dedicated Convex deployment/, "README should describe Convex-backed application reads");
-assert.match(readme, /workflow actions come from Convex when configured/, "README should describe Convex-backed workflow actions");
-assert.match(readme, /new application creation and template field edits are still local prototype state/, "README should describe remaining local prototype mutations");
+assert.match(readme, /New application creation, template field edits, status transitions/, "README should describe Convex-backed create, edit, and workflow actions");
+assert.match(readme, /local fallback for prototype demos/, "README should describe the remaining local prototype fallback");
 assert.match(readme, /Railway is still waiting for CLI login and a dedicated Railway project ID/, "README should describe current Railway setup blocker");
 assert.match(readme, /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
 assert.match(readme, /setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run/, "README should show explicit Railway project targeting for dry-runs");

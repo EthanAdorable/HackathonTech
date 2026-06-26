@@ -30,6 +30,8 @@ export type TemplateDefinition = {
 };
 
 export type TemplateEntry = {
+  id?: string;
+  templateDocumentId?: string;
   templateId: string;
   values: Record<string, string>;
   enabled: boolean;
