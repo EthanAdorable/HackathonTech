@@ -562,7 +562,15 @@ export function TamsHubApp() {
         )}
 
         {section === "messages" && (
-          <MessagesView application={selectedApp} activeUser={activeUser} messageDraft={messageDraft} setMessageDraft={setMessageDraft} onSend={() => sendMessage()} />
+          <MessagesView
+            application={selectedApp}
+            applications={visibleApplications}
+            activeUser={activeUser}
+            messageDraft={messageDraft}
+            setMessageDraft={setMessageDraft}
+            onSelect={setSelectedAppId}
+            onSend={() => sendMessage()}
+          />
         )}
 
         {section === "guide" && (
@@ -1287,31 +1295,45 @@ function ReviewerInsightsPanel({ application, completionPercent }: { application
 
 function MessagesView({
   application,
+  applications,
   activeUser,
   messageDraft,
   setMessageDraft,
+  onSelect,
   onSend,
 }: {
   application: EventApplication;
+  applications: EventApplication[];
   activeUser: DemoUser;
   messageDraft: string;
   setMessageDraft: (value: string) => void;
+  onSelect: (id: string) => void;
   onSend: () => void;
 }) {
   const [threadSearch, setThreadSearch] = useState("");
-  const [selectedThreadTitle, setSelectedThreadTitle] = useState("SADU Review");
+  const [selectedThreadId, setSelectedThreadId] = useState(application.id);
   const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
-  const threads = [
-    { title: "SADU Review", preview: "Please revise the budget breakdown.", count: "2", time: "2h ago" },
-    { title: "Junior Philippine CS Society", preview: "Are you open to co-organizing the seminar?", count: "1", time: "1d ago" },
-    { title: "Student Council Federation", preview: "Joint event proposal attached.", count: "", time: "3d ago" },
-  ];
+  const threads = applications.map((item) => {
+    const latestMessage = item.messages.at(-1);
+    return {
+      id: item.id,
+      title: item.title,
+      preview: latestMessage?.body ?? `${shortStatus(item.status)} - no messages yet.`,
+      count: item.messages.length ? String(item.messages.length) : "",
+      time: latestMessage ? formatShortDate(latestMessage.createdAt) : shortStatus(item.status),
+      application: item,
+    };
+  });
   const visibleThreads = threads.filter((thread) =>
     `${thread.title} ${thread.preview}`.toLowerCase().includes(threadSearch.trim().toLowerCase()),
   );
   const selectedThread =
-    visibleThreads.find((thread) => thread.title === selectedThreadTitle) ??
+    visibleThreads.find((thread) => thread.id === selectedThreadId) ??
     visibleThreads[0];
+
+  useEffect(() => {
+    setSelectedThreadId(application.id);
+  }, [application.id]);
 
   return (
     <section className="messages-layout">
@@ -1319,10 +1341,13 @@ function MessagesView({
         <div className="search-box"><Search size={16} aria-hidden="true" /><input aria-label="Search messages" value={threadSearch} onChange={(event) => setThreadSearch(event.target.value)} placeholder={"Search messages\u2026"} /></div>
         {visibleThreads.map((thread) => (
           <button
-            key={thread.title}
-            className={thread.title === selectedThread.title ? "thread-item active" : "thread-item"}
-            aria-pressed={thread.title === selectedThread.title}
-            onClick={() => setSelectedThreadTitle(thread.title)}
+            key={thread.id}
+            className={thread.id === selectedThread.id ? "thread-item active" : "thread-item"}
+            aria-pressed={thread.id === selectedThread.id}
+            onClick={() => {
+              setSelectedThreadId(thread.id);
+              onSelect(thread.id);
+            }}
           >
             <span className="thread-meta"><strong>{thread.title}</strong><span>{thread.count && <em>{thread.count}</em>}{thread.time}</span></span>
             <small>{thread.preview}</small>
@@ -1336,7 +1361,7 @@ function MessagesView({
             <div className="message-thread-header">
               <h2>{selectedThread.title}</h2>
             </div>
-            <MiniThread application={application} activeRole={activeUser.role} ownLabel="You" expanded />
+            <MiniThread application={selectedThread.application} activeRole={activeUser.role} ownLabel="You" expanded />
             <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder={"Type a message\u2026"} /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
           </>
         ) : (

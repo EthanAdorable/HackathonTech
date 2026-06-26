@@ -135,12 +135,15 @@ assert.match(appComponent, /aria-label="Search messages"/, "Messages search inpu
 assert.match(appComponent, /aria-label="Message"/, "Message composer input should have an accessible name");
 assert.match(appComponent, /placeholder=\{"Search messages\\u2026"\}/, "Visible placeholders should use polished ellipsis glyphs");
 assert.match(globalCss, /\.thread-meta strong\s*\{[\s\S]*text-overflow: ellipsis/, "Message thread titles should truncate in the compact sidebar");
-assert.match(appComponent, /selectedThreadTitle/, "Messages thread list should select visible conversations");
-assert.match(appComponent, /visibleThreads\.find\(\(thread\) => thread\.title === selectedThreadTitle\)/, "Messages selected thread should stay aligned with filtered conversations");
+assert.match(appComponent, /applications\.map\(\(item\) =>/, "Messages thread list should derive conversations from visible application data");
+assert.match(appComponent, /const latestMessage = item\.messages\.at\(-1\)/, "Messages thread previews should use the latest persisted application message");
+assert.match(appComponent, /selectedThreadId/, "Messages thread list should select conversations by application id");
+assert.match(appComponent, /visibleThreads\.find\(\(thread\) => thread\.id === selectedThreadId\)/, "Messages selected thread should stay aligned with filtered conversations");
+assert.doesNotMatch(appComponent, /const threads = \[\s*\{ title: "SADU Review"/, "Messages should not use hardcoded thread rows");
 assert.match(appComponent, /empty-chat-state/, "Messages should show an empty chat state when search hides every thread");
 assert.match(appComponent, /className="empty-chat-state" role="status" aria-live="polite"/, "Messages empty chat state should be announced politely");
 assert.doesNotMatch(appComponent, /visibleThreads\[0\] \?\?[\s\S]*threads\[0\]/, "Messages search should not fall back to an invisible thread");
-assert.match(appComponent, /aria-pressed=\{thread\.title === selectedThread\.title\}/, "Message thread buttons should expose selected state");
+assert.match(appComponent, /aria-pressed=\{thread\.id === selectedThread\.id\}/, "Message thread buttons should expose selected state");
 assert.match(appComponent, /className="message-thread-header"/, "Messages chat panel should use a reference-style thread header band");
 assert.match(globalCss, /\.message-thread-header/, "Messages thread header should have a scoped divider style");
 assert.doesNotMatch(appComponent, /className="thread-summary"/, "Messages chat panel should not duplicate the selected thread preview");
