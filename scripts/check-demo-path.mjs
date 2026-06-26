@@ -102,6 +102,10 @@ assert.match(appComponent, /aria-pressed=\{user\.id === activeUserId\}/, "Access
 assert.match(appComponent, /aria-label="View notifications"/, "Topbar notification bell should be an accessible icon button");
 assert.match(appComponent, /aria-controls=\{notificationsOpen \? "notification-popover" : undefined\}/, "Notification trigger should reference the open popover");
 assert.match(appComponent, /id="notification-popover" role="region" aria-label="Notifications"/, "Notification popover should expose a named region");
+assert.match(appComponent, /const notificationItems = \[/, "Topbar notifications should derive from current app and service state");
+assert.match(appComponent, /revisionApplication \? `\$\{revisionApplication\.title\} needs revised budget details\.`/, "Topbar revision alerts should derive from the current revision application");
+assert.match(appComponent, /serviceStatus && !serviceStatus\.railwayProjectIdConfigured/, "Topbar setup alerts should derive from service readiness state");
+assert.doesNotMatch(appComponent, /<span>Tech Career Fair needs revised budget details\.<\/span>/, "Topbar notifications should not use hardcoded revision copy");
 assert.match(appComponent, /showNewEvent=\{activeUser\.role === "Student Officer"\}/, "Topbar file-event CTA should be the single student officer create command");
 assert.doesNotMatch(appComponent, /activeUser\.role === "Student Officer" && <button className="primary-button" onClick=\{onNewEvent\}/, "Dashboard welcome panel should not duplicate the topbar file-event CTA");
 assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");

@@ -549,6 +549,7 @@ export function TamsHubApp() {
         <Topbar
           title={sectionTitle(section)}
           activeUser={activeUser}
+          applications={visibleApplications}
           onNewEvent={createApplication}
           showNewEvent={activeUser.role === "Student Officer"}
         />
@@ -773,15 +774,42 @@ function Sidebar({
 function Topbar({
   title,
   activeUser,
+  applications,
   onNewEvent,
   showNewEvent,
 }: {
   title: string;
   activeUser: DemoUser;
+  applications: EventApplication[];
   onNewEvent: () => void;
   showNewEvent: boolean;
 }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [serviceStatus, setServiceStatus] = useState<ServiceStatus | null>(null);
+  const revisionApplication = applications.find((item) => item.status === "Revision Requested");
+  const draftCount = applications.filter((item) => item.status === "Draft" || item.status === "Template Completion").length;
+  const notificationItems = [
+    revisionApplication ? `${revisionApplication.title} needs revised budget details.` : "",
+    draftCount ? `${draftCount} application${draftCount === 1 ? "" : "s"} still need template completion.` : "",
+    serviceStatus && !serviceStatus.railwayProjectIdConfigured ? "Railway is waiting for login and a dedicated project ID." : "",
+    serviceStatus?.authWarnings.length ? `Auth safety review: ${serviceStatus.authWarnings.join(", ")}.` : "",
+    serviceStatus && !serviceStatus.openAiConfigured ? "TAMS Guide is using mock guidance until OPENAI_API_KEY is set." : "",
+  ].filter(Boolean);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/service-status")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: ServiceStatus | null) => {
+        if (active) setServiceStatus(data);
+      })
+      .catch(() => {
+        if (active) setServiceStatus(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <header className="topbar">
@@ -796,13 +824,12 @@ function Topbar({
             onClick={() => setNotificationsOpen((current) => !current)}
           >
             <Bell size={18} aria-hidden="true" />
-            <span className="notification-dot" aria-hidden="true" />
+            {notificationItems.length > 0 && <span className="notification-dot" aria-hidden="true" />}
           </button>
           {notificationsOpen && (
             <div className="notification-popover" id="notification-popover" role="region" aria-label="Notifications">
               <strong>Notifications</strong>
-              <span>Tech Career Fair needs revised budget details.</span>
-              <span>Convex and Railway setup are waiting for account choices.</span>
+              {notificationItems.length ? notificationItems.map((item) => <span key={item}>{item}</span>) : <span>No active alerts.</span>}
             </div>
           )}
         </div>
