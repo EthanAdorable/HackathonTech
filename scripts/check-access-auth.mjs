@@ -66,8 +66,9 @@ assert.match(usersRoute, /api\.users\.list, \{ actor \}/, "User API route must p
 assert.match(convexUsers, /args\.actor\.role !== "Admin"[\s\S]*filter\(\(user\) => user\.id === args\.actor\.id\)/, "Convex user list must scope non-admin reads to the current user.");
 assert.match(guideLogsRoute, /api\.guide\.listForApplication[\s\S]*actor/, "Guide log reads must pass the verified actor.");
 assert.match(guideRoute, /withAuthorizedApplication\(body, actor\)/, "TAMS Guide must authorize the selected application before guidance.");
-assert.match(guideRoute, /type GuideRequest = \{[\s\S]*applicationId: string;[\s\S]*\};/, "TAMS Guide requests must identify applications by id only.");
-assert.doesNotMatch(guideRoute, /type GuideRequest = \{[^}]*application: EventApplication[^}]*\};/, "TAMS Guide route must not trust client-supplied application objects.");
+const guideRequestBlock = guideRoute.match(/type GuideRequest = \{[\s\S]*?\};/)?.[0] ?? "";
+assert.match(guideRequestBlock, /applicationId: string;/, "TAMS Guide requests must identify applications by id only.");
+assert.doesNotMatch(guideRequestBlock, /application: EventApplication/, "TAMS Guide route must not trust client-supplied application objects.");
 assert.match(guideRoute, /seedApplications\.find/, "Local demo guide data must be fetched server-side from canonical seed data.");
 assert.match(guideRoute, /client\.query\(api\.applications\.get,[\s\S]*actor/, "Convex guide data must be fetched through actor-scoped application reads.");
 assert.match(guideRoute, /OPENAI_TIMEOUT_MS/, "OpenAI calls must have an explicit configurable timeout.");
