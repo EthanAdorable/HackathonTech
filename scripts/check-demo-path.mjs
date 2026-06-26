@@ -190,7 +190,8 @@ assert.match(readme, /Convex schema\/functions provisioned on a dedicated protot
 assert.match(readme, /conneura\/tams-hub-prototype/, "README should record the dedicated Convex project");
 assert.match(readme, /zealous-ocelot-537\.convex\.cloud/, "README should record the configured Convex client URL");
 assert.match(readme, /loads seeded applications from the dedicated Convex deployment/, "README should describe Convex-backed application reads");
-assert.match(readme, /create\/edit\/status\/message actions are still local prototype state/, "README should describe remaining local prototype mutations");
+assert.match(readme, /workflow actions come from Convex when configured/, "README should describe Convex-backed workflow actions");
+assert.match(readme, /new application creation and template field edits are still local prototype state/, "README should describe remaining local prototype mutations");
 assert.match(readme, /Railway is still waiting for CLI login and a dedicated Railway project ID/, "README should describe current Railway setup blocker");
 assert.match(readme, /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
 assert.match(readme, /setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run/, "README should show explicit Railway project targeting for dry-runs");
