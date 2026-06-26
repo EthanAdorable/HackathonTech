@@ -287,9 +287,9 @@ function activeDocumentSignature(documents: any[]) {
     .map((document) => [
       document.documentType,
       document.sha256,
-      document.rubricVersionId,
-      document.extractionSchemaVersion,
-      document.promptVersion,
+      defaultRubricVersionId,
+      defaultExtractionSchemaVersion,
+      defaultPromptVersion,
     ].join(":"))
     .sort();
   return parts.length ? parts.join("|") : "no-files";

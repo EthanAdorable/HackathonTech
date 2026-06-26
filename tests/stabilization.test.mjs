@@ -338,6 +338,9 @@ test("document verification route is separate, Codex-LB only, and fail-closed", 
   assert.match(sources.verificationRoute, /collectAttachmentUrls/);
   assert.match(sources.verificationRoute, /Promise\.all\(verificationDocuments\.map/);
   assert.match(sources.verificationRoute, /\["active", "uploaded"\]\.includes\(attachment\.status\)/);
+  assert.match(sources.convexApplications, /defaultRubricVersionId/);
+  assert.match(sources.convexApplications, /defaultExtractionSchemaVersion/);
+  assert.match(sources.convexApplications, /defaultPromptVersion/);
   assert.match(sources.verificationRoute, /outcome\.extraction\?\.documentType \?\? outcome\.documentType/);
   assert.match(sources.verificationRoute, /CODEX_LB_API_KEY is required; verification fails closed/);
   assert.match(sources.verificationRoute, /validateExtractionJson/);

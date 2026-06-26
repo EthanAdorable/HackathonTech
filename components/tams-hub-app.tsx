@@ -544,8 +544,9 @@ export function TamsHubApp() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) return null;
-    return (await response.json()) as ConvexApplicationsResponse;
+    const data = (await response.json()) as ConvexApplicationsResponse & { error?: string };
+    if (!response.ok) throw new Error(data.error ?? "Convex workflow action failed.");
+    return data;
   }
 
   async function syncConvexWorkflow(payload: Record<string, unknown>) {
@@ -553,9 +554,12 @@ export function TamsHubApp() {
     if (!isConvexApplicationId(selectedApp.id)) return;
     try {
       const data = await postConvexWorkflow({ applicationId: selectedApp.id, ...payload });
-      if (data?.source === "convex") applyRemoteApplications(data.applications);
-    } catch {
-      // Keep optimistic local prototype state if Convex sync is unavailable.
+      if (data.source === "convex") applyRemoteApplications(data.applications);
+    } catch (error) {
+      setGuideOutput([
+        "Workflow action paused.",
+        error instanceof Error ? error.message : "Convex workflow action failed.",
+      ]);
     }
   }
 
