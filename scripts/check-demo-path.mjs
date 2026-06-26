@@ -69,6 +69,10 @@ assert.match(appComponent, /function toggleTemplateAvailability/, "Admin templat
 assert.match(appComponent, /aria-pressed=\{available\}/, "Admin template toggles should expose pressed state");
 assert.match(appComponent, /disabled=\{!canStartReview\}/, "SADU review action should be gated by submitted states");
 assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resubmission should require completed fields");
+assert.match(appComponent, /selectedApp\.status === "Revision Requested"/, "Revision pre-check should preserve the revision-requested workflow state");
+assert.match(appComponent, /Demo compliance check completed for revision response\./, "Revision pre-check should record a revision-specific stub check note");
+assert.match(appComponent, /disabled=\{missingCount > 0\} onClick=\{onResubmit\}/, "File Event revision upload should use the guarded resubmission action");
+assert.doesNotMatch(appComponent, /Revision Requested"[\s\S]{0,260}<SendHorizonal size=\{16\} \/> Submit to SADU/, "Revision filing should not expose the generic submit action");
 assert.doesNotMatch(appComponent, /Revision Requested"\) \?\? applications\[0\]/, "Dashboard guide alert should not fall back to a non-revision application");
 assert.match(appComponent, /\{revisionApplication && \(/, "Dashboard guide alert should only render when a revision application exists");
 assert.match(appComponent, /onSelect\(revisionApplication\.id\)/, "Dashboard guide alert should open the revision application");
@@ -78,6 +82,11 @@ assert.doesNotMatch(appComponent, /needs revised budget and participant clarific
 assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
 assert.match(appComponent, /Revision Inconsistency/, "File event guide should show a reference-style revision alert");
 assert.match(appComponent, /application\.status === "Revision Requested"/, "File event revision alert should only appear for applications with requested revisions");
+assert.match(appComponent, /revisionGuideDetail\(applicationCompletion\.missing, application\.messages\)/, "File event revision warning should derive detail from template gaps and thread messages");
+assert.match(appComponent, /formatBudgetEstimate\(budgetValues\.totalBudget\)/, "File event budget summary should derive from the selected budget template");
+assert.match(appComponent, /value=\{proposalValues\.objectives \?\? ""\}/, "File event objectives summary should derive from the selected proposal template");
+assert.doesNotMatch(appComponent, /SADU flagged the budget breakdown and participant count/, "File event revision warning should not use fixed budget and participant copy");
+assert.doesNotMatch(appComponent, /value="25,000\.00"/, "File event budget summary should not use a fixed sample amount");
 assert.match(appComponent, /required document\(s\) missing/, "File event guide should show a separate missing-documents notice");
 assert.match(appComponent, /className="warning-box" role="alert"/, "File event revision warning should be announced as an alert");
 assert.match(appComponent, /className="guide-says" role="status" aria-live="polite"/, "File event guide output should be announced politely");
@@ -214,6 +223,10 @@ assert.match(convexWorkflowRoute, /api\.applications\.updateTemplateAvailability
 assert.match(convexWorkflowRoute, /api\.applications\.addMessage/, "Convex workflow route should sync message actions");
 assert.match(convexWorkflowRoute, /api\.applications\.requestRevision/, "Convex workflow route should sync revision requests");
 assert.match(convexWorkflowRoute, /api\.applications\.approve/, "Convex workflow route should sync SADU approvals");
+assert.match(convexWorkflowRoute, /function assertStatus/, "Convex workflow route should enforce transition rules before remote mutations");
+assert.match(convexWorkflowRoute, /Use the \$\{payload\.status \?\? "requested"\} workflow action/, "Convex workflow route should block direct terminal status updates");
+assert.match(convexWorkflowRoute, /Unsupported or incomplete workflow action/, "Convex workflow route should reject incomplete direct workflow calls");
+assert.match(convexWorkflowRoute, /\{ status: 409 \}/, "Convex workflow route should report rejected Convex workflow transitions");
 assert.match(appComponent, /fetch\("\/api\/convex-workflow"/, "App should sync workflow actions through the Convex workflow route");
 assert.match(appComponent, /function syncConvexCreate\(next: EventApplication\)/, "App should sync newly-created applications to Convex");
 assert.match(appComponent, /function syncConvexTemplate\(templateId: string, values: Record<string, string>\)/, "App should sync template field changes to Convex");
