@@ -2,6 +2,7 @@ import { inflateRawSync, inflateSync } from "node:zlib";
 import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { PDFParse } from "pdf-parse";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { withTimeout } from "@/lib/async-timeout";
@@ -410,7 +411,7 @@ async function fetchDocumentSource(url: string, mimeType: string): Promise<Docum
     return extractXlsxText(buffer);
   }
   if (mimeType === "application/pdf") {
-    const pdf = extractPdfText(buffer);
+    const pdf = await extractPdfText(buffer);
     if (pdf.text.length < 300) {
       return {
         ...pdf,
@@ -441,7 +442,29 @@ function extractXlsxText(buffer: Buffer) {
   return { text: sheetTexts.join("\n").trim(), locations: sheetTexts.map((text) => text.split(":")[0]), mode: "text_xlsx" as ExtractionMode };
 }
 
-function extractPdfText(buffer: Buffer) {
+async function extractPdfText(buffer: Buffer) {
+  const fallback = extractPdfTextFallback(buffer);
+  let parser: PDFParse | undefined;
+  try {
+    parser = new PDFParse({ data: new Uint8Array(buffer) });
+    const parsed = await parser.getText({ pageJoiner: "\n-- page_number of total_number --\n" });
+    const text = normalizeExtractedPdfText(parsed.text);
+    if (text.length >= Math.max(300, fallback.text.length * 0.5)) {
+      return {
+        text,
+        locations: parsed.pages.map((page) => `pdf:page-${page.num}`),
+        mode: "text_pdf" as ExtractionMode,
+      };
+    }
+  } catch {
+    // Fall through to the lightweight parser so verification still fails closed.
+  } finally {
+    await parser?.destroy().catch(() => undefined);
+  }
+  return fallback;
+}
+
+function extractPdfTextFallback(buffer: Buffer) {
   const chunks: string[] = [];
   const raw = buffer.toString("latin1");
   for (const match of raw.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
@@ -463,6 +486,15 @@ function extractPdfText(buffer: Buffer) {
     .replace(/\s+/g, " ")
     .trim() ?? "";
   return { text, locations: text ? ["pdf:text-spans"] : [], mode: "text_pdf" as ExtractionMode };
+}
+
+function normalizeExtractedPdfText(text: string) {
+  return text
+    .replace(/[^\x20-\x7E\n]+/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
 }
 
 function readZipEntries(buffer: Buffer) {
@@ -612,10 +644,11 @@ function codexLbUserContent(input: {
 }
 
 function compactSourceText(text: string) {
-  return text
+  const normalized = text
     .replace(/\b[A-Za-z0-9+/=]{80,}\b/g, " ")
     .replace(/[^\x20-\x7E\n]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 2200);
+    .trim();
+  if (normalized.length <= 3600) return normalized;
+  return `${normalized.slice(0, 1900)} ... [middle omitted] ... ${normalized.slice(-1500)}`;
 }
