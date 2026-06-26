@@ -10,7 +10,7 @@ const args = new Map(
   }),
 );
 
-const project = args.get("project") || process.env.TAMS_RAILWAY_PROJECT || "tams-hub-prototype";
+const project = args.get("project") || process.env.TAMS_RAILWAY_PROJECT || "TAMS Hub";
 const providedProjectId = args.get("project-id") || process.env.TAMS_RAILWAY_PROJECT_ID || "";
 const workspace = args.get("workspace") || process.env.TAMS_RAILWAY_WORKSPACE;
 const environment = args.get("environment") || process.env.TAMS_RAILWAY_ENVIRONMENT || "";
@@ -21,7 +21,7 @@ const createDomain = args.has("domain");
 const dryRun = args.has("dry-run");
 
 if (args.has("help") || args.has("h")) {
-  console.log(`Usage: node scripts/setup-railway.mjs [--workspace <workspace>] [--project tams-hub-prototype] [--project-id <id>] [--environment <env>] [--service <service>] [--app-url https://...] [--domain] [--deploy] [--dry-run]
+  console.log(`Usage: node scripts/setup-railway.mjs [--workspace <workspace>] [--project "TAMS Hub"] [--project-id <id>] [--environment <env>] [--service <service>] [--app-url https://...] [--domain] [--deploy] [--dry-run]
 
 Creates the dedicated Railway project after Railway login is complete, sets
 runtime variables from local env values with secret output redacted, and

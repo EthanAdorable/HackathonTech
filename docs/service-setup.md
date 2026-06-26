@@ -3,7 +3,7 @@
 This prototype uses separate external projects:
 
 - Convex project: `tams-hub-prototype`
-- Railway project: `tams-hub-prototype`
+- Railway project: `TAMS Hub`
 
 Do not reuse an unrelated Convex or Railway project for this app.
 
@@ -19,12 +19,12 @@ Convex is configured for the dedicated project:
 
 Convex functions have been generated, pushed, and seeded for the prototype demo data.
 
-Railway CLI is installed, but the browser OAuth flow is paused at GitHub account selection:
+The dedicated Railway project is identified in the browser and should be targeted explicitly:
 
-- `Xylodex`
-- `ItchyDitchy`
+- Project: `TAMS Hub`
+- Project ID: stored locally as `TAMS_RAILWAY_PROJECT_ID`
 
-Railway project creation should continue only after the Railway ownership choice is confirmed.
+Railway CLI is installed, but local CLI auth is still pending. Continue setup only after Railway login is completed for the intended account/workspace; do not create or link an unrelated Railway project.
 
 ## Convex Setup
 
@@ -78,7 +78,7 @@ railway login
 railway whoami --json
 ```
 
-Create a separate Railway project from this repo:
+Create a separate Railway project from this repo only if the dedicated project does not already exist:
 
 ```powershell
 corepack pnpm setup:railway -- --workspace <workspace> --dry-run
@@ -87,7 +87,7 @@ corepack pnpm setup:railway -- --workspace <workspace>
 
 Omit `--workspace` only after confirming the Railway CLI is authenticated to the intended account/workspace.
 
-If the dedicated Railway project already exists, pass its project ID explicitly so every variable, domain, and deploy command targets the correct project:
+Because the dedicated Railway project already exists, pass its project ID explicitly so every variable, domain, and deploy command targets the correct project:
 
 ```powershell
 corepack pnpm setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run

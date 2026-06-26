@@ -258,12 +258,13 @@ assert.match(readme, /New application creation, template field edits, admin temp
 assert.match(readme, /TAMS Guide audit logs sync through Convex-backed routes/, "README should describe Convex-backed guide audit logs");
 assert.match(readme, /visible in the Guide workbench/, "README should describe visible TAMS Guide audit history");
 assert.match(readme, /local fallback for prototype demos/, "README should describe the remaining local prototype fallback");
-assert.match(readme, /Railway is still waiting for CLI login and a dedicated Railway project ID/, "README should describe current Railway setup blocker");
+assert.match(readme, /dedicated Railway project has been identified/, "README should describe the identified Railway project target");
+assert.match(readme, /CLI auth, service selection, domain, and deployment still require Railway login/, "README should describe current Railway setup blocker");
 assert.match(readme, /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
 assert.match(readme, /setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run/, "README should show explicit Railway project targeting for dry-runs");
 assert.match(convexSetup, /const project = .*"tams-hub-prototype"/, "Convex setup should default to the dedicated prototype project");
 assert.match(convexSetup, /Missing Convex \$\{label\} value/, "Convex setup should reject missing project, team, or deployment argument values");
-assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway setup should default to the dedicated prototype project");
+assert.match(railwaySetup, /const project = .*"TAMS Hub"/, "Railway setup should default to the identified dedicated Railway project");
 assert.match(railwaySetup, /Missing Railway \$\{label\} value/, "Railway setup should reject missing project or workspace argument values");
 assert.match(railwaySetup, /function isHttpUrl/, "Railway setup should validate public callback URLs before setting NEXTAUTH_URL");
 assert.match(railwaySetup, /absolute http\(s\) URL/, "Railway setup should reject missing or malformed app URLs");

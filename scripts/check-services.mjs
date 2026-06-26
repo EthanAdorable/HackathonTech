@@ -87,7 +87,7 @@ function deployEnvWarnings() {
 
 function projectTargetSummary() {
   const convexProject = envValue("TAMS_CONVEX_PROJECT") || "tams-hub-prototype";
-  const railwayProject = envValue("TAMS_RAILWAY_PROJECT") || "tams-hub-prototype";
+  const railwayProject = envValue("TAMS_RAILWAY_PROJECT") || "TAMS Hub";
   const railwayProjectId = envValue("TAMS_RAILWAY_PROJECT_ID") || envValue("RAILWAY_PROJECT_ID");
   const missing = deployCheck && !railwayProjectId ? ["TAMS_RAILWAY_PROJECT_ID"] : [];
 
