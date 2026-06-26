@@ -449,7 +449,7 @@ async function extractPdfText(buffer: Buffer) {
     parser = new PDFParse({ data: new Uint8Array(buffer) });
     const parsed = await parser.getText({ pageJoiner: "\n-- page_number of total_number --\n" });
     const text = normalizeExtractedPdfText(parsed.text);
-    if (text.length >= Math.max(300, fallback.text.length * 0.5)) {
+    if (text.length >= 300) {
       return {
         text,
         locations: parsed.pages.map((page) => `pdf:page-${page.num}`),

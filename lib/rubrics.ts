@@ -30,7 +30,7 @@ export type DocumentRubricProfile = {
 
 export const activeRubricVersionId = "app-apf-verf-rubric-v1";
 export const activeExtractionSchemaVersion = "app-apf-verf-extraction-v1";
-export const activePromptVersion = "app-apf-verf-prompt-v3";
+export const activePromptVersion = "app-apf-verf-prompt-v4";
 
 export const pdfMimeType = "application/pdf";
 export const jpegMimeType = "image/jpeg";
