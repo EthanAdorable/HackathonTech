@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   compileVerificationSummary,
+  extractionFromFields,
   runDeterministicVerification,
   validateExtractionJson,
 } from "../lib/document-verification.ts";
@@ -155,18 +156,24 @@ test("submission readiness includes required attachments", () => {
 });
 
 test("document verification rubrics cover every template and validate extraction JSON", () => {
-  assert.equal(documentRubricProfiles.length, 7);
-  for (const applicationTemplate of seedApplications[0].templates) {
-    assert.ok(getRubricProfile(applicationTemplate.templateId), `${applicationTemplate.templateId} should have a rubric profile`);
+  assert.equal(documentRubricProfiles.length, 3);
+  for (const documentType of ["app", "apf", "verf"]) {
+    assert.ok(getRubricProfile(documentType), `${documentType} should have a rubric profile`);
   }
 
   assert.equal(validateExtractionJson({}).ok, false);
   const valid = validateExtractionJson({
-    documentType: "proposal",
+    documentType: "app",
     schemaVersion: activeExtractionSchemaVersion,
+    completenessStatus: "filled",
+    extractionMode: "text_pdf",
+    documentData: {
+      formCode: "FEUA-FO-FIN-ACC-005/012623/Rev1",
+      programTitle: "Career expo",
+    },
     normalizedFields: [{
-      fieldId: "overview",
-      label: "Event overview",
+      fieldId: "programTitle",
+      label: "Program title",
       value: "Career expo",
       confidence: 0.94,
       evidence: ["Career expo"],
@@ -182,7 +189,7 @@ test("document verification rubrics cover every template and validate extraction
 });
 
 test("verification aggregation blocks critical failures and allows warning-only summaries", () => {
-  const profile = getRubricProfile("proposal");
+  const profile = getRubricProfile("app");
   const failed = runDeterministicVerification({
     profile,
     mimeType: "application/pdf",
@@ -191,7 +198,7 @@ test("verification aggregation blocks critical failures and allows warning-only 
   const blocked = compileVerificationSummary({
     rubricVersionId: profile.rubricVersionId,
     documentCount: 1,
-    fileSignature: "proposal:hash:tams-placeholder-v1:event-document-extraction-v1:document-verification-prompt-v1",
+    fileSignature: "app:hash:app-apf-verf-rubric-v1:app-apf-verf-extraction-v1:app-apf-verf-prompt-v1",
     results: failed,
     runStatuses: ["failed_ai_timeout"],
   });
@@ -202,23 +209,24 @@ test("verification aggregation blocks critical failures and allows warning-only 
   const passed = runDeterministicVerification({
     profile,
     mimeType: "application/pdf",
-    extraction: {
-      documentType: "proposal",
-      schemaVersion: activeExtractionSchemaVersion,
-      normalizedFields: profile.requiredFieldIds.map((fieldId) => ({
-        fieldId,
-        label: fieldId,
-        value: "present",
-        confidence: 0.92,
-        evidence: ["present"],
-        sourceLocations: ["page 1"],
-      })),
-      missingFields: [],
-      unknownFields: [],
+    extraction: extractionFromFields({
+      documentType: "app",
+      completenessStatus: "filled",
       confidence: 0.92,
+      hasPage2: false,
+      fields: Object.fromEntries(profile.requiredFieldIds.map((fieldId) => [
+        fieldId,
+        fieldId === "totalProposedBudget"
+          ? 2900
+          : fieldId.includes("Date") || fieldId.includes("Time")
+            ? "June 17, 2026 9:00 AM"
+            : fieldId === "budgetCategories" || fieldId === "objectives"
+              ? ["present"]
+              : "present",
+      ])),
       evidence: ["present"],
       sourceLocations: ["page 1"],
-    },
+    }),
   });
   const ready = compileVerificationSummary({
     rubricVersionId: profile.rubricVersionId,
@@ -227,7 +235,7 @@ test("verification aggregation blocks critical failures and allows warning-only 
     results: passed,
   });
   assert.equal(ready.readyForSadu, true);
-  assert.equal(ready.status, "ready_for_sadu");
+  assert.equal(ready.status, "needs_human_review");
 });
 
 test("document verification route is separate, Codex-LB only, and fail-closed", () => {

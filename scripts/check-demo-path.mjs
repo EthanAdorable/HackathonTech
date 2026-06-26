@@ -13,7 +13,10 @@ import { addMessage, transitionApplication } from "../lib/workflow.ts";
 
 const roles = new Set(users.map((user) => user.role));
 assert.deepEqual([...roles].sort(), ["Admin", "Faculty Adviser", "SADU Associate", "Student Officer"].sort());
-assert.equal(templateDefinitions.length, 7, "all required event templates should be present");
+assert.equal(templateDefinitions.length, 10, "all required event templates and APP/APF/VERF slots should be present");
+for (const templateId of ["app", "apf", "verf"]) {
+  assert.ok(templateDefinitions.some((template) => template.id === templateId), `${templateId.toUpperCase()} upload slot should be present`);
+}
 
 const byStatus = new Map(seedApplications.map((application) => [application.status, application]));
 assert.ok(byStatus.get("Draft"), "seed data should include a draft application");
@@ -354,8 +357,8 @@ const revised = {
   ...review,
   verificationSummary: {
     status: "ready_for_sadu",
-    rubricVersionId: "tams-placeholder-v1",
-    documentCount: 5,
+    rubricVersionId: "app-apf-verf-rubric-v1",
+    documentCount: 3,
     criticalFailureCount: 0,
     warningCount: 0,
     readyForSadu: true,
