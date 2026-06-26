@@ -40,7 +40,8 @@ TAMS_DEMO_AUTH_ENABLED=true
 # TAMS_HUB_HEALTH_URL=http://127.0.0.1:3000
 CODEX_LB_API_KEY=
 CODEX_LB_BASE_URL=https://codex-lb-production-6b47.up.railway.app/v1
-CODEX_LB_MODEL=gpt-5.4-mini
+CODEX_LB_MODEL=gpt-5.4
+CODEX_LB_REASONING_EFFORT=high
 CONVEX_DEPLOYMENT=dev:zealous-ocelot-537
 NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud
 TAMS_CONVEX_PROJECT=tams-hub-prototype
@@ -62,7 +63,7 @@ The FEU account login signs in directly through the NextAuth credentials provide
 ## Main Modules
 
 - TAMS Access: role-based login simulation and NextAuth-ready credentials provider
-- TAMS Events: application list, status tracker, template editor, queue, revision loop, approval/rejection actions, and messages
+- TAMS Events: application list, status tracker, five requirement slots, queue, revision loop, approval/rejection actions, and messages
 - TAMS Guide: checklist generation, missing-field checks, SADU summary, revision draft, and basic filing answers
 - Admin: user/role visibility and prototype template availability toggles
 
@@ -70,7 +71,7 @@ The FEU account login signs in directly through the NextAuth credentials provide
 
 - Student Officer role opens a dashboard with JPCS applications.
 - Student creates a new event with `File New Event`.
-- Student fills required template fields in the completion editor.
+- Student uploads APP FORM, APF FORM, and VERF FORM; Speaker guest request and Publicity Publication Post remain optional.
 - Student runs `Run AI Completeness Check`; the timeline records `AI Pre-check`.
 - TAMS Guide can generate a checklist, missing fields, summary, revision draft, and filing answer.
 - Student submits to SADU once the prototype completion threshold is met.
@@ -112,6 +113,7 @@ Set these Railway variables:
 - `CODEX_LB_API_KEY`, optional
 - `CODEX_LB_BASE_URL`, optional
 - `CODEX_LB_MODEL`, optional
+- `CODEX_LB_REASONING_EFFORT`, optional
 - `NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud`
 - `TAMS_RAILWAY_PROJECT_ID`, set to the dedicated Railway project target
 

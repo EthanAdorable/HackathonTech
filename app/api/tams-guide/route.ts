@@ -6,6 +6,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { canReadApplication, type AccessActor } from "@/lib/access-policy";
 import { getAccessActor } from "@/lib/server-access";
 import { withTimeout } from "@/lib/async-timeout";
+import { codexLbReasoningEffort, defaultCodexLbBaseUrl, defaultCodexLbModel } from "@/lib/codex-lb";
 import {
   type EventApplication,
   getApplicationCompletion,
@@ -28,9 +29,6 @@ type AuthorizedGuideRequest = GuideRequest & {
   application: EventApplication;
   dataSource: "convex" | "local-demo";
 };
-
-const defaultCodexLbBaseUrl = "https://codex-lb-production-6b47.up.railway.app/v1";
-const defaultCodexLbModel = "gpt-5.4-mini";
 
 export async function POST(request: Request) {
   const actor = await getAccessActor();
@@ -61,6 +59,7 @@ export async function POST(request: Request) {
     const completion = await withTimeout(
       client.chat.completions.create({
         model: process.env.CODEX_LB_MODEL ?? defaultCodexLbModel,
+        reasoning_effort: codexLbReasoningEffort(),
         temperature: 0.2,
         messages: [
           {

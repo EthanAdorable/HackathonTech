@@ -89,6 +89,7 @@ type ServiceStatus = {
   codexLbConfigured: boolean;
   codexLbBaseHost: string;
   codexLbModel: string;
+  codexLbReasoningEffort: string;
   railwayConfigured: boolean;
   railwayEnvironment?: string;
   railwayProject: string;
@@ -1554,7 +1555,8 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
   const railwayProject = status?.railwayProject ?? "TAMS Hub";
   const convexHost = status?.convexHost || "not configured";
   const codexLbHost = status?.codexLbBaseHost || "codex-lb-production-6b47.up.railway.app";
-  const codexLbModel = status?.codexLbModel || "gpt-5.4-mini";
+  const codexLbModel = status?.codexLbModel || "gpt-5.4";
+  const codexLbReasoningEffort = status?.codexLbReasoningEffort || "high";
   const railwayProjectId = status?.railwayProjectId ?? "missing";
   const authWarnings = status?.authWarnings ?? [];
 
@@ -1593,7 +1595,7 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
           <strong>codex-lb Guide</strong>
           <p>
             {codexLbReady
-              ? `CODEX_LB_API_KEY is configured for ${codexLbModel}.`
+              ? `CODEX_LB_API_KEY is configured for ${codexLbModel} (${codexLbReasoningEffort} reasoning).`
               : "Using deterministic mock guidance fallback."}
           </p>
           <span className="service-detail">Host: {codexLbHost}</span>

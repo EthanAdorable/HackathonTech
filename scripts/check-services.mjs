@@ -146,7 +146,7 @@ checks.push({
   label: "codex-lb env",
   status: "info",
   output: process.env.CODEX_LB_API_KEY || localEnv.CODEX_LB_API_KEY
-    ? `CODEX_LB_API_KEY is set; model: ${envValue("CODEX_LB_MODEL") || "gpt-5.4-mini"}`
+    ? `CODEX_LB_API_KEY is set; model: ${envValue("CODEX_LB_MODEL") || "gpt-5.4"}; reasoning: ${envValue("CODEX_LB_REASONING_EFFORT") || "high"}`
     : "CODEX_LB_API_KEY is not set; mock guide fallback will be used",
 });
 checks.push({

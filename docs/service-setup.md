@@ -103,7 +103,8 @@ Set the initial variables after Convex provides a URL:
 railway variable set NEXTAUTH_SECRET=<production-secret>
 railway variable set TAMS_DEMO_AUTH_ENABLED=false
 railway variable set CODEX_LB_BASE_URL=https://codex-lb-production-6b47.up.railway.app/v1
-railway variable set CODEX_LB_MODEL=gpt-5.4-mini
+railway variable set CODEX_LB_MODEL=gpt-5.4
+railway variable set CODEX_LB_REASONING_EFFORT=high
 railway variable set NEXT_PUBLIC_CONVEX_URL=<convex-url>
 ```
 

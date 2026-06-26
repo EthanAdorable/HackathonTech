@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { codexLbReasoningEffort, defaultCodexLbBaseUrl, defaultCodexLbModel } from "@/lib/codex-lb";
 
 export async function GET() {
   const convexProject = process.env.TAMS_CONVEX_PROJECT || "tams-hub-prototype";
@@ -8,9 +9,9 @@ export async function GET() {
   const convexHost = hostForUrl(convexUrl);
   const nextAuthSecret = process.env.NEXTAUTH_SECRET || "";
   const nextAuthUrl = process.env.NEXTAUTH_URL || "";
-  const codexLbBaseUrl =
-    process.env.CODEX_LB_BASE_URL || "https://codex-lb-production-6b47.up.railway.app/v1";
-  const codexLbModel = process.env.CODEX_LB_MODEL || "gpt-5.4-mini";
+  const codexLbBaseUrl = process.env.CODEX_LB_BASE_URL || defaultCodexLbBaseUrl;
+  const codexLbModel = process.env.CODEX_LB_MODEL || defaultCodexLbModel;
+  const codexLbReasoning = codexLbReasoningEffort();
   const demoAuthEnabled = process.env.TAMS_DEMO_AUTH_ENABLED === "true";
   const authWarnings = [
     isPrototypeSecret(nextAuthSecret) ? "prototype secret" : "",
@@ -27,6 +28,7 @@ export async function GET() {
     codexLbConfigured: Boolean(process.env.CODEX_LB_API_KEY),
     codexLbBaseHost: hostForUrl(codexLbBaseUrl),
     codexLbModel,
+    codexLbReasoningEffort: codexLbReasoning,
     railwayConfigured: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
     railwayEnvironment: process.env.RAILWAY_ENVIRONMENT_NAME ?? process.env.RAILWAY_ENVIRONMENT,
     convexProject,

@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { withTimeout } from "@/lib/async-timeout";
+import { codexLbReasoningEffort, defaultCodexLbBaseUrl, defaultCodexLbModel } from "@/lib/codex-lb";
 import {
   compileVerificationSummary,
   makeVerificationCacheKey,
@@ -57,9 +58,6 @@ type DocumentSource = {
 type CodexLbContentPart =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } };
-
-const defaultCodexLbBaseUrl = "https://codex-lb-production-6b47.up.railway.app/v1";
-const defaultCodexLbModel = "gpt-5.4-mini";
 
 export async function POST(request: Request) {
   const actor = await getAccessActor();
@@ -478,6 +476,7 @@ async function extractWithCodexLb(input: {
   const completion = await withTimeout(
     client.chat.completions.create({
       model: input.model,
+      reasoning_effort: codexLbReasoningEffort(),
       temperature: 0,
       response_format: { type: "json_object" },
       messages: [
