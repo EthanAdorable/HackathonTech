@@ -787,9 +787,15 @@ function Topbar({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus | null>(null);
   const revisionApplication = applications.find((item) => item.status === "Revision Requested");
+  const revisionCompletion = revisionApplication ? getApplicationCompletion(revisionApplication) : null;
+  const revisionNotification = revisionApplication
+    ? revisionCompletion?.missing.length
+      ? `${revisionApplication.title} needs ${revisionCompletion.missing[0]} before resubmission.`
+      : `${revisionApplication.title} has a SADU revision request ready for response.`
+    : "";
   const draftCount = applications.filter((item) => item.status === "Draft" || item.status === "Template Completion").length;
   const notificationItems = [
-    revisionApplication ? `${revisionApplication.title} needs revised budget details.` : "",
+    revisionNotification,
     draftCount ? `${draftCount} application${draftCount === 1 ? "" : "s"} still need template completion.` : "",
     serviceStatus && !serviceStatus.railwayProjectIdConfigured ? "Railway is waiting for login and a dedicated project ID." : "",
     serviceStatus?.authWarnings.length ? `Auth safety review: ${serviceStatus.authWarnings.join(", ")}.` : "",
@@ -866,6 +872,12 @@ function DashboardView({
   const stats = getDashboardStats(activeUser.role, applications, queueCount);
   const [onlyActionItems, setOnlyActionItems] = useState(false);
   const revisionApplication = applications.find((app) => app.status === "Revision Requested");
+  const revisionCompletion = revisionApplication ? getApplicationCompletion(revisionApplication) : null;
+  const revisionAlertText = revisionApplication
+    ? revisionCompletion?.missing.length
+      ? `${revisionApplication.title} needs revisions for ${revisionCompletion.missing.slice(0, 2).join("; ")}.`
+      : `${revisionApplication.title} has SADU revision notes waiting for response.`
+    : "";
   const dashboardDate = formatDashboardDate(applications);
   const displayedApplications = onlyActionItems
     ? applications.filter((app) => app.status === "Revision Requested" || app.status === "Draft" || app.status === "Submitted to SADU")
@@ -890,7 +902,7 @@ function DashboardView({
       {revisionApplication && (
         <section className="guide-alert">
           <Sparkles size={18} />
-          <div><strong>TAMS Guide Alert</strong><p>{revisionApplication.title} needs revised budget and participant clarification. Deadline in 6 days.</p></div>
+          <div><strong>TAMS Guide Alert</strong><p>{revisionAlertText}</p></div>
           <button className="gold-button" onClick={() => onSelect(revisionApplication.id)}><Eye size={15} /> View</button>
         </section>
       )}

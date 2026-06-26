@@ -72,7 +72,9 @@ assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resub
 assert.doesNotMatch(appComponent, /Revision Requested"\) \?\? applications\[0\]/, "Dashboard guide alert should not fall back to a non-revision application");
 assert.match(appComponent, /\{revisionApplication && \(/, "Dashboard guide alert should only render when a revision application exists");
 assert.match(appComponent, /onSelect\(revisionApplication\.id\)/, "Dashboard guide alert should open the revision application");
-assert.match(appComponent, /\{revisionApplication\.title\} needs revised budget/, "Dashboard guide alert should describe the selected revision application");
+assert.match(appComponent, /const revisionAlertText = revisionApplication/, "Dashboard guide alert should derive text from the selected revision application");
+assert.match(appComponent, /getApplicationCompletion\(revisionApplication\)/, "Revision alerts should use application completion data");
+assert.doesNotMatch(appComponent, /needs revised budget and participant clarification\. Deadline in 6 days\./, "Dashboard guide alert should not use fixed revision copy");
 assert.match(appComponent, /<SendHorizonal size=\{16\} \/> Submit to SADU/, "Primary submission command should keep a consistent Lucide icon");
 assert.match(appComponent, /Revision Inconsistency/, "File event guide should show a reference-style revision alert");
 assert.match(appComponent, /application\.status === "Revision Requested"/, "File event revision alert should only appear for applications with requested revisions");
@@ -103,9 +105,10 @@ assert.match(appComponent, /aria-label="View notifications"/, "Topbar notificati
 assert.match(appComponent, /aria-controls=\{notificationsOpen \? "notification-popover" : undefined\}/, "Notification trigger should reference the open popover");
 assert.match(appComponent, /id="notification-popover" role="region" aria-label="Notifications"/, "Notification popover should expose a named region");
 assert.match(appComponent, /const notificationItems = \[/, "Topbar notifications should derive from current app and service state");
-assert.match(appComponent, /revisionApplication \? `\$\{revisionApplication\.title\} needs revised budget details\.`/, "Topbar revision alerts should derive from the current revision application");
+assert.match(appComponent, /const revisionNotification = revisionApplication/, "Topbar revision alerts should derive from the current revision application");
 assert.match(appComponent, /serviceStatus && !serviceStatus\.railwayProjectIdConfigured/, "Topbar setup alerts should derive from service readiness state");
 assert.doesNotMatch(appComponent, /<span>Tech Career Fair needs revised budget details\.<\/span>/, "Topbar notifications should not use hardcoded revision copy");
+assert.doesNotMatch(appComponent, /needs revised budget details/, "Topbar notifications should not assume a fixed revision reason");
 assert.match(appComponent, /showNewEvent=\{activeUser\.role === "Student Officer"\}/, "Topbar file-event CTA should be the single student officer create command");
 assert.doesNotMatch(appComponent, /activeUser\.role === "Student Officer" && <button className="primary-button" onClick=\{onNewEvent\}/, "Dashboard welcome panel should not duplicate the topbar file-event CTA");
 assert.match(globalCss, /\.notification-dot/, "Topbar notification bell should include the reference unread dot");
