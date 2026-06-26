@@ -9,6 +9,7 @@
  */
 
 import type * as applications from "../applications.js";
+import type * as guide from "../guide.js";
 import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
@@ -20,6 +21,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   applications: typeof applications;
+  guide: typeof guide;
   seed: typeof seed;
   users: typeof users;
 }>;

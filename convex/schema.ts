@@ -58,4 +58,12 @@ export default defineSchema({
     note: v.string(),
     createdAt: v.string(),
   }).index("by_application", ["applicationId"]),
+  guideLogs: defineTable({
+    applicationId: v.id("applications"),
+    mode: v.string(),
+    question: v.optional(v.string()),
+    source: v.string(),
+    lines: v.array(v.string()),
+    createdAt: v.string(),
+  }).index("by_application", ["applicationId"]),
 });

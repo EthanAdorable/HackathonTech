@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   type EventApplication,
   getApplicationCompletion,
@@ -21,6 +24,7 @@ export async function POST(request: Request) {
   const mockLines = getMockLines(body);
 
   if (!process.env.OPENAI_API_KEY) {
+    await recordGuideLog(body, "mock", mockLines);
     return NextResponse.json({ source: "mock", lines: mockLines });
   }
 
@@ -60,9 +64,30 @@ export async function POST(request: Request) {
       ? text.split(/\n+/).map((line) => line.replace(/^[-*]\s*/, "").trim()).filter(Boolean).slice(0, 6)
       : mockLines;
 
+    await recordGuideLog(body, "openai", lines);
     return NextResponse.json({ source: "openai", lines });
   } catch {
+    await recordGuideLog(body, "mock-fallback", mockLines);
     return NextResponse.json({ source: "mock-fallback", lines: mockLines });
+  }
+}
+
+async function recordGuideLog(request: GuideRequest, source: string, lines: string[]) {
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+  const applicationId = request.application.id;
+  if (!convexUrl || !applicationId || applicationId.startsWith("app-")) return;
+
+  try {
+    const client = new ConvexHttpClient(convexUrl);
+    await client.mutation(api.guide.record, {
+      applicationId: applicationId as Id<"applications">,
+      mode: request.mode,
+      question: request.question,
+      source,
+      lines,
+    });
+  } catch {
+    // Guidance should still be returned even if audit logging is unavailable.
   }
 }
 

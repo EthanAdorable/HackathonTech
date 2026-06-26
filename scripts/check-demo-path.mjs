@@ -32,10 +32,13 @@ assert.ok(
 
 const appComponent = readFileSync(new URL("../components/tams-hub-app.tsx", import.meta.url), "utf8");
 const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+const convexSchema = readFileSync(new URL("../convex/schema.ts", import.meta.url), "utf8");
 const convexApplications = readFileSync(new URL("../convex/applications.ts", import.meta.url), "utf8");
+const convexGuide = readFileSync(new URL("../convex/guide.ts", import.meta.url), "utf8");
 const convexUsers = readFileSync(new URL("../convex/users.ts", import.meta.url), "utf8");
 const authRoute = readFileSync(new URL("../app/api/auth/[...nextauth]/route.ts", import.meta.url), "utf8");
 const authConfig = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf8");
+const tamsGuideRoute = readFileSync(new URL("../app/api/tams-guide/route.ts", import.meta.url), "utf8");
 const packageJson = readFileSync(new URL("../package.json", import.meta.url), "utf8");
 const nextConfig = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
 const convexApplicationsRoute = readFileSync(new URL("../app/api/convex-applications/route.ts", import.meta.url), "utf8");
@@ -157,6 +160,12 @@ assert.match(appComponent, /guideModeLabels/, "Guide output should identify the 
 assert.match(appComponent, /className="guide-output" role="status" aria-live="polite"/, "Guide workbench output should be announced politely");
 assert.doesNotMatch(globalCss, /var\(--green\)/, "Guide styles should use defined green tokens");
 assert.match(appComponent, /Human review required/, "Guide output should preserve the human-review boundary");
+assert.match(convexSchema, /guideLogs: defineTable/, "Convex schema should include auditable TAMS Guide logs");
+assert.match(convexGuide, /export const record = mutation/, "Convex guide function should record generated guidance");
+assert.match(convexGuide, /export const listForApplication = query/, "Convex guide function should expose guidance logs by application");
+assert.match(tamsGuideRoute, /recordGuideLog\(body, "mock"/, "Mock guide responses should be audit logged when Convex is configured");
+assert.match(tamsGuideRoute, /recordGuideLog\(body, "openai"/, "OpenAI guide responses should be audit logged when Convex is configured");
+assert.match(tamsGuideRoute, /applicationId\.startsWith\("app-"\)/, "Guide logging should skip local prototype draft ids");
 assert.match(convexApplicationsRoute, /ConvexHttpClient/, "Frontend hydration route should read from the configured Convex deployment");
 assert.match(convexApplicationsRoute, /api\.applications\.listWithDetails/, "Frontend hydration route should load detailed Convex applications");
 assert.match(appComponent, /fetch\("\/api\/convex-applications"\)/, "App should try to hydrate application data from Convex");
@@ -212,6 +221,7 @@ assert.match(readme, /conneura\/tams-hub-prototype/, "README should record the d
 assert.match(readme, /zealous-ocelot-537\.convex\.cloud/, "README should record the configured Convex client URL");
 assert.match(readme, /loads seeded applications from the dedicated Convex deployment/, "README should describe Convex-backed application reads");
 assert.match(readme, /New application creation, template field edits, admin template availability, status transitions/, "README should describe Convex-backed create, edit, admin, and workflow actions");
+assert.match(readme, /TAMS Guide audit logs sync through Convex-backed routes/, "README should describe Convex-backed guide audit logs");
 assert.match(readme, /local fallback for prototype demos/, "README should describe the remaining local prototype fallback");
 assert.match(readme, /Railway is still waiting for CLI login and a dedicated Railway project ID/, "README should describe current Railway setup blocker");
 assert.match(readme, /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
