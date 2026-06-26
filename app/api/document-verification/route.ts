@@ -456,8 +456,8 @@ async function extractPdfText(buffer: Buffer) {
         mode: "text_pdf" as ExtractionMode,
       };
     }
-  } catch {
-    // Fall through to the lightweight parser so verification still fails closed.
+  } catch (error) {
+    console.warn("PDFParse failed; falling back to lightweight PDF text extraction.", error);
   } finally {
     await parser?.destroy().catch(() => undefined);
   }

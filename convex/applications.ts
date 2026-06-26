@@ -32,7 +32,7 @@ const status = v.union(
 
 const defaultRubricVersionId = "app-apf-verf-rubric-v1";
 const defaultExtractionSchemaVersion = "app-apf-verf-extraction-v1";
-const defaultPromptVersion = "app-apf-verf-prompt-v4";
+const defaultPromptVersion = "app-apf-verf-prompt-v5";
 const verificationDocumentTypes = new Set(["app", "apf", "verf"]);
 const formReviewRoles = new Set(["Admin", "SADU Associate"]);
 
