@@ -149,7 +149,7 @@ export const getCachedExtraction = query({
       .withIndex("by_cache_key", (q: any) => q.eq("cacheKey", args.cacheKey))
       .collect();
     const reusableRun = runs
-      .filter((run: any) => run.status !== "extracting" && run.status !== "queued" && run.status !== "failed_ai_timeout")
+      .filter((run: any) => run.extractionJson && !["extracting", "queued"].includes(run.status) && !String(run.status).startsWith("failed_"))
       .sort((a: any, b: any) => (b.completedAt ?? b.startedAt).localeCompare(a.completedAt ?? a.startedAt))[0];
     if (!reusableRun) return null;
 

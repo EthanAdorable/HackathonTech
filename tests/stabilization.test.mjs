@@ -309,6 +309,9 @@ test("document verification route is separate, Codex-LB only, and fail-closed", 
   assert.match(sources.verificationRoute, /api\.verification\.listActiveDocuments/);
   assert.match(sources.verificationRoute, /api\.verification\.getCachedExtraction/);
   assert.match(sources.verificationRoute, /normalizeCachedResults/);
+  assert.match(sources.verificationRoute, /collectAttachmentUrls/);
+  assert.match(sources.verificationRoute, /\["active", "uploaded"\]\.includes\(attachment\.status\)/);
+  assert.match(sources.verificationRoute, /outcome\.extraction\?\.documentType \?\? outcome\.documentType/);
   assert.match(sources.verificationRoute, /CODEX_LB_API_KEY is required; verification fails closed/);
   assert.match(sources.verificationRoute, /validateExtractionJson/);
   assert.match(sources.verificationRoute, /response_format: \{ type: "json_object" \}/);
@@ -324,4 +327,6 @@ test("document verification route is separate, Codex-LB only, and fail-closed", 
   assert.match(sources.convexVerification, /saveVerificationOutcome/);
   assert.match(sources.convexVerification, /getCachedExtraction/);
   assert.match(sources.convexVerification, /by_cache_key/);
+  assert.match(sources.convexVerification, /run\.extractionJson/);
+  assert.match(sources.convexVerification, /startsWith\("failed_"\)/);
 });

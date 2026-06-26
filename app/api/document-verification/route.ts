@@ -47,6 +47,28 @@ type ActiveDocument = {
   promptVersion: string;
 };
 
+type HydratedAttachment = {
+  id?: string;
+  attachmentId?: string;
+  status?: string;
+  url?: string | null;
+};
+
+type HydratedRequirement = {
+  activeAttachment?: HydratedAttachment | null;
+};
+
+type HydratedTemplate = {
+  attachments?: HydratedAttachment[];
+  requirements?: HydratedRequirement[];
+};
+
+type HydratedApplication = {
+  attachments?: HydratedAttachment[];
+  templates?: HydratedTemplate[];
+  requirements?: HydratedRequirement[];
+};
+
 type DocumentSource = {
   text: string;
   locations: string[];
@@ -91,10 +113,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ source: "convex", error: "No active APP, APF, or VERF uploaded documents were found." }, { status: 409 });
     }
 
-    const urlsByAttachment = new Map<string, string>();
-    for (const attachment of application.attachments ?? []) {
-      if (attachment.status === "active" && attachment.url) urlsByAttachment.set(attachment.id, attachment.url);
-    }
+    const urlsByAttachment = collectAttachmentUrls(application);
 
     const outcomes = [];
     const codexLbApiKey = process.env.CODEX_LB_API_KEY;
@@ -139,6 +158,7 @@ export async function POST(request: Request) {
         model = cached.run.model;
         aiSource = cached.run.aiSource ? `${cached.run.aiSource}:cache` : "cache";
         outcomes.push({
+          documentType: document.documentType,
           runId,
           status,
           extraction,
@@ -231,6 +251,7 @@ export async function POST(request: Request) {
       }
 
       outcomes.push({
+        documentType: document.documentType,
         runId,
         status,
         extraction,
@@ -250,7 +271,7 @@ export async function POST(request: Request) {
       const blockers = outcome.results.filter((result) => result.severity === "critical" && result.status === "fail");
       const warnings = outcome.results.filter((result) => result.severity === "warning" && ["warning", "manual_review"].includes(result.status));
       return {
-        documentType: outcome.extraction?.documentType ?? "unknown",
+        documentType: outcome.extraction?.documentType ?? outcome.documentType,
         status: outcome.status,
         fieldCount: outcome.extraction?.normalizedFields.length ?? 0,
         confidence: outcome.extraction?.confidence ?? 0,
@@ -296,6 +317,25 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+}
+
+function collectAttachmentUrls(application: HydratedApplication) {
+  const urlsByAttachment = new Map<string, string>();
+  const addAttachment = (attachment: HydratedAttachment | null | undefined) => {
+    if (!attachment?.url) return;
+    if (attachment.status && !["active", "uploaded"].includes(attachment.status)) return;
+    const id = attachment.attachmentId ?? attachment.id;
+    if (id) urlsByAttachment.set(String(id), attachment.url);
+  };
+
+  for (const attachment of application.attachments ?? []) addAttachment(attachment);
+  for (const template of application.templates ?? []) {
+    for (const attachment of template.attachments ?? []) addAttachment(attachment);
+    for (const requirement of template.requirements ?? []) addAttachment(requirement.activeAttachment);
+  }
+  for (const requirement of application.requirements ?? []) addAttachment(requirement.activeAttachment);
+
+  return urlsByAttachment;
 }
 
 function activeDocumentSignature(documents: ActiveDocument[]) {
