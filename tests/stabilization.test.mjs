@@ -348,6 +348,7 @@ test("document verification route is separate, Codex-LB only, and fail-closed", 
   assert.match(sources.verificationRoute, /extractPdfText/);
   assert.match(sources.verificationRoute, /PDFParse/);
   assert.match(sources.verificationRoute, /\[middle omitted\]/);
+  assert.match(sources.verificationRoute, /repairExtractionFromSourceText/);
   assert.doesNotMatch(sources.verificationRoute, /mock/i);
   assert.match(sources.convexSchema, /uploadedDocuments/);
   assert.match(sources.convexSchema, /extractionRuns/);

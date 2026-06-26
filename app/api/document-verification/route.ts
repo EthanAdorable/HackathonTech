@@ -206,7 +206,7 @@ export async function POST(request: Request) {
               extractionMode: source.mode,
             });
             if (validation.ok) {
-              extraction = validation.extraction;
+              extraction = repairExtractionFromSourceText(validation.extraction, document.documentType, source.text);
             } else {
               extractionError = validation.error;
               status = "failed_schema";
@@ -367,6 +367,42 @@ function normalizeCachedResults(results: Array<Record<string, unknown>>): Verifi
     failureReason: typeof result.failureReason === "string" ? result.failureReason : undefined,
     documentType: typeof result.documentType === "string" ? result.documentType : undefined,
   }));
+}
+
+function repairExtractionFromSourceText(extraction: DocumentExtraction, documentType: string, sourceText: string): DocumentExtraction {
+  if (documentType !== "app") return extraction;
+  const dateTimes = extractDateTimeCandidates(sourceText);
+  if (dateTimes.length < 2) return extraction;
+  const sorted = dateTimes.sort((a, b) => a.timestamp - b.timestamp);
+  const startDateTime = sorted[0]?.value;
+  const endDateTime = sorted[sorted.length - 1]?.value;
+  if (!startDateTime || !endDateTime || startDateTime === endDateTime) return extraction;
+
+  return {
+    ...extraction,
+    documentData: {
+      ...extraction.documentData,
+      startDateTime,
+      endDateTime,
+    },
+    normalizedFields: extraction.normalizedFields.map((field) => {
+      if (field.fieldId === "startDateTime") return { ...field, value: startDateTime, evidence: [startDateTime], sourceLocations: ["pdf:date-time-repair"] };
+      if (field.fieldId === "endDateTime") return { ...field, value: endDateTime, evidence: [endDateTime], sourceLocations: ["pdf:date-time-repair"] };
+      return field;
+    }),
+    missingFields: extraction.missingFields.filter((fieldId) => !["startDateTime", "endDateTime"].includes(fieldId)),
+  };
+}
+
+function extractDateTimeCandidates(sourceText: string) {
+  const matches = [...sourceText.matchAll(/\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}(?:\s*[AP]M)?\b/gi)];
+  return matches
+    .map((match) => {
+      const value = match[0].replace(/\s+/g, " ").trim();
+      const timestamp = Date.parse(value);
+      return Number.isNaN(timestamp) ? null : { value, timestamp };
+    })
+    .filter((item): item is { value: string; timestamp: number } => Boolean(item));
 }
 
 function missingRequiredDocumentResults(documents: ActiveDocument[]): VerificationResult[] {
