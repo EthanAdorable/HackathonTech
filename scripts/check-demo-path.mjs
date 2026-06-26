@@ -81,6 +81,10 @@ assert.match(appComponent, /application\.status === "Revision Requested"/, "File
 assert.match(appComponent, /required document\(s\) missing/, "File event guide should show a separate missing-documents notice");
 assert.match(appComponent, /className="warning-box" role="alert"/, "File event revision warning should be announced as an alert");
 assert.match(appComponent, /className="guide-says" role="status" aria-live="polite"/, "File event guide output should be announced politely");
+assert.match(appComponent, /const missingCards = getApplicationCompletion\(application\)\.missing/, "Status required actions should derive from current template gaps");
+assert.match(appComponent, /Respond to SADU revision notes/, "Revision required actions should fall back to thread response when fields are complete");
+assert.doesNotMatch(appComponent, /Upload revised budget breakdown/, "Status required actions should not use fixed budget-only revision copy");
+assert.doesNotMatch(appComponent, /Proposal says 120 but registration form says 150/, "Status required actions should not use fixed participant mismatch copy");
 assert.match(globalCss, /\.requirement-tile > svg/, "Upload requirement icons should use reference-style icon chips");
 assert.match(appComponent, /Student Org Officer/, "UI role labels should match the reference screens");
 assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy should match the reference student view");
@@ -138,8 +142,8 @@ assert.match(appComponent, /Final Approval/, "Application progress tracker shoul
 assert.match(appComponent, /formatMilestoneDate/, "Application progress tracker should use compact reference-style dates");
 assert.match(appComponent, /milestone\.done \? "done" : ""/, "Application progress tracker should allow active milestones to remain highlighted after completion");
 assert.match(globalCss, /\.progress-step\.done\.active > span/, "Completed active progress milestones should keep the reference gold halo");
-assert.match(appComponent, /Upload revised budget breakdown/, "Revision status should show reference-style required actions");
-assert.match(appComponent, /Clarify expected number of participants/, "Revision status should call out participant count reconciliation");
+assert.match(appComponent, /application\.status === "Revision Requested" \? `Revise \$\{title\.replace\(" Template", ""\)\}`/, "Revision status should derive required action labels from template gaps");
+assert.match(appComponent, /const missingCards = getApplicationCompletion\(application\)\.missing\.slice\(0, 3\)\.map/, "Revision status should use completion data for required actions");
 assert.match(appComponent, /Application thread message/, "Application status communication panel should include an inline message composer");
 assert.match(appComponent, /placeholder=\{"Type a message to SADU\\u2026"\}/, "Application status composer should match the reference thread prompt");
 assert.match(appComponent, /aria-label="Send Application Thread Message"/, "Application status composer send control should be accessible");

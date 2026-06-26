@@ -1333,23 +1333,24 @@ function getProgressMilestones(application: EventApplication) {
 }
 
 function getRequiredActionCards(application: EventApplication) {
+  const missingCards = getApplicationCompletion(application).missing.slice(0, 3).map((item) => {
+    const [title, detail] = item.split(":");
+    const actionTitle = application.status === "Revision Requested" ? `Revise ${title.replace(" Template", "")}` : title;
+    return { title: actionTitle, detail: detail?.trim() || "Complete before proceeding." };
+  });
+
+  if (missingCards.length) return missingCards;
+
   if (application.status === "Revision Requested") {
     return [
       {
-        title: "Upload revised budget breakdown",
-        detail: "Include itemized food, materials, and honorarium costs.",
-      },
-      {
-        title: "Clarify expected number of participants",
-        detail: "Proposal says 120 but registration form says 150 - reconcile both.",
+        title: "Respond to SADU revision notes",
+        detail: "Review the communication thread and upload the requested clarification before resubmission.",
       },
     ];
   }
 
-  return getApplicationCompletion(application).missing.slice(0, 3).map((item) => {
-    const [title, detail] = item.split(":");
-    return { title, detail: detail?.trim() || "Complete before proceeding." };
-  });
+  return [];
 }
 
 function ReviewerInsightsPanel({ application, completionPercent }: { application: EventApplication; completionPercent: number }) {
