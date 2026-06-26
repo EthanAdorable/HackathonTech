@@ -8,6 +8,8 @@ export type AccessActor = {
   title?: string;
 };
 
+const FORM_REVIEW_ROLES = new Set<Role>(["SADU Associate", "Admin"]);
+
 export function canSeeAllApplications(actor: AccessActor) {
   return actor.role === "Admin" || actor.role === "SADU Associate";
 }
@@ -28,7 +30,11 @@ export function canEditApplication(actor: AccessActor, application: Pick<EventAp
 }
 
 export function canReviewAsSadu(actor: AccessActor) {
-  return actor.role === "SADU Associate";
+  return FORM_REVIEW_ROLES.has(actor.role);
+}
+
+export function canHandleForms(actor: AccessActor) {
+  return canReviewAsSadu(actor);
 }
 
 export function canEndorseApplication(actor: AccessActor, application: Pick<EventApplication, "adviserId">) {

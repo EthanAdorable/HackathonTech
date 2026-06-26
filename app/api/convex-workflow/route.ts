@@ -196,7 +196,7 @@ export async function POST(request: Request) {
         if (!application || !canEditApplication(actor, application)) throw new Error("Only the application owner can submit to SADU.");
         assertStatus(application!.status, ["AI Pre-check", "Pending Adviser Endorsement"], "Submission");
       } else if (payload.status === "Under Review") {
-        if (!canReviewAsSadu(actor)) throw new Error("Only SADU associates can start review.");
+        if (!canReviewAsSadu(actor)) throw new Error("Only SADU associates or campus administrators can start review.");
         assertStatus(application!.status, ["Submitted to SADU", "Resubmitted"], "SADU review");
       } else {
         throw new Error(`Use the ${payload.status ?? "requested"} workflow action.`);
@@ -208,7 +208,7 @@ export async function POST(request: Request) {
         note: payload.note ?? "Status updated in TAMS Hub.",
       }));
     } else if (payload.action === "requestRevision" && applicationId) {
-      if (!canReviewAsSadu(actor)) throw new Error("Only SADU associates can request revisions.");
+      if (!canReviewAsSadu(actor)) throw new Error("Only SADU associates or campus administrators can request revisions.");
       assertStatus(application!.status, ["Under Review"], "Revision request");
       await withTimeout(client.mutation(api.applications.requestRevision, {
         actor,
@@ -224,7 +224,7 @@ export async function POST(request: Request) {
         note: payload.note,
       }));
     } else if (payload.action === "approve" && applicationId) {
-      if (!canReviewAsSadu(actor)) throw new Error("Only SADU associates can approve applications.");
+      if (!canReviewAsSadu(actor)) throw new Error("Only SADU associates or campus administrators can approve applications.");
       assertStatus(application!.status, ["Under Review"], "Approval");
       await withTimeout(client.mutation(api.applications.approve, {
         actor,
@@ -232,7 +232,7 @@ export async function POST(request: Request) {
         body: payload.body,
       }));
     } else if (payload.action === "reject" && applicationId) {
-      if (!canReviewAsSadu(actor)) throw new Error("Only SADU associates can reject applications.");
+      if (!canReviewAsSadu(actor)) throw new Error("Only SADU associates or campus administrators can reject applications.");
       assertStatus(application!.status, ["Under Review"], "Rejection");
       await withTimeout(client.mutation(api.applications.reject, {
         actor,

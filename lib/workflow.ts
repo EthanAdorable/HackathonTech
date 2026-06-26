@@ -29,6 +29,10 @@ function actorMetadata(actor?: WorkflowActor) {
     : {};
 }
 
+function canHandleFormReview(actor?: WorkflowActor) {
+  return actor?.role === "SADU Associate" || actor?.role === "Admin";
+}
+
 function validateTransition(application: EventApplication, status: EventStatus, actor?: WorkflowActor) {
   const errors: string[] = [];
   const from = application.status;
@@ -54,12 +58,14 @@ function validateTransition(application: EventApplication, status: EventStatus, 
     }
   }
 
-  if (status === "Under Review" && !["Submitted to SADU", "Resubmitted"].includes(from)) {
-    errors.push(`SADU review is not allowed from ${from}.`);
+  if (status === "Under Review") {
+    if (!canHandleFormReview(actor)) errors.push("Only SADU associates or campus administrators can start form review.");
+    if (!["Submitted to SADU", "Resubmitted"].includes(from)) errors.push(`SADU review is not allowed from ${from}.`);
   }
 
-  if (status === "Revision Requested" && from !== "Under Review") {
-    errors.push(`Revision request is not allowed from ${from}.`);
+  if (status === "Revision Requested") {
+    if (!canHandleFormReview(actor)) errors.push("Only SADU associates or campus administrators can request revisions.");
+    if (from !== "Under Review") errors.push(`Revision request is not allowed from ${from}.`);
   }
 
   if (status === "Resubmitted") {
@@ -68,8 +74,9 @@ function validateTransition(application: EventApplication, status: EventStatus, 
     if (!readiness.ready) errors.push(...readiness.missing);
   }
 
-  if ((status === "SADU Approved" || status === "Rejected") && from !== "Under Review") {
-    errors.push(`${status} is not allowed from ${from}.`);
+  if (status === "SADU Approved" || status === "Rejected") {
+    if (!canHandleFormReview(actor)) errors.push("Only SADU associates or campus administrators can approve or reject forms.");
+    if (from !== "Under Review") errors.push(`${status} is not allowed from ${from}.`);
   }
 
   if (status === "SADU Approved" && !getAdviserEndorsementReadiness(application).complete) {

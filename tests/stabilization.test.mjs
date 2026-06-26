@@ -21,7 +21,7 @@ import {
   canReadApplication,
   canReviewAsSadu,
 } from "../lib/access-policy.ts";
-import { getSubmissionReadiness, seedApplications } from "../lib/tams-data.ts";
+import { getSubmissionReadiness, seedApplications, users } from "../lib/tams-data.ts";
 import { tryTransitionApplication } from "../lib/workflow.ts";
 
 const sources = {
@@ -69,19 +69,37 @@ function makeIncompleteRevisionFixture() {
 }
 
 test("access policy enforces owner, adviser, SADU, and admin boundaries", () => {
+  assert.deepEqual(users.map((user) => user.role).sort(), ["Admin", "Faculty Adviser", "SADU Associate", "Student Officer"]);
   assert.ok(canReadApplication(student, submittedApplication));
   assert.ok(!canReadApplication(otherStudent, submittedApplication));
+  assert.ok(canReadApplication(adviser, submittedApplication));
+  assert.ok(!canReadApplication({ ...adviser, id: "other-adviser" }, submittedApplication));
   assert.ok(canReadApplication(sadu, submittedApplication));
   assert.ok(canReadApplication(admin, submittedApplication));
   assert.ok(canEditApplication(student, submittedApplication));
+  assert.ok(!canEditApplication(otherStudent, submittedApplication));
+  assert.ok(!canEditApplication(adviser, submittedApplication));
   assert.ok(!canEditApplication(sadu, submittedApplication));
+  assert.ok(!canEditApplication(admin, submittedApplication));
   assert.ok(canCreateApplication(student));
+  assert.ok(!canCreateApplication(adviser));
+  assert.ok(!canCreateApplication(sadu));
   assert.ok(!canCreateApplication(admin));
   assert.ok(canReviewAsSadu(sadu));
+  assert.ok(canReviewAsSadu(admin));
+  assert.ok(!canReviewAsSadu(student));
   assert.ok(!canReviewAsSadu(adviser));
   assert.ok(canEndorseApplication(adviser, submittedApplication));
+  assert.ok(!canEndorseApplication({ ...adviser, id: "other-adviser" }, submittedApplication));
+  assert.ok(!canEndorseApplication(sadu, submittedApplication));
+  assert.ok(!canEndorseApplication(admin, submittedApplication));
   assert.ok(canAdministerDemoData(admin));
   assert.ok(canAdministerTemplates(admin));
+  assert.ok(!canAdministerDemoData(student));
+  assert.ok(!canAdministerDemoData(sadu));
+  assert.ok(!canAdministerTemplates(student));
+  assert.ok(!canAdministerTemplates(sadu));
+  assert.ok(!canAdministerTemplates(adviser));
 });
 
 test("workflow rejects incomplete resubmission and unendorsed SADU submission", () => {
@@ -106,6 +124,27 @@ test("workflow completes SADU review and approval for an endorsed submission", (
   assert.ok(approved.application.timeline.some((entry) => entry.actorRole === "SADU Associate"));
 });
 
+test("admin and SADU are form reviewers, but only admin administers templates", () => {
+  for (const reviewer of [sadu, admin]) {
+    assert.equal(canReviewAsSadu(reviewer), true, `${reviewer.role} should be able to handle review decisions`);
+  }
+
+  for (const nonReviewer of [student, adviser]) {
+    assert.equal(canReviewAsSadu(nonReviewer), false, `${nonReviewer.role} should not handle review decisions`);
+  }
+
+  assert.equal(canAdministerTemplates(admin), true);
+  assert.equal(canAdministerTemplates(sadu), false);
+  assert.equal(canAdministerTemplates(student), false);
+  assert.equal(canAdministerTemplates(adviser), false);
+
+  const adminReview = tryTransitionApplication(submittedApplication, "Under Review", "Admin opened form review.", admin);
+  assert.equal(adminReview.ok, true);
+  assert.equal(adminReview.application.timeline.at(-1).actorRole, "Admin");
+  assert.equal(tryTransitionApplication(submittedApplication, "Under Review", "Student tried review.", student).ok, false);
+  assert.equal(tryTransitionApplication(submittedApplication, "Under Review", "Adviser tried review.", adviser).ok, false);
+});
+
 test("auth config keeps demo credentials explicit and role-aware", () => {
   assert.match(sources.auth, /TAMS_DEMO_AUTH_ENABLED/);
   assert.match(sources.auth, /if \(!isDemoAuthEnabled\(\)\) return null/);
@@ -125,6 +164,10 @@ test("API routes derive access from authenticated server actors", () => {
   assert.match(sources.workflowRoute, /canReviewAsSadu\(actor\)/);
   assert.match(sources.workflowRoute, /canEndorseApplication\(actor, application\)/);
   assert.match(sources.workflowRoute, /canAdministerTemplates\(actor\)/);
+  assert.match(sources.workflowRoute, /canAdministerTemplates\(actor\)[\s\S]*api\.applications\.updateTemplateAvailability/);
+  assert.match(sources.workflowRoute, /canReviewAsSadu\(actor\)[\s\S]*api\.applications\.requestRevision/);
+  assert.match(sources.workflowRoute, /canReviewAsSadu\(actor\)[\s\S]*api\.applications\.approve/);
+  assert.match(sources.workflowRoute, /canReviewAsSadu\(actor\)[\s\S]*api\.applications\.reject/);
   assert.match(sources.workflowRoute, /client\.query\(api\.applications\.get, \{ applicationId, actor \}\)/);
   assert.match(sources.middleware, /\/api\/document-verification\/:path\*/, "document verification route should be protected by auth middleware");
 });
@@ -159,7 +202,12 @@ test("role-specific UI scopes creation, admin, review, and adviser affordances",
   assert.match(sources.app, /showNewEvent=\{activeUser\.role === "Student Officer"\}/);
   assert.match(sources.app, /activeUser\.role === "Admin" && <ServiceReadinessPanel/);
   assert.match(sources.app, /activeUser\.role === "Admin" && <AdminOperationsPanel/);
-  assert.match(sources.app, /activeUser\.role === "SADU Associate" && <ReviewerInsightsPanel/);
+  assert.match(sources.app, /const canReviewForms = canReviewApplicationForms\(activeUser\.role\)/);
+  assert.match(sources.app, /canReviewForms && <ReviewerInsightsPanel/);
+  assert.match(sources.app, /Admin:\s*\{[\s\S]*actionFilterLabel: "Admin Review"/);
+  assert.match(sources.app, /"SADU Associate":\s*\{[\s\S]*actionFilterLabel: "SADU Queue"/);
+  assert.match(sources.app, /function canReviewApplicationForms\(role: Role\)[\s\S]*role === "SADU Associate" \|\| role === "Admin"/);
+  assert.match(sources.app, /if \(canReviewApplicationForms\(role\)\)/);
   assert.match(sources.app, /<WorkflowActions role=\{activeUser\.role\}/);
   assert.match(sources.app, /activeUser\.role === "Faculty Adviser"/);
   assert.match(sources.app, /visibleApplications = useMemo/);

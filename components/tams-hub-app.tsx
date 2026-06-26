@@ -145,6 +145,102 @@ const roleIcons: Record<Role, ReactNode> = {
   Admin: <Settings2 size={16} />,
 };
 
+type DashboardAffordance = {
+  icon: ReactNode;
+  title: string;
+  text: string;
+};
+
+type RoleDashboardMetadata = {
+  displayName: string;
+  welcomeName: string;
+  dashboardIntro: string;
+  actionFilterLabel: string;
+  actionStatuses: EventStatus[];
+  statLabels: {
+    pending: string;
+    needsAction: string;
+    approved: string;
+    messages: string;
+  };
+  affordances: DashboardAffordance[];
+};
+
+const roleDashboardMetadata: Record<Role, RoleDashboardMetadata> = {
+  "Student Officer": {
+    displayName: "Student Org Officer",
+    welcomeName: "Student Council Officer",
+    dashboardIntro: "Draft events, complete requirements, respond to revisions, and track SADU review from one filing desk.",
+    actionFilterLabel: "Officer Action",
+    actionStatuses: ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"],
+    statLabels: {
+      pending: "In SADU Review",
+      needsAction: "Officer Tasks",
+      approved: "Approved Events",
+      messages: "Review Messages",
+    },
+    affordances: [
+      { icon: <FilePlus2 />, title: "File event packets", text: "Start or continue template requirements before SADU intake." },
+      { icon: <Sparkles />, title: "Use TAMS Guide", text: "Check missing fields, attachments, and revision wording." },
+      { icon: <MessageSquare />, title: "Reply to reviewers", text: "Keep adviser and SADU clarification threads moving." },
+    ],
+  },
+  "SADU Associate": {
+    displayName: "SADU Associate",
+    welcomeName: "SADU Review Associate",
+    dashboardIntro: "Review submitted applications, request precise revisions, and keep event approvals moving through SADU.",
+    actionFilterLabel: "SADU Queue",
+    actionStatuses: ["Submitted to SADU", "Under Review", "Resubmitted"],
+    statLabels: {
+      pending: "Review Queue",
+      needsAction: "Revision Follow-ups",
+      approved: "Approved by SADU",
+      messages: "Applicant Messages",
+    },
+    affordances: [
+      { icon: <ClipboardList />, title: "Review submissions", text: "Open event packets queued for SADU assessment." },
+      { icon: <AlertTriangle />, title: "Request revisions", text: "Flag incomplete templates and mismatched event details." },
+      { icon: <CheckCircle2 />, title: "Record decisions", text: "Approve complete applications or keep review notes visible." },
+    ],
+  },
+  "Faculty Adviser": {
+    displayName: "Organization Adviser",
+    welcomeName: "Organization Adviser",
+    dashboardIntro: "See organization filings awaiting endorsement and monitor revisions before they return to SADU.",
+    actionFilterLabel: "Endorsement Queue",
+    actionStatuses: ["Pending Adviser Endorsement", "Revision Requested"],
+    statLabels: {
+      pending: "Awaiting Endorsement",
+      needsAction: "Adviser Follow-ups",
+      approved: "Endorsed Approvals",
+      messages: "Org Messages",
+    },
+    affordances: [
+      { icon: <ClipboardCheck />, title: "Endorse applications", text: "Validate student organization filings before SADU review." },
+      { icon: <Eye />, title: "Monitor revisions", text: "Check whether requested updates are ready for resubmission." },
+      { icon: <MessageSquare />, title: "Guide officers", text: "Keep advisory context with the application thread." },
+    ],
+  },
+  Admin: {
+    displayName: "Campus Administrator",
+    welcomeName: "Campus Administrator",
+    dashboardIntro: "Manage campus-wide TAMS readiness, template availability, user roles, and deployment health.",
+    actionFilterLabel: "Admin Review",
+    actionStatuses: ["Submitted to SADU", "Under Review", "Resubmitted", "Revision Requested"],
+    statLabels: {
+      pending: "Campus Queue",
+      needsAction: "Config Watchlist",
+      approved: "Approved Events",
+      messages: "Audit Messages",
+    },
+    affordances: [
+      { icon: <Settings2 />, title: "Govern templates", text: "Tune required event filing templates for campus operations." },
+      { icon: <UsersRound />, title: "Review role access", text: "Check demo accounts and TAMS Access permission alignment." },
+      { icon: <Database />, title: "Monitor readiness", text: "Track Convex, Railway, auth, and guide service configuration." },
+    ],
+  },
+};
+
 const statusTone: Record<EventStatus, string> = {
   Draft: "neutral",
   "Template Completion": "gold",
@@ -166,6 +262,10 @@ const guideModeLabels: Record<GuideMode, string> = {
   revision: "Revision Draft",
   question: "Filing Answer",
 };
+
+function canReviewApplicationForms(role: Role) {
+  return role === "SADU Associate" || role === "Admin";
+}
 
 export function TamsHubApp() {
   const { data: session, status: sessionStatus } = useSession();
@@ -1377,6 +1477,7 @@ function DashboardView({
   onToggleTemplate: (templateId: string) => void;
   onSelect: (id: string) => void;
 }) {
+  const roleMetadata = getRoleDashboardMetadata(activeUser.role);
   const stats = getDashboardStats(activeUser.role, applications, queueCount);
   const [onlyActionItems, setOnlyActionItems] = useState(false);
   const revisionApplication = applications.find((app) => app.status === "Revision Requested");
@@ -1388,7 +1489,7 @@ function DashboardView({
     : "";
   const dashboardDate = formatDashboardDate(applications);
   const displayedApplications = onlyActionItems
-    ? applications.filter((app) => app.status === "Revision Requested" || app.status === "Draft" || app.status === "Submitted to SADU")
+    ? applications.filter((app) => roleMetadata.actionStatuses.includes(app.status))
     : applications;
 
   return (
@@ -1396,15 +1497,22 @@ function DashboardView({
       <div className="dashboard-welcome">
         <div>
           <h2>Welcome, FEU Alabang {roleWelcomeName(activeUser.role)}</h2>
+          <p>{roleMetadata.dashboardIntro}</p>
           <p>{dashboardDate} - Semester 2, A.Y. 2024-2025</p>
         </div>
       </div>
 
       <section className="stats-grid">
-        <StatCard icon={<Clock3 />} value={stats.pending} label="Pending Applications" tone="gold" />
-        <StatCard icon={<AlertTriangle />} value={stats.needsAction} label="Needs Action" tone="red" />
-        <StatCard icon={<CheckCircle2 />} value={stats.approved} label="Approved Events" tone="green" />
-        <StatCard icon={<MessageSquare />} value={stats.messages} label="SADU Messages" tone="blue" />
+        <StatCard icon={<Clock3 />} value={stats.pending} label={roleMetadata.statLabels.pending} tone="gold" />
+        <StatCard icon={<AlertTriangle />} value={stats.needsAction} label={roleMetadata.statLabels.needsAction} tone="red" />
+        <StatCard icon={<CheckCircle2 />} value={stats.approved} label={roleMetadata.statLabels.approved} tone="green" />
+        <StatCard icon={<MessageSquare />} value={stats.messages} label={roleMetadata.statLabels.messages} tone="blue" />
+      </section>
+
+      <section className="feature-grid" aria-label={`${roleMetadata.displayName} dashboard affordances`}>
+        {roleMetadata.affordances.map((affordance) => (
+          <Feature key={affordance.title} icon={affordance.icon} title={affordance.title} text={affordance.text} />
+        ))}
       </section>
 
       {revisionApplication && (
@@ -1422,7 +1530,7 @@ function DashboardView({
         <div className="table-header">
           <h2>Recent Applications</h2>
           <div>
-            <button className={onlyActionItems ? "ghost-button active" : "ghost-button"} aria-pressed={onlyActionItems} onClick={() => setOnlyActionItems((current) => !current)}><Filter size={15} /> {onlyActionItems ? "Needs Action" : "Filter"}</button>
+            <button className={onlyActionItems ? "ghost-button active" : "ghost-button"} aria-pressed={onlyActionItems} onClick={() => setOnlyActionItems((current) => !current)}><Filter size={15} /> {onlyActionItems ? roleMetadata.actionFilterLabel : "Filter"}</button>
             <button className="ghost-button" disabled={!onlyActionItems} onClick={() => setOnlyActionItems(false)}><Eye size={15} /> View All</button>
           </div>
         </div>
@@ -1465,12 +1573,15 @@ function DashboardView({
 }
 
 function getDashboardStats(role: Role, applications: EventApplication[], queueCount: number) {
-  const pending = role === "Student Officer"
-    ? applications.filter((app) => ["Submitted to SADU", "Under Review", "Resubmitted"].includes(app.status)).length
-    : queueCount;
-  const needsAction = applications.filter((app) =>
-    ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"].includes(app.status),
-  ).length;
+  const reviewStatuses: EventStatus[] = ["Submitted to SADU", "Under Review", "Resubmitted"];
+  const roleMetadata = getRoleDashboardMetadata(role);
+  const pending = (() => {
+    if (role === "Student Officer") return applications.filter((app) => reviewStatuses.includes(app.status)).length;
+    if (role === "Faculty Adviser") return applications.filter((app) => app.status === "Pending Adviser Endorsement").length;
+    if (role === "Admin") return applications.filter((app) => [...reviewStatuses, "Revision Requested"].includes(app.status)).length;
+    return queueCount;
+  })();
+  const needsAction = applications.filter((app) => roleMetadata.actionStatuses.includes(app.status)).length;
 
   return {
     pending,
@@ -1668,6 +1779,7 @@ function FileEventView({
   const revisionDetail = revisionAlert ? revisionGuideDetail(applicationCompletion.missing, application.messages) : "";
   const canEditDetails = activeUser.role === "Student Officer" && ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"].includes(application.status);
   const canManageUploads = canEditDetails;
+  const canSubmitApplication = activeUser.role === "Student Officer";
   const verificationSummary = application.verificationSummary;
 
   return (
@@ -1795,14 +1907,14 @@ function FileEventView({
                           <span>{field.label}{field.required ? " *" : ""}</span>
                           {missingRequiredField && <small className="field-error" role="status">Required before submission.</small>}
                           {field.type === "textarea" ? (
-                            <textarea disabled={!enabled} aria-invalid={missingRequiredField} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
+                            <textarea disabled={!enabled || !canEditDetails} aria-invalid={missingRequiredField} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
                           ) : field.type === "select" ? (
-                            <select disabled={!enabled} aria-invalid={missingRequiredField} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)}>
+                            <select disabled={!enabled || !canEditDetails} aria-invalid={missingRequiredField} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)}>
                               <option value="">Select</option>
                               {field.options?.map((option) => <option key={option}>{option}</option>)}
                             </select>
                           ) : (
-                            <input disabled={!enabled} aria-invalid={missingRequiredField} type={field.type} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
+                            <input disabled={!enabled || !canEditDetails} aria-invalid={missingRequiredField} type={field.type} value={value} onChange={(event) => onTemplateChange(template.id, field.id, event.target.value)} />
                           )}
                         </label>
                       );
@@ -1826,7 +1938,7 @@ function FileEventView({
         </ul>
         {revisionAlert && <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>SADU Revision Requested</strong><p>{revisionDetail}</p></div></div>}
         <div className="warning-box amber" role="status" aria-live="polite"><CircleAlert size={16} /><div><strong>{submissionReadiness.missing.length || "No"} required item(s) missing</strong><p>{submissionReadiness.ready ? `${completionPercent}% of required fields and attachments are complete.` : submissionReadiness.missing.slice(0, 2).join(" ") || `${requiredAttachmentMissing} required attachment(s) still need a file.`}</p></div></div>
-        <button className="gold-button full" onClick={onPrecheck}><Sparkles size={16} /> Run AI Completeness Check</button>
+        <button className="gold-button full" disabled={!canSubmitApplication} onClick={onPrecheck}><Sparkles size={16} /> Run AI Completeness Check</button>
         <button className="secondary-button full" disabled={verificationPending || !canManageUploads} onClick={onVerifyDocuments}><ShieldCheck size={16} /> {verificationPending ? "Verifying Documents" : "Verify Documents"}</button>
         {verificationSummary && (
           <div className={verificationSummary.readyForSadu ? "verification-summary ok" : "verification-summary blocked"} role="status">
@@ -1839,9 +1951,9 @@ function FileEventView({
         )}
         <div className="guide-says" role="status" aria-live="polite"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
         {revisionAlert ? (
-          <button className="primary-button full" disabled={missingCount > 0} onClick={onResubmit}><UploadCloud size={16} /> Upload Revised Documents</button>
+          <button className="primary-button full" disabled={!canSubmitApplication || missingCount > 0} onClick={onResubmit}><UploadCloud size={16} /> Upload Revised Documents</button>
         ) : (
-          <button className="primary-button full" disabled={!submissionReadiness.ready} onClick={onSubmit}><SendHorizonal size={16} /> Submit to SADU</button>
+          <button className="primary-button full" disabled={!canSubmitApplication || !submissionReadiness.ready} onClick={onSubmit}><SendHorizonal size={16} /> Submit to SADU</button>
         )}
       </aside>
     </section>
@@ -1880,6 +1992,7 @@ function ApplicationsView({
   onSend: () => void;
 }) {
   const requiredActions = getRequiredActionCards(application);
+  const canReviewForms = canReviewApplicationForms(activeUser.role);
 
   return (
     <div className="screen-stack">
@@ -1888,7 +2001,7 @@ function ApplicationsView({
         <span className={`status-pill ${statusTone[application.status]}`}>{application.status}</span>
       </div>
 
-      {activeUser.role === "SADU Associate" && <ReviewerInsightsPanel application={application} completionPercent={completionPercent} />}
+      {canReviewForms && <ReviewerInsightsPanel application={application} completionPercent={completionPercent} />}
 
       <section className="status-card">
         <div className="status-header"><strong>Application Progress</strong><span>{completionPercent}%</span></div>
@@ -1902,7 +2015,7 @@ function ApplicationsView({
       </section>
 
       <section className="applications-layout">
-        {activeUser.role === "SADU Associate" && (
+        {canReviewForms && (
           <div className="panel review-attachments-panel">
             <h3>Requirement Files</h3>
             <AttachmentReviewList application={application} />
@@ -2344,9 +2457,10 @@ function WorkflowActions({
   onReject: () => void;
   onEndorse: () => void;
 }) {
-  if (role === "SADU Associate") {
+  if (canReviewApplicationForms(role)) {
     const canStartReview = status === "Submitted to SADU" || status === "Resubmitted";
     const canDecide = status === "Under Review";
+    const reviewerLabel = role === "Admin" ? "Campus administrator" : "SADU reviewer";
     return (
       <div className="action-stack">
         <div className="action-row">
@@ -2355,7 +2469,7 @@ function WorkflowActions({
           <button className="danger-button" disabled={!canDecide} onClick={onReject}><CircleAlert size={16} /> Reject</button>
           <button className="primary-button" disabled={!canDecide} onClick={onApprove}><CheckCircle2 size={16} /> Approve</button>
         </div>
-        {!canDecide && <p className="fine-print">SADU actions unlock after the application is submitted or resubmitted.</p>}
+        {!canDecide && <p className="fine-print">{reviewerLabel} actions unlock after the application is submitted or resubmitted.</p>}
       </div>
     );
   }
@@ -2457,15 +2571,15 @@ function sectionTitle(section: Section) {
 }
 
 function roleDisplayName(role: Role) {
-  if (role === "Student Officer") return "Student Org Officer";
-  if (role === "Faculty Adviser") return "Organization Adviser";
-  if (role === "Admin") return "Campus Administrator";
-  return role;
+  return getRoleDashboardMetadata(role).displayName;
 }
 
 function roleWelcomeName(role: Role) {
-  if (role === "Student Officer") return "Student Council Officer";
-  return roleDisplayName(role);
+  return getRoleDashboardMetadata(role).welcomeName;
+}
+
+function getRoleDashboardMetadata(role: Role) {
+  return roleDashboardMetadata[role];
 }
 
 function formatShortDate(value: string) {

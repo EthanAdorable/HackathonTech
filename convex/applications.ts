@@ -34,6 +34,7 @@ const defaultRubricVersionId = "app-apf-verf-rubric-v1";
 const defaultExtractionSchemaVersion = "app-apf-verf-extraction-v1";
 const defaultPromptVersion = "app-apf-verf-prompt-v1";
 const verificationDocumentTypes = new Set(["app", "apf", "verf"]);
+const formReviewRoles = new Set(["Admin", "SADU Associate"]);
 
 async function addTimeline(ctx: any, applicationId: any, nextStatus: string, note: string, accessActor?: any) {
   await ctx.db.insert("timeline", {
@@ -102,8 +103,8 @@ function assertCanEditApplication(accessActor: any, application: any) {
 }
 
 function assertCanReviewAsSadu(accessActor: any) {
-  if (accessActor.role !== "SADU Associate") {
-    throw new Error("Only SADU associates can perform SADU review actions.");
+  if (!formReviewRoles.has(accessActor.role)) {
+    throw new Error("Only campus administrators or SADU associates can perform form review actions.");
   }
 }
 

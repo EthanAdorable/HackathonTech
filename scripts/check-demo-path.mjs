@@ -67,7 +67,7 @@ const railwayConfig = readFileSync(new URL("../railway.json", import.meta.url), 
 const startScript = readFileSync(new URL("../scripts/start.mjs", import.meta.url), "utf8");
 assert.match(
   appComponent,
-  /\["Submitted to SADU", "Under Review", "Resubmitted"\]\.includes\(app\.status\)/,
+  /const reviewStatuses: EventStatus\[\] = \["Submitted to SADU", "Under Review", "Resubmitted"\]/,
   "student dashboard pending metric should derive from current application statuses",
 );
 assert.match(appComponent, /applications\.reduce\(\(sum, app\) => sum \+ app\.messages\.length, 0\)/, "dashboard message metric should derive from current message data");
@@ -85,7 +85,7 @@ assert.match(appComponent, /disabled=\{!canStartReview\}/, "SADU review action s
 assert.match(appComponent, /currentCompletion\.missing\.length/, "Revision resubmission should require completed fields");
 assert.match(appComponent, /selectedApp\.status === "Revision Requested"/, "Revision pre-check should preserve the revision-requested workflow state");
 assert.match(appComponent, /Demo compliance check completed for revision response\./, "Revision pre-check should record a revision-specific stub check note");
-assert.match(appComponent, /disabled=\{missingCount > 0\} onClick=\{onResubmit\}/, "File Event revision upload should use the guarded resubmission action");
+assert.match(appComponent, /disabled=\{!canSubmitApplication \|\| missingCount > 0\} onClick=\{onResubmit\}/, "File Event revision upload should use the guarded resubmission action");
 assert.doesNotMatch(appComponent, /Revision Requested"[\s\S]{0,260}<SendHorizonal size=\{16\} \/> Submit to SADU/, "Revision filing should not expose the generic submit action");
 assert.doesNotMatch(appComponent, /Revision Requested"\) \?\? applications\[0\]/, "Dashboard guide alert should not fall back to a non-revision application");
 assert.match(appComponent, /\{revisionApplication && \(/, "Dashboard guide alert should only render when a revision application exists");
@@ -118,7 +118,9 @@ assert.match(appComponent, /Student Council Officer/, "Dashboard welcome copy sh
 assert.match(appComponent, /formatDashboardDate\(applications\)/, "Dashboard date should derive from current application data");
 assert.doesNotMatch(appComponent, /Thursday, June 19, 2025/, "Dashboard date should not be stale hardcoded copy");
 assert.doesNotMatch(appComponent, /return \{ pending: 3, needsAction: 2, approved: 7, messages: 4 \}/, "Dashboard stats should not be hardcoded for student officers");
-assert.match(appComponent, /const pending = role === "Student Officer"/, "Dashboard pending count should derive from visible student data");
+assert.match(appComponent, /if \(role === "Student Officer"\) return applications\.filter\(\(app\) => reviewStatuses\.includes\(app\.status\)\)\.length/, "Dashboard pending count should derive from visible student data");
+assert.match(appComponent, /if \(role === "Faculty Adviser"\) return applications\.filter\(\(app\) => app\.status === "Pending Adviser Endorsement"\)\.length/, "Dashboard adviser pending count should derive from endorsement data");
+assert.match(appComponent, /if \(role === "Admin"\) return applications\.filter\(\(app\) => \[\.\.\.reviewStatuses, "Revision Requested"\]\.includes\(app\.status\)\)\.length/, "Dashboard admin pending count should derive from campus review data");
 assert.match(appComponent, /onlyActionItems/, "Dashboard filter button should have local filtering behavior");
 assert.match(appComponent, /aria-pressed=\{onlyActionItems\}/, "Dashboard filter button should expose pressed state");
 assert.match(appComponent, /disabled=\{!onlyActionItems\} onClick=\{\(\) => setOnlyActionItems\(false\)\}/, "Dashboard View All should clear the action filter instead of opening an arbitrary row");
@@ -336,13 +338,15 @@ assert.match(convexUsers, /userDocumentId: document\._id/, "Convex users query s
 const submitted = byStatus.get("Submitted to SADU");
 assert.ok(getApplicationCompletion(submitted).percent >= 70, "submitted demo application should meet the prototype submission threshold");
 
-let review = transitionApplication(submitted, "Under Review", "SADU opened the application for review.");
+const saduActor = users.find((user) => user.role === "SADU Associate");
+assert.ok(saduActor, "demo users should include a SADU associate");
+let review = transitionApplication(submitted, "Under Review", "SADU opened the application for review.", saduActor);
 assert.equal(review.status, "Under Review");
 assert.ok(review.timeline.some((entry) => entry.status === "Under Review"));
 
 const revisionBody = makeRevisionDraft(review);
 assert.match(revisionBody, /guidance only/i);
-review = transitionApplication(addMessage(review, "SADU Associate", "SADU Associate", revisionBody), "Revision Requested", "SADU requested revisions.");
+review = transitionApplication(addMessage(review, saduActor.name, saduActor.role, revisionBody, saduActor), "Revision Requested", "SADU requested revisions.", saduActor);
 assert.equal(review.status, "Revision Requested");
 assert.ok(review.messages.some((message) => message.body === revisionBody));
 

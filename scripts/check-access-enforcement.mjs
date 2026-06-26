@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 
 import {
   canAdministerDemoData,
+  canAdministerTemplates,
+  canCreateApplication,
   canEditApplication,
+  canEndorseApplication,
   canReadApplication,
   canReviewAsSadu,
 } from "../lib/access-policy.ts";
@@ -20,13 +23,29 @@ assert.equal(canReadApplication(otherStudent, application), false, "student cann
 assert.equal(canReadApplication(adviser, application), true, "assigned adviser can read application");
 assert.equal(canReadApplication({ ...adviser, id: "other-adviser" }, application), false, "other adviser cannot read application");
 assert.equal(canReadApplication(sadu, application), true, "SADU can read review queue");
+assert.equal(canReadApplication(admin, application), true, "admin can read campus-wide applications");
+assert.equal(canCreateApplication(student), true, "student can create applications");
+assert.equal(canCreateApplication(sadu), false, "SADU cannot create student applications");
+assert.equal(canCreateApplication(adviser), false, "adviser cannot create student applications");
+assert.equal(canCreateApplication(admin), false, "admin cannot create student applications");
 assert.equal(canEditApplication(student, application), true, "student owner can edit own application");
 assert.equal(canEditApplication(otherStudent, application), false, "student cannot edit another user's application");
+assert.equal(canEditApplication(adviser, application), false, "adviser cannot edit student form data");
+assert.equal(canEditApplication(sadu, application), false, "SADU cannot edit student form data");
+assert.equal(canEditApplication(admin, application), false, "admin cannot edit student form data");
+assert.equal(canEndorseApplication(adviser, application), true, "assigned adviser can endorse");
+assert.equal(canEndorseApplication({ ...adviser, id: "other-adviser" }, application), false, "unassigned adviser cannot endorse");
+assert.equal(canEndorseApplication(sadu, application), false, "SADU cannot endorse as adviser");
+assert.equal(canEndorseApplication(admin, application), false, "admin cannot endorse as adviser");
 assert.equal(canReviewAsSadu(sadu), true, "SADU can approve/reject");
+assert.equal(canReviewAsSadu(admin), true, "campus admin can handle form review alongside SADU");
 assert.equal(canReviewAsSadu(student), false, "student cannot approve/reject");
-assert.equal(canReviewAsSadu(admin), false, "admin cannot spoof SADU approval");
+assert.equal(canReviewAsSadu(adviser), false, "adviser cannot approve/reject");
 assert.equal(canAdministerDemoData(admin), true, "admin can reset demo data");
 assert.equal(canAdministerDemoData(sadu), false, "non-admin cannot reset demo data");
+assert.equal(canAdministerTemplates(admin), true, "admin can manage template availability");
+assert.equal(canAdministerTemplates(sadu), false, "SADU cannot manage template availability");
+assert.equal(canAdministerTemplates(student), false, "student cannot manage template availability");
 
 const workflowRoute = readFileSync(new URL("../app/api/convex-workflow/route.ts", import.meta.url), "utf8");
 const applicationsRoute = readFileSync(new URL("../app/api/convex-applications/route.ts", import.meta.url), "utf8");
@@ -46,8 +65,10 @@ for (const route of [workflowRoute, applicationsRoute, usersRoute, guideLogsRout
 assert.doesNotMatch(workflowRoute, /author:\s*payload\.author|role:\s*payload\.role/, "workflow must not trust client author or role");
 assert.match(workflowRoute, /api\.applications\.listWithDetails,\s*\{\s*actor\s*\}/, "application refresh must use actor-filtered query");
 assert.match(workflowRoute, /api\.seed\.seedDemoData,\s*\{\s*actor\s*\}/, "demo reset must pass actor");
+assert.match(workflowRoute, /canAdministerTemplates\(actor\)[\s\S]*api\.applications\.updateTemplateAvailability/, "template availability must be admin-gated before Convex mutation");
 assert.match(workflowRoute, /canReviewAsSadu\(actor\)[\s\S]*api\.applications\.approve/, "approval must be SADU-gated");
 assert.match(workflowRoute, /canReviewAsSadu\(actor\)[\s\S]*api\.applications\.reject/, "rejection must be SADU-gated");
+assert.match(workflowRoute, /canReviewAsSadu\(actor\)[\s\S]*api\.applications\.requestRevision/, "revision requests must be form-review gated");
 
 assert.match(convexApplications, /const actor = v\.object/, "Convex application functions must require actor");
 assert.doesNotMatch(convexApplications, /actor = v\.optional/, "Convex application actor cannot be optional");
@@ -56,6 +77,10 @@ assert.match(convexApplications, /applicationsForActor\(ctx, args\.actor\)/, "Co
 assert.match(convexApplications, /assertCanEditApplication\(args\.actor, application\)/, "Convex edits must require owner");
 assert.match(convexApplications, /assertCanReviewAsSadu\(args\.actor\)/, "Convex review actions must require SADU");
 assert.match(convexApplications, /assertCanAdminister\(args\.actor\)/, "Convex template admin must require admin");
+assert.match(convexApplications, /formReviewRoles = new Set\(\["Admin", "SADU Associate"\]\)/, "Convex form review roles must include only Admin and SADU");
+assert.match(convexApplications, /updateTemplateAvailability = mutation[\s\S]*assertCanAdminister\(args\.actor\)/, "Convex template availability mutation must remain admin-only");
+assert.match(convexApplications, /recordAttachmentUpload = mutation[\s\S]*assertCanEditApplication\(args\.actor, application\)/, "Convex form uploads must remain owner-only");
+assert.match(convexApplications, /removeAttachment = mutation[\s\S]*assertCanEditApplication\(args\.actor, application\)/, "Convex form removals must remain owner-only");
 
 assert.match(convexGuide, /actor,\s*\n\s*applicationId/, "guide logs must require actor");
 assert.match(convexGuide, /assertCanReadApplication\(ctx, args\.actor, args\.applicationId\)/, "guide logs must be application-scoped");

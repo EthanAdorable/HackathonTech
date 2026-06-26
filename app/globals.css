@@ -589,14 +589,15 @@ p {
 }
 
 .role-chip {
+  position: relative;
   justify-content: center;
   gap: 8px;
-  min-height: 38px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--field);
   color: #24342f;
-  padding: 8px 10px;
+  padding: 8px 12px;
   font-size: 12px;
   font-weight: 850;
   line-height: 1.2;
@@ -612,6 +613,19 @@ p {
   border-color: var(--green-700);
   background: var(--green-700);
   color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.role-chip.active::after {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  background: var(--gold);
+  content: "";
 }
 
 .role-chip:hover {
@@ -1010,6 +1024,9 @@ p {
 
 .guide-screen {
   gap: 12px;
+  width: min(1400px, calc(100% - 40px));
+  margin-right: 20px;
+  margin-left: 20px;
 }
 
 .screen-stack:not(.guide-screen) > .table-card:last-child,
@@ -1236,6 +1253,12 @@ p {
   transform: translate3d(0, -1px, 0);
 }
 
+.admin-row:focus-within {
+  border-color: rgba(15, 122, 70, 0.42);
+  background: #f5faf7;
+  box-shadow: 0 0 0 3px rgba(15, 122, 70, 0.09);
+}
+
 .admin-row strong,
 .admin-row span:not(.status-pill):not(.role-badge) {
   display: block;
@@ -1248,10 +1271,12 @@ p {
 }
 
 .toggle-button {
+  position: relative;
   border: 1px solid #d9e3dd;
   border-radius: 999px;
   background: #f3f6f4;
   color: #60736b;
+  min-height: 32px;
   min-width: 92px;
   padding: 7px 11px;
   font-size: 12px;
@@ -1268,6 +1293,14 @@ p {
   border-color: #b7dfc7;
   background: #dff6e9;
   color: var(--green-700);
+}
+
+.toggle-button[aria-pressed="false"] {
+  border-style: dashed;
+}
+
+.toggle-button[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px rgba(15, 122, 70, 0.12);
 }
 
 .table-card {
@@ -1483,6 +1516,10 @@ p {
 .field {
   display: grid;
   gap: 5px;
+}
+
+.field:has([aria-invalid="true"]) {
+  gap: 6px;
 }
 
 .field.wide {
@@ -2749,12 +2786,32 @@ p {
 
 .guide-controls {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(220px, 240px) minmax(0, 1fr) auto;
   gap: 10px;
+  align-items: start;
+}
+
+.guide-controls select {
+  grid-column: 1;
 }
 
 .guide-controls textarea {
+  grid-column: 2;
   min-height: 44px;
+}
+
+.guide-controls .primary-button {
+  grid-column: 3;
+  min-width: 190px;
+}
+
+.guide-controls:not(:has(textarea)) {
+  grid-template-columns: minmax(220px, 240px) auto;
+  justify-content: start;
+}
+
+.guide-controls:not(:has(textarea)) .primary-button {
+  grid-column: 2;
 }
 
 .guide-output {
@@ -2903,11 +2960,14 @@ p {
 }
 
 .field-error {
-  display: block;
-  margin: -4px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
   color: var(--red);
   font-size: 12px;
   font-weight: 800;
+  line-height: 1.35;
 }
 
 input[aria-invalid="true"],
@@ -2915,6 +2975,13 @@ select[aria-invalid="true"],
 textarea[aria-invalid="true"] {
   border-color: rgba(223, 63, 66, 0.72);
   background: #fff6f5;
+}
+
+input[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(223, 63, 66, 0.15);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3127,5 +3194,22 @@ textarea[aria-invalid="true"] {
   .file-layout,
   .messages-layout {
     width: min(100% - 24px, 1180px);
+  }
+
+  .guide-screen {
+    width: min(100% - 24px, 1400px);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .guide-controls select,
+  .guide-controls textarea,
+  .guide-controls .primary-button,
+  .guide-controls:not(:has(textarea)) .primary-button {
+    grid-column: 1;
+  }
+
+  .guide-controls .primary-button {
+    width: 100%;
   }
 }
