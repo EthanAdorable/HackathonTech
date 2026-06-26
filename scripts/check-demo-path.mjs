@@ -166,6 +166,9 @@ assert.match(appComponent, /Target project: \$\{railwayProject\}/, "Admin servic
 assert.match(appComponent, /railwayReady && railwayProjectReady/, "Admin service cards should require both Railway runtime and explicit project ID readiness");
 assert.match(serviceRunbook, /separate external projects/, "Service runbook should require separate Convex and Railway projects");
 assert.match(serviceRunbook, /Do not reuse an unrelated Convex or Railway project/, "Service runbook should warn against reusing unrelated projects");
+assert.match(serviceRunbook, /Team: `conneura`/, "Service runbook should record the selected Convex team");
+assert.match(serviceRunbook, /Dev deployment: `dev:zealous-ocelot-537`/, "Service runbook should record the configured Convex dev deployment");
+assert.match(serviceRunbook, /Convex functions have been generated, pushed, and seeded/, "Service runbook should record completed Convex provisioning");
 assert.match(serviceRunbook, /setup:railway -- --workspace <workspace> --dry-run/, "Railway runbook should require explicit workspace selection in setup examples");
 assert.match(readFileSync("README.md", "utf8"), /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
 assert.match(readFileSync("README.md", "utf8"), /setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run/, "README should show explicit Railway project targeting for dry-runs");

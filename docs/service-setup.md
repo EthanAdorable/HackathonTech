@@ -7,23 +7,28 @@ This prototype uses separate external projects:
 
 Do not reuse an unrelated Convex or Railway project for this app.
 
-## Current Account Choices Needed
+## Current External Setup State
 
-Convex is logged in locally and can access two teams:
+Convex is configured for the dedicated project:
 
-- `conneura`
-- `gwyneth-betonio`
+- Team: `conneura`
+- Project: `tams-hub-prototype`
+- Dev deployment: `dev:zealous-ocelot-537`
+- Client URL: `https://zealous-ocelot-537.convex.cloud`
+- Dashboard: `https://dashboard.convex.dev/t/conneura/tams-hub-prototype/zealous-ocelot-537`
+
+Convex functions have been generated, pushed, and seeded for the prototype demo data.
 
 Railway CLI is installed, but the browser OAuth flow is paused at GitHub account selection:
 
 - `Xylodex`
 - `ItchyDitchy`
 
-Project creation should continue only after those ownership choices are confirmed.
+Railway project creation should continue only after the Railway ownership choice is confirmed.
 
 ## Convex Setup
 
-Create the project under the chosen team:
+Create or refresh the project under the selected team:
 
 ```powershell
 corepack pnpm setup:convex -- --team <team-slug> --dry-run
