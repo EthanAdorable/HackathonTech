@@ -1123,7 +1123,7 @@ function MessagesView({
             <div className="message-thread-header">
               <h2>{selectedThread.title}</h2>
             </div>
-            <MiniThread application={application} activeRole={activeUser.role} expanded />
+            <MiniThread application={application} activeRole={activeUser.role} ownLabel="You" expanded />
             <div className="composer-row"><input aria-label="Message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder={"Type a message\u2026"} /><button className="send-button" aria-label="Send Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button></div>
           </>
         ) : (
@@ -1282,17 +1282,20 @@ function WorkflowActions({
   return <p className="fine-print">Actions shown here depend on the verified TAMS Access role.</p>;
 }
 
-function MiniThread({ application, activeRole, expanded = false }: { application: EventApplication; activeRole: Role; expanded?: boolean }) {
+function MiniThread({ application, activeRole, ownLabel, expanded = false }: { application: EventApplication; activeRole: Role; ownLabel?: string; expanded?: boolean }) {
   const messages = application.messages.length ? application.messages : [{ id: "empty", author: "TAMS Hub", role: "SADU Associate" as Role, body: "No messages yet.", createdAt: new Date().toISOString() }];
   return (
     <div className={expanded ? "chat-thread expanded" : "chat-thread"}>
-      {messages.map((message) => (
-        <div key={message.id} className={message.role === activeRole ? "chat-bubble own" : "chat-bubble"}>
-          <strong>{message.author}</strong>
-          <p>{message.body}</p>
-          <span>{formatShortDate(message.createdAt)}</span>
-        </div>
-      ))}
+      {messages.map((message) => {
+        const isOwnMessage = message.role === activeRole;
+        return (
+          <div key={message.id} className={isOwnMessage ? "chat-bubble own" : "chat-bubble"}>
+            <strong>{isOwnMessage && ownLabel ? ownLabel : message.author}</strong>
+            <p>{message.body}</p>
+            <span>{formatShortDate(message.createdAt)}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -137,8 +137,11 @@ assert.doesNotMatch(appComponent, /className="thread-summary"/, "Messages chat p
 assert.doesNotMatch(globalCss, /\.thread-summary/, "Messages stylesheet should not keep unused thread summary styles");
 assert.match(appComponent, /aria-label="Send Message"/, "Icon-only message send button should have an accessible name");
 assert.match(appComponent, /activeRole:\s*Role/, "Message thread alignment should receive the active user role");
-assert.match(appComponent, /message\.role === activeRole \? "chat-bubble own" : "chat-bubble"/, "Message bubbles should align by sender role");
+assert.match(appComponent, /const isOwnMessage = message\.role === activeRole/, "Message bubbles should align by sender role");
+assert.match(appComponent, /isOwnMessage \? "chat-bubble own" : "chat-bubble"/, "Message bubbles should render the own-message treatment by sender role");
 assert.doesNotMatch(appComponent, /index % 2 \? "chat-bubble own" : "chat-bubble"/, "Message bubbles should not align by alternating index");
+assert.match(appComponent, /ownLabel="You" expanded/, "Dedicated messages screen should label the active user's bubble as You");
+assert.match(appComponent, /isOwnMessage && ownLabel \? ownLabel : message\.author/, "Application status threads should preserve organization or reviewer author labels");
 assert.match(appComponent, /notificationsOpen/, "Topbar notification bell should open prototype alerts");
 assert.match(globalCss, /\.notification-popover/, "Topbar notification alerts should be styled as a popover");
 assert.match(appComponent, /TAMS Guide filing question/, "Guide question mode should expose an accessible prompt");
