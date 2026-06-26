@@ -1,6 +1,7 @@
 import { ConvexHttpClient } from "convex/browser";
 import { NextResponse } from "next/server";
 import { api } from "@/convex/_generated/api";
+import { withTimeout } from "@/lib/async-timeout";
 
 export async function GET() {
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -10,7 +11,7 @@ export async function GET() {
 
   try {
     const client = new ConvexHttpClient(convexUrl);
-    const applications = await client.query(api.applications.listWithDetails, {});
+    const applications = await withTimeout(client.query(api.applications.listWithDetails, {}));
 
     return NextResponse.json({ source: "convex", applications });
   } catch {

@@ -4,6 +4,8 @@ import { spawnSync } from "node:child_process";
 const checks = [];
 const localEnv = readLocalEnv();
 const deployCheck = process.env.TAMS_DEPLOY_CHECK === "1" || Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
+const commandTimeoutMs = Number(process.env.TAMS_SERVICE_CHECK_TIMEOUT_MS || 15000);
+const healthTimeoutMs = Number(process.env.TAMS_SERVICE_HEALTH_TIMEOUT_MS || 10000);
 
 function readLocalEnv() {
   if (!existsSync(".env.local")) {
@@ -26,12 +28,16 @@ function run(label, command, args) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
     shell: process.platform === "win32",
+    timeout: commandTimeoutMs,
   });
 
+  const timedOut = result.error?.code === "ETIMEDOUT";
   checks.push({
     label,
-    status: result.status === 0 ? "ok" : "wait",
-    output: sanitize(`${result.stdout || ""}${result.stderr || ""}`.trim()),
+    status: !timedOut && result.status === 0 ? "ok" : "wait",
+    output: timedOut
+      ? `${command} ${args.join(" ")} timed out after ${commandTimeoutMs}ms`
+      : sanitize(`${result.stdout || ""}${result.stderr || ""}`.trim()),
   });
 }
 
@@ -119,7 +125,7 @@ async function healthSummary() {
 
   const url = new URL("/api/health", baseUrl).toString();
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(healthTimeoutMs) });
     if (!response.ok) {
       return { status: "fail", output: `${url} returned HTTP ${response.status}` };
     }

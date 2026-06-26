@@ -2,6 +2,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { NextResponse } from "next/server";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { withTimeout } from "@/lib/async-timeout";
 
 export async function GET(request: Request) {
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -12,9 +13,11 @@ export async function GET(request: Request) {
 
   try {
     const client = new ConvexHttpClient(convexUrl);
-    const logs = await client.query(api.guide.listForApplication, {
-      applicationId: applicationId as Id<"applications">,
-    });
+    const logs = await withTimeout(
+      client.query(api.guide.listForApplication, {
+        applicationId: applicationId as Id<"applications">,
+      }),
+    );
     return NextResponse.json({ source: "convex", logs });
   } catch {
     return NextResponse.json({ source: "local", logs: [] });

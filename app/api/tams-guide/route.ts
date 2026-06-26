@@ -3,6 +3,7 @@ import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { withTimeout } from "@/lib/async-timeout";
 import {
   type EventApplication,
   getApplicationCompletion,
@@ -79,13 +80,15 @@ async function recordGuideLog(request: GuideRequest, source: string, lines: stri
 
   try {
     const client = new ConvexHttpClient(convexUrl);
-    await client.mutation(api.guide.record, {
-      applicationId: applicationId as Id<"applications">,
-      mode: request.mode,
-      question: request.question,
-      source,
-      lines,
-    });
+    await withTimeout(
+      client.mutation(api.guide.record, {
+        applicationId: applicationId as Id<"applications">,
+        mode: request.mode,
+        question: request.question,
+        source,
+        lines,
+      }),
+    );
   } catch {
     // Guidance should still be returned even if audit logging is unavailable.
   }
