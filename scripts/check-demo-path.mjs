@@ -163,12 +163,14 @@ assert.match(convexApplications, /templates: templates\.map\(templateWithUiId\)/
 assert.match(convexApplications, /templateDocumentId: document\._id/, "Convex template rows should carry explicit document ids for updates");
 assert.match(convexWorkflowRoute, /api\.applications\.create/, "Convex workflow route should sync new application creation");
 assert.match(convexWorkflowRoute, /api\.applications\.updateTemplate/, "Convex workflow route should sync template field edits");
+assert.match(convexWorkflowRoute, /api\.applications\.updateTemplateAvailability/, "Convex workflow route should sync admin template availability changes");
 assert.match(convexWorkflowRoute, /api\.applications\.addMessage/, "Convex workflow route should sync message actions");
 assert.match(convexWorkflowRoute, /api\.applications\.requestRevision/, "Convex workflow route should sync revision requests");
 assert.match(convexWorkflowRoute, /api\.applications\.approve/, "Convex workflow route should sync SADU approvals");
 assert.match(appComponent, /fetch\("\/api\/convex-workflow"/, "App should sync workflow actions through the Convex workflow route");
 assert.match(appComponent, /function syncConvexCreate\(next: EventApplication\)/, "App should sync newly-created applications to Convex");
 assert.match(appComponent, /function syncConvexTemplate\(templateId: string, values: Record<string, string>\)/, "App should sync template field changes to Convex");
+assert.match(appComponent, /function syncConvexTemplateAvailability\(templateId: string, enabled: boolean\)/, "App should sync admin template availability changes to Convex");
 assert.match(appComponent, /template\?\.templateDocumentId \?\? template\?\.id/, "App should use Convex template document ids when syncing field changes");
 assert.match(appComponent, /if \(applicationSource !== "convex"\) return/, "App should keep workflow sync scoped to Convex-hydrated data");
 assert.match(appComponent, /function isConvexApplicationId\(id: string\)/, "App should distinguish Convex-hydrated applications from local prototype drafts");
@@ -197,7 +199,7 @@ assert.match(readme, /Convex schema\/functions provisioned on a dedicated protot
 assert.match(readme, /conneura\/tams-hub-prototype/, "README should record the dedicated Convex project");
 assert.match(readme, /zealous-ocelot-537\.convex\.cloud/, "README should record the configured Convex client URL");
 assert.match(readme, /loads seeded applications from the dedicated Convex deployment/, "README should describe Convex-backed application reads");
-assert.match(readme, /New application creation, template field edits, status transitions/, "README should describe Convex-backed create, edit, and workflow actions");
+assert.match(readme, /New application creation, template field edits, admin template availability, status transitions/, "README should describe Convex-backed create, edit, admin, and workflow actions");
 assert.match(readme, /local fallback for prototype demos/, "README should describe the remaining local prototype fallback");
 assert.match(readme, /Railway is still waiting for CLI login and a dedicated Railway project ID/, "README should describe current Railway setup blocker");
 assert.match(readme, /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
@@ -227,6 +229,7 @@ assert.match(convexApplications, /function withUiId/, "Convex detailed queries s
 assert.match(convexApplications, /return applications\.map\(withUiId\)/, "Convex list query should expose application ids for UI selection");
 assert.match(convexApplications, /messages: messages\.map\(withUiId\)/, "Convex detailed queries should expose message ids for React keys");
 assert.match(convexApplications, /timeline: timeline\.map\(withUiId\)/, "Convex detailed queries should expose timeline ids for workflow rendering");
+assert.match(convexApplications, /export const updateTemplateAvailability = mutation/, "Convex should expose an admin template availability mutation");
 assert.match(convexUsers, /return users\.map\(withUiId\)/, "Convex users query should expose user ids for role selection");
 
 const submitted = byStatus.get("Submitted to SADU");

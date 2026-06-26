@@ -8,6 +8,7 @@ type WorkflowRequest = {
   action:
     | "create"
     | "updateTemplate"
+    | "updateTemplateAvailability"
     | "addMessage"
     | "updateStatus"
     | "requestRevision"
@@ -17,6 +18,8 @@ type WorkflowRequest = {
     | "addEndorsement";
   applicationId?: string;
   templateDocumentId?: string;
+  templateId?: string;
+  enabled?: boolean;
   title?: string;
   organization?: string;
   eventType?: string;
@@ -68,6 +71,11 @@ export async function POST(request: Request) {
       await client.mutation(api.applications.updateTemplate, {
         templateDocumentId: payload.templateDocumentId as Id<"templates">,
         values: payload.values ?? {},
+      });
+    } else if (payload.action === "updateTemplateAvailability") {
+      await client.mutation(api.applications.updateTemplateAvailability, {
+        templateId: payload.templateId ?? "",
+        enabled: payload.enabled ?? true,
       });
     } else if (payload.action === "addMessage" && applicationId) {
       await client.mutation(api.applications.addMessage, {

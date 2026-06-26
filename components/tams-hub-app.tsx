@@ -280,6 +280,16 @@ export function TamsHubApp() {
     }
   }
 
+  async function syncConvexTemplateAvailability(templateId: string, enabled: boolean) {
+    if (applicationSource !== "convex") return;
+    try {
+      const data = await postConvexWorkflow({ action: "updateTemplateAvailability", templateId, enabled });
+      if (data?.source === "convex") applyRemoteApplications(data.applications);
+    } catch {
+      // Keep optimistic local prototype state if Convex sync is unavailable.
+    }
+  }
+
   function resetDemoData() {
     window.localStorage.removeItem(storageKey);
     setApplications(seedApplications);
@@ -298,6 +308,7 @@ export function TamsHubApp() {
         ),
       })),
     );
+    void syncConvexTemplateAvailability(templateId, nextEnabled);
   }
 
   function updateTemplateValue(templateId: string, fieldId: string, value: string) {

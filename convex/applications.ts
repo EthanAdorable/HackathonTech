@@ -332,3 +332,20 @@ export const updateTemplate = mutation({
     }
   },
 });
+
+export const updateTemplateAvailability = mutation({
+  args: {
+    templateId: v.string(),
+    enabled: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const templates = await ctx.db
+      .query("templates")
+      .filter((q) => q.eq(q.field("templateId"), args.templateId))
+      .collect();
+
+    for (const template of templates) {
+      await ctx.db.patch(template._id, { enabled: args.enabled });
+    }
+  },
+});
