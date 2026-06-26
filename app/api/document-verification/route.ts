@@ -531,7 +531,7 @@ async function extractWithCodexLb(input: {
         },
       ],
     }),
-    Number(process.env.CODEX_LB_TIMEOUT_MS ?? 12000),
+    Number(process.env.CODEX_LB_TIMEOUT_MS ?? 45000),
   );
   const content = completion.choices[0]?.message.content;
   if (!content) throw new Error("Codex-LB returned an empty extraction response.");
