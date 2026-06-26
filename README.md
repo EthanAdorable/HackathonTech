@@ -7,7 +7,7 @@ The current source of truth is `C:/Users/kdrf/Downloads/Tams-Hub.docx`.
 ## Stack
 
 - Next.js App Router with TypeScript
-- Convex schema/functions prepared for persistence
+- Convex schema/functions provisioned on a dedicated prototype project
 - NextAuth credentials structure for future real providers
 - OpenAI API route abstraction with deterministic mock fallback
 - Railway-ready configuration
@@ -40,8 +40,11 @@ TAMS_DEMO_AUTH_ENABLED=true
 # TAMS_HUB_HEALTH_URL=http://127.0.0.1:3000
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
-CONVEX_DEPLOYMENT=
-NEXT_PUBLIC_CONVEX_URL=
+CONVEX_DEPLOYMENT=dev:zealous-ocelot-537
+NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud
+TAMS_CONVEX_PROJECT=tams-hub-prototype
+TAMS_RAILWAY_PROJECT=tams-hub-prototype
+TAMS_RAILWAY_PROJECT_ID=
 ```
 
 `OPENAI_API_KEY` is optional. Without it, TAMS Guide returns deterministic mock guidance so the demo still works.
@@ -87,7 +90,9 @@ Convex files live in `convex/`:
 - `applications.ts` includes list, status update, and message mutations.
 - `seed.ts` mirrors the prototype seed data for backend initialization.
 
-The running MVP currently uses local browser storage for demo speed. `app/providers.tsx` already enables `ConvexProvider` when `NEXT_PUBLIC_CONVEX_URL` exists, so the next migration step is replacing local state in `components/tams-hub-app.tsx` with Convex hooks after project setup.
+The dedicated Convex project is configured under `conneura/tams-hub-prototype` with dev deployment `dev:zealous-ocelot-537` and `NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud`. Convex functions have been generated, pushed, and seeded.
+
+The running MVP still uses local browser storage for demo speed. `app/providers.tsx` enables `ConvexProvider` when `NEXT_PUBLIC_CONVEX_URL` exists, so the next migration step is replacing local state in `components/tams-hub-app.tsx` with Convex hooks.
 
 ## Railway Notes
 
@@ -97,7 +102,7 @@ The running MVP currently uses local browser storage for demo speed. `app/provid
 corepack pnpm start
 ```
 
-The detailed Convex and Railway setup runbook is in `docs/service-setup.md`. External project creation is intentionally separate for each service.
+The detailed Convex and Railway setup runbook is in `docs/service-setup.md`. External project creation is intentionally separate for each service. Convex is already on its dedicated project; Railway is still waiting for CLI login and a dedicated Railway project ID.
 
 Set these Railway variables:
 
@@ -105,7 +110,8 @@ Set these Railway variables:
 - `NEXTAUTH_URL`
 - `OPENAI_API_KEY`, optional
 - `OPENAI_MODEL`, optional
-- `NEXT_PUBLIC_CONVEX_URL`, when Convex is connected
+- `NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud`
+- `TAMS_RAILWAY_PROJECT_ID`, after the dedicated Railway project exists
 
 Build command can remain Railway/Nixpacks default, or be set to:
 
@@ -131,7 +137,7 @@ corepack pnpm setup:railway -- --project-id <railway-project-id> --environment p
 
 When checking a running deployment, set `TAMS_HUB_HEALTH_URL` to the app URL so `services:check` probes `/api/health`. Set `TAMS_DEPLOY_CHECK=1` to fail on deploy-unsafe auth values such as localhost `NEXTAUTH_URL` or the local prototype `NEXTAUTH_SECRET`. The script reports account setup gaps as `WAIT` and optional fallbacks as `INFO`; only failed health checks or deploy-mode env errors return a failure exit code.
 
-`setup:convex` and `setup:railway` are guarded provisioning helpers for the dedicated external projects. Use `--dry-run` first; the real commands should only run after the Convex team and Railway account/workspace choices are confirmed. Omit `--workspace` only after Railway CLI is authenticated to the intended workspace. After the dedicated Railway project exists, pass `--project-id`, `--environment`, and `--service` so variables, domains, and deployments target that project explicitly.
+`setup:convex` and `setup:railway` are guarded provisioning helpers for the dedicated external projects. Convex has already been provisioned under `conneura`; rerun `setup:convex` only to refresh functions or seed data. Use Railway dry-runs first; the real Railway commands should only run after Railway account/workspace ownership is confirmed. Omit `--workspace` only after Railway CLI is authenticated to the intended workspace. After the dedicated Railway project exists, pass `--project-id`, `--environment`, and `--service` so variables, domains, and deployments target that project explicitly.
 
 ## Current Limitations
 

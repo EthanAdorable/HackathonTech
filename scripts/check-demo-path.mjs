@@ -41,6 +41,7 @@ const nextConfig = readFileSync(new URL("../next.config.ts", import.meta.url), "
 const convexSetup = readFileSync(new URL("../scripts/setup-convex.mjs", import.meta.url), "utf8");
 const railwaySetup = readFileSync(new URL("../scripts/setup-railway.mjs", import.meta.url), "utf8");
 const serviceRunbook = readFileSync(new URL("../docs/service-setup.md", import.meta.url), "utf8");
+const readme = readFileSync("README.md", "utf8");
 const railwayConfig = readFileSync(new URL("../railway.json", import.meta.url), "utf8");
 const startScript = readFileSync(new URL("../scripts/start.mjs", import.meta.url), "utf8");
 assert.match(
@@ -170,8 +171,12 @@ assert.match(serviceRunbook, /Team: `conneura`/, "Service runbook should record 
 assert.match(serviceRunbook, /Dev deployment: `dev:zealous-ocelot-537`/, "Service runbook should record the configured Convex dev deployment");
 assert.match(serviceRunbook, /Convex functions have been generated, pushed, and seeded/, "Service runbook should record completed Convex provisioning");
 assert.match(serviceRunbook, /setup:railway -- --workspace <workspace> --dry-run/, "Railway runbook should require explicit workspace selection in setup examples");
-assert.match(readFileSync("README.md", "utf8"), /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
-assert.match(readFileSync("README.md", "utf8"), /setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run/, "README should show explicit Railway project targeting for dry-runs");
+assert.match(readme, /Convex schema\/functions provisioned on a dedicated prototype project/, "README should describe current Convex provisioning state");
+assert.match(readme, /conneura\/tams-hub-prototype/, "README should record the dedicated Convex project");
+assert.match(readme, /zealous-ocelot-537\.convex\.cloud/, "README should record the configured Convex client URL");
+assert.match(readme, /Railway is still waiting for CLI login and a dedicated Railway project ID/, "README should describe current Railway setup blocker");
+assert.match(readme, /setup:railway -- --workspace <workspace> --dry-run/, "README should show explicit Railway workspace selection for dry-runs");
+assert.match(readme, /setup:railway -- --project-id <railway-project-id> --environment production --service <service-name> --dry-run/, "README should show explicit Railway project targeting for dry-runs");
 assert.match(convexSetup, /const project = .*"tams-hub-prototype"/, "Convex setup should default to the dedicated prototype project");
 assert.match(convexSetup, /Missing Convex \$\{label\} value/, "Convex setup should reject missing project, team, or deployment argument values");
 assert.match(railwaySetup, /const project = .*"tams-hub-prototype"/, "Railway setup should default to the dedicated prototype project");
