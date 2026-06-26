@@ -1,6 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { seedApplications, users } from "../lib/tams-data";
+import { seedApplications, templateDefinitions, users } from "../lib/tams-data";
 
 const role = v.union(
   v.literal("Student Officer"),
@@ -127,6 +127,7 @@ export const clearFiledData = mutation({
   args: {
     actor,
     deleteStoredFiles: v.optional(v.boolean()),
+    createTemplateShell: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     if (args.actor.role !== "Admin") {
@@ -170,13 +171,60 @@ export const clearFiledData = mutation({
       }
     }
 
+    const createdApplicationId = args.createTemplateShell === false ? null : await insertTestingTemplateShell(ctx);
+
     return {
       deletedRows,
       deletedStoredFiles,
       preservedTables: ["users"],
+      createdApplicationId,
     };
   },
 });
+
+async function insertTestingTemplateShell(ctx: any) {
+  const applicationId = await ctx.db.insert("applications", {
+    title: "Fresh Testing Draft",
+    organization: "Testing Organization",
+    eventType: "Workshop",
+    venue: "TBD",
+    eventDate: new Date().toISOString().slice(0, 10),
+    expectedParticipants: 40,
+    ownerId: "juan",
+    adviserId: "adviser",
+    status: "Draft",
+    riskLevel: "Low",
+    adviserEndorsementRequired: false,
+    adviserEndorsementState: "Not Required",
+  });
+
+  for (const [index, template] of templateDefinitions.entries()) {
+    const templateDocumentId = await ctx.db.insert("templates", {
+      applicationId,
+      templateId: template.id,
+      enabled: true,
+      values: {},
+    });
+    const requirement = defaultRequirementForTemplate(template.id);
+    if (requirement) {
+      await ctx.db.insert("templateRequirements", {
+        applicationId,
+        templateDocumentId,
+        templateId: template.id,
+        requirementKey: requirement.requirementKey,
+        label: requirement.label,
+        description: requirement.description,
+        required: requirement.required,
+        visibleToReviewer: true,
+        accepts: requirement.accepts,
+        maxSizeBytes: 10 * 1024 * 1024,
+        sortOrder: index,
+      });
+    }
+  }
+
+  return applicationId;
+}
 
 function defaultRequirementForTemplate(templateId: string) {
   const requirements: Record<
