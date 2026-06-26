@@ -1805,6 +1805,10 @@ p {
   padding-top: 12px;
 }
 
+.inline-composer {
+  margin-top: 14px;
+}
+
 .partner-card {
   grid-column: 2;
   display: flex;

@@ -115,6 +115,10 @@ assert.match(appComponent, /milestone\.done \? "done" : ""/, "Application progre
 assert.match(globalCss, /\.progress-step\.done\.active > span/, "Completed active progress milestones should keep the reference gold halo");
 assert.match(appComponent, /Upload revised budget breakdown/, "Revision status should show reference-style required actions");
 assert.match(appComponent, /Clarify expected number of participants/, "Revision status should call out participant count reconciliation");
+assert.match(appComponent, /Application thread message/, "Application status communication panel should include an inline message composer");
+assert.match(appComponent, /placeholder=\{"Type a message to SADU\\u2026"\}/, "Application status composer should match the reference thread prompt");
+assert.match(appComponent, /aria-label="Send Application Thread Message"/, "Application status composer send control should be accessible");
+assert.match(globalCss, /\.inline-composer/, "Application status composer should have scoped spacing");
 assert.match(appComponent, /aria-pressed=\{app\.id === application\.id\}/, "Application cards should expose selected state");
 assert.match(appComponent, /threadSearch/, "Messages search box should filter visible conversations");
 assert.match(appComponent, /aria-label="Search messages"/, "Messages search input should have an accessible name");

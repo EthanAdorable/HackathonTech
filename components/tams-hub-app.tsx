@@ -345,6 +345,8 @@ export function TamsHubApp() {
             applications={visibleApplications}
             activeUser={activeUser}
             completionPercent={completion.percent}
+            messageDraft={messageDraft}
+            setMessageDraft={setMessageDraft}
             onSelect={setSelectedAppId}
             onReview={() => setStatus("Under Review", "SADU opened the application for review.")}
             onRevision={requestRevision}
@@ -352,6 +354,7 @@ export function TamsHubApp() {
             onApprove={approveApplication}
             onReject={rejectApplication}
             onEndorse={endorseApplication}
+            onSend={() => sendMessage()}
           />
         )}
 
@@ -908,6 +911,8 @@ function ApplicationsView({
   applications,
   activeUser,
   completionPercent,
+  messageDraft,
+  setMessageDraft,
   onSelect,
   onReview,
   onRevision,
@@ -915,11 +920,14 @@ function ApplicationsView({
   onApprove,
   onReject,
   onEndorse,
+  onSend,
 }: {
   application: EventApplication;
   applications: EventApplication[];
   activeUser: (typeof users)[number];
   completionPercent: number;
+  messageDraft: string;
+  setMessageDraft: (value: string) => void;
   onSelect: (id: string) => void;
   onReview: () => void;
   onRevision: () => void;
@@ -927,6 +935,7 @@ function ApplicationsView({
   onApprove: () => void;
   onReject: () => void;
   onEndorse: () => void;
+  onSend: () => void;
 }) {
   const requiredActions = getRequiredActionCards(application);
 
@@ -965,6 +974,10 @@ function ApplicationsView({
         <div className="panel">
           <h3>Communication Thread</h3>
           <MiniThread application={application} activeRole={activeUser.role} />
+          <div className="composer-row inline-composer">
+            <input aria-label="Application thread message" value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder={"Type a message to SADU\u2026"} />
+            <button className="send-button" aria-label="Send Application Thread Message" onClick={onSend}><SendHorizonal size={18} aria-hidden="true" /></button>
+          </div>
         </div>
       </section>
 
