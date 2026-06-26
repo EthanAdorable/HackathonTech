@@ -1668,8 +1668,8 @@ function ServiceReadinessPanel({ onResetDemo }: { onResetDemo: () => void }) {
   const railwayProject = status?.railwayProject ?? "TAMS Hub";
   const convexHost = status?.convexHost || "not configured";
   const codexLbHost = status?.codexLbBaseHost || "codex-lb-production-6b47.up.railway.app";
-  const codexLbModel = status?.codexLbModel || "gpt-5.4";
-  const codexLbReasoningEffort = status?.codexLbReasoningEffort || "high";
+  const codexLbModel = status?.codexLbModel || "gpt-5.5";
+  const codexLbReasoningEffort = status?.codexLbReasoningEffort || "medium";
   const railwayProjectId = status?.railwayProjectId ?? "missing";
   const authWarnings = status?.authWarnings ?? [];
 

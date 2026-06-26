@@ -176,8 +176,8 @@ const variables = {
   TAMS_DEMO_AUTH_ENABLED: "false",
   CODEX_LB_BASE_URL:
     envValue("CODEX_LB_BASE_URL") || "https://codex-lb-production-6b47.up.railway.app/v1",
-  CODEX_LB_MODEL: envValue("CODEX_LB_MODEL") || "gpt-5.4",
-  CODEX_LB_REASONING_EFFORT: envValue("CODEX_LB_REASONING_EFFORT") || "high",
+  CODEX_LB_MODEL: envValue("CODEX_LB_MODEL") || "gpt-5.5",
+  CODEX_LB_REASONING_EFFORT: envValue("CODEX_LB_REASONING_EFFORT") || "medium",
   NEXT_PUBLIC_CONVEX_URL: envValue("NEXT_PUBLIC_CONVEX_URL"),
   CODEX_LB_API_KEY: envValue("CODEX_LB_API_KEY"),
 };
