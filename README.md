@@ -97,7 +97,7 @@ The running MVP loads seeded applications from the dedicated Convex deployment w
 
 ## Railway Notes
 
-`railway.json` uses Nixpacks and starts the app with:
+`railway.json` uses Railpack and starts the app with:
 
 ```bash
 corepack pnpm start
@@ -115,7 +115,7 @@ Set these Railway variables:
 - `NEXT_PUBLIC_CONVEX_URL=https://zealous-ocelot-537.convex.cloud`
 - `TAMS_RAILWAY_PROJECT_ID`, set to the dedicated Railway project target
 
-Build command can remain Railway/Nixpacks default, or be set to:
+Build command can remain Railway/Railpack default, or be set to:
 
 ```bash
 corepack pnpm install && corepack pnpm build
