@@ -352,6 +352,18 @@ function demoAttachment(id, fileName) {
 
 const revised = {
   ...review,
+  verificationSummary: {
+    status: "ready_for_sadu",
+    rubricVersionId: "tams-placeholder-v1",
+    documentCount: 5,
+    criticalFailureCount: 0,
+    warningCount: 0,
+    readyForSadu: true,
+    currentFileSignature: "demo-revision-ready",
+    blockingFindings: [],
+    warnings: [],
+    generatedAt: "2025-06-18T09:05:00.000Z",
+  },
   templates: review.templates.map((template) =>
     template.templateId === "budget"
       ? {

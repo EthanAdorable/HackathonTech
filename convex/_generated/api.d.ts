@@ -12,6 +12,7 @@ import type * as applications from "../applications.js";
 import type * as guide from "../guide.js";
 import type * as seed from "../seed.js";
 import type * as users from "../users.js";
+import type * as verification from "../verification.js";
 
 import type {
   ApiFromModules,
@@ -24,6 +25,7 @@ declare const fullApi: ApiFromModules<{
   guide: typeof guide;
   seed: typeof seed;
   users: typeof users;
+  verification: typeof verification;
 }>;
 
 /**

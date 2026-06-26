@@ -42,6 +42,7 @@ type WorkflowRequest = {
   fileName?: string;
   contentType?: string;
   sizeBytes?: number;
+  sha256?: string;
   deleteFromStorage?: boolean;
   enabled?: boolean;
   title?: string;
@@ -167,6 +168,7 @@ export async function POST(request: Request) {
         fileName: payload.fileName,
         contentType: payload.contentType,
         sizeBytes: payload.sizeBytes,
+        sha256: payload.sha256,
       }));
     } else if (payload.action === "removeAttachment" && applicationId) {
       if (!application || !canEditApplication(actor, application)) throw new Error("Only the application owner can remove requirement files.");

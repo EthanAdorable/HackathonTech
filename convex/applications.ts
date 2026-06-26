@@ -30,6 +30,10 @@ const status = v.union(
   v.literal("Archived"),
 );
 
+const defaultRubricVersionId = "tams-placeholder-v1";
+const defaultExtractionSchemaVersion = "event-document-extraction-v1";
+const defaultPromptVersion = "document-verification-prompt-v1";
+
 async function addTimeline(ctx: any, applicationId: any, nextStatus: string, note: string, accessActor?: any) {
   await ctx.db.insert("timeline", {
     applicationId,
@@ -286,6 +290,35 @@ async function activeAttachmentsForApplication(ctx: any, applicationId: any) {
   return attachments.filter((attachment: any) => attachment.status === "active");
 }
 
+async function activeUploadedDocumentsForApplication(ctx: any, applicationId: any) {
+  const documents = await ctx.db
+    .query("uploadedDocuments")
+    .withIndex("by_application", (q: any) => q.eq("applicationId", applicationId))
+    .collect();
+  return documents.filter((document: any) => document.status === "active");
+}
+
+async function latestVerificationSummaryForApplication(ctx: any, applicationId: any) {
+  const summaries = await ctx.db
+    .query("compiledVerificationSummaries")
+    .withIndex("by_application", (q: any) => q.eq("applicationId", applicationId))
+    .collect();
+  return summaries.sort((a: any, b: any) => b.generatedAt.localeCompare(a.generatedAt))[0] ?? null;
+}
+
+function activeDocumentSignature(documents: any[]) {
+  const parts = documents
+    .map((document) => [
+      document.documentType,
+      document.sha256,
+      document.rubricVersionId,
+      document.extractionSchemaVersion,
+      document.promptVersion,
+    ].join(":"))
+    .sort();
+  return parts.length ? parts.join("|") : "no-files";
+}
+
 function requiredAttachmentGaps(templates: any[], requirements: any[], activeAttachments: any[]) {
   const enabledTemplateIds = new Set(templates.filter((template) => template.enabled).map((template) => template._id));
   const activeRequirementIds = new Set(activeAttachments.map((attachment) => attachment.requirementId));
@@ -295,18 +328,34 @@ function requiredAttachmentGaps(templates: any[], requirements: any[], activeAtt
     .map((requirement) => requirement.label);
 }
 
-function makeReadiness(templates: any[], requirements: any[], activeAttachments: any[]) {
+function makeReadiness(templates: any[], requirements: any[], activeAttachments: any[], activeDocuments: any[] = [], verificationSummary: any = null) {
   const missingFields = requiredTemplateGaps(templates);
   const missingAttachments = requiredAttachmentGaps(templates, requirements, activeAttachments);
+  const missingVerification = verificationGaps(activeAttachments, activeDocuments, verificationSummary);
   return {
-    ready: missingFields.length === 0 && missingAttachments.length === 0,
+    ready: missingFields.length === 0 && missingAttachments.length === 0 && missingVerification.length === 0,
     missingFields,
     missingAttachments,
+    missingVerification,
   };
 }
 
+function verificationGaps(activeAttachments: any[], activeDocuments: any[], verificationSummary: any) {
+  if (!activeAttachments.length) return [];
+  const signature = activeDocumentSignature(activeDocuments);
+  if (!verificationSummary) return ["Run document verification for the current uploaded files."];
+  if (verificationSummary.currentFileSignature !== signature) {
+    return ["Run document verification again because uploaded files changed."];
+  }
+  if (!verificationSummary.readyForSadu) {
+    const findings = verificationSummary.blockingFindings?.map((finding: any) => `${finding.label}: ${finding.recommendation}`) ?? [];
+    return findings.length ? findings : [`Document verification is ${verificationSummary.status}.`];
+  }
+  return [];
+}
+
 async function getApplicationReadiness(ctx: any, applicationId: any) {
-  const [templates, requirements, activeAttachments] = await Promise.all([
+  const [templates, requirements, activeAttachments, activeDocuments, verificationSummary] = await Promise.all([
     ctx.db
       .query("templates")
       .withIndex("by_application", (q: any) => q.eq("applicationId", applicationId))
@@ -316,8 +365,17 @@ async function getApplicationReadiness(ctx: any, applicationId: any) {
       .withIndex("by_application", (q: any) => q.eq("applicationId", applicationId))
       .collect(),
     activeAttachmentsForApplication(ctx, applicationId),
+    activeUploadedDocumentsForApplication(ctx, applicationId),
+    latestVerificationSummaryForApplication(ctx, applicationId),
   ]);
-  return { templates, requirements, activeAttachments, readiness: makeReadiness(templates, requirements, activeAttachments) };
+  return {
+    templates,
+    requirements,
+    activeAttachments,
+    activeDocuments,
+    verificationSummary,
+    readiness: makeReadiness(templates, requirements, activeAttachments, activeDocuments, verificationSummary),
+  };
 }
 
 function withUiId(document: any) {
@@ -380,6 +438,10 @@ async function hydrateApplication(ctx: any, application: any) {
       .withIndex("by_application", (q: any) => q.eq("applicationId", application._id))
       .collect(),
   ]);
+  const [activeDocuments, verificationSummary] = await Promise.all([
+    activeUploadedDocumentsForApplication(ctx, application._id),
+    latestVerificationSummaryForApplication(ctx, application._id),
+  ]);
 
   const activeAttachments = attachments.filter((attachment: any) => attachment.status === "active");
   const activeByRequirement = new Map<any, any>(activeAttachments.map((attachment: any) => [attachment.requirementId, attachment]));
@@ -418,7 +480,8 @@ async function hydrateApplication(ctx: any, application: any) {
     attachments: attachments.map((attachment: any) =>
       attachmentWithUiId(attachment, attachment.status === "active" ? urlsByAttachment.get(attachment._id) : null),
     ),
-    readiness: makeReadiness(templates, requirements, activeAttachments),
+    readiness: makeReadiness(templates, requirements, activeAttachments, activeDocuments, verificationSummary),
+    verificationSummary: verificationSummary ? withUiId(verificationSummary) : null,
     messages: messages.map(withUiId),
     timeline: timeline.map(withUiId),
   };
@@ -545,11 +608,13 @@ export const updateStatus = mutation({
       assertCanEditApplication(args.actor, application);
       assertStatus(application, ["AI Pre-check"], "Adviser endorsement request");
       const { readiness } = await getApplicationReadiness(ctx, args.applicationId);
-      if (readiness.missingFields.length || readiness.missingAttachments.length) {
+      if (!readiness.ready) {
         throw new Error(
           `Adviser endorsement requires all required fields and attachments. Missing fields: ${
             readiness.missingFields.join(", ") || "none"
-          }. Missing attachments: ${readiness.missingAttachments.join(", ") || "none"}.`,
+          }. Missing attachments: ${readiness.missingAttachments.join(", ") || "none"}. Verification: ${
+            readiness.missingVerification.join(", ") || "ready"
+          }.`,
         );
       }
     } else if (args.status === "Submitted to SADU") {
@@ -560,7 +625,7 @@ export const updateStatus = mutation({
         throw new Error(
           `Submission is not ready. Missing fields: ${readiness.missingFields.join(", ") || "none"}. Missing attachments: ${
             readiness.missingAttachments.join(", ") || "none"
-          }.`,
+          }. Verification: ${readiness.missingVerification.join(", ") || "ready"}.`,
         );
       }
       if (!isAdviserEndorsementComplete(application)) {
@@ -651,7 +716,9 @@ export const resubmit = mutation({
       throw new Error(
         `Resubmission requires all required fields and attachments. Missing fields: ${
           readiness.missingFields.join(", ") || "none"
-        }. Missing attachments: ${readiness.missingAttachments.join(", ") || "none"}.`,
+        }. Missing attachments: ${readiness.missingAttachments.join(", ") || "none"}. Verification: ${
+          readiness.missingVerification.join(", ") || "ready"
+        }.`,
       );
     }
     await ctx.db.patch(args.applicationId, { status: "Resubmitted" });
@@ -805,6 +872,7 @@ export const recordAttachmentUpload = mutation({
     fileName: v.string(),
     contentType: v.string(),
     sizeBytes: v.number(),
+    sha256: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const requirement = assertApplication(await ctx.db.get(args.requirementId));
@@ -838,6 +906,7 @@ export const recordAttachmentUpload = mutation({
       fileName: args.fileName,
       contentType: args.contentType,
       sizeBytes: args.sizeBytes,
+      sha256: args.sha256,
       uploadedBy: args.actor.name,
       uploadedByRole: args.actor.role,
       revision,
@@ -853,6 +922,35 @@ export const recordAttachmentUpload = mutation({
         replacedBy: attachmentId,
       });
     }
+
+    const activeDocuments = await ctx.db
+      .query("uploadedDocuments")
+      .withIndex("by_application", (q: any) => q.eq("applicationId", requirement.applicationId))
+      .collect();
+    for (const document of activeDocuments.filter((document: any) => document.requirementId === args.requirementId && document.status === "active")) {
+      await ctx.db.patch(document._id, { status: "replaced", updatedAt: now });
+    }
+
+    await ctx.db.insert("uploadedDocuments", {
+      applicationId: requirement.applicationId,
+      attachmentId,
+      templateDocumentId: requirement.templateDocumentId,
+      requirementId: args.requirementId,
+      storageId: args.storageId,
+      sha256: args.sha256 ?? `${attachmentId}:${args.sizeBytes}`,
+      mimeType: args.contentType,
+      sizeBytes: args.sizeBytes,
+      originalName: args.fileName,
+      documentType: requirement.templateId,
+      uploadedBy: args.actor.name,
+      uploadedByRole: args.actor.role,
+      rubricVersionId: defaultRubricVersionId,
+      extractionSchemaVersion: defaultExtractionSchemaVersion,
+      promptVersion: defaultPromptVersion,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
 
     if (application.status === "Draft") {
       await ctx.db.patch(requirement.applicationId, { status: "Template Completion" });
@@ -890,6 +988,13 @@ export const removeAttachment = mutation({
     });
     if (args.deleteFromStorage) {
       await ctx.storage.delete(attachment.storageId);
+    }
+    const activeDocuments = await ctx.db
+      .query("uploadedDocuments")
+      .withIndex("by_attachment", (q: any) => q.eq("attachmentId", args.attachmentId))
+      .collect();
+    for (const document of activeDocuments.filter((document: any) => document.status === "active")) {
+      await ctx.db.patch(document._id, { status: "removed", updatedAt: now });
     }
     return args.attachmentId;
   },

@@ -2,6 +2,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  compileVerificationSummary,
+  runDeterministicVerification,
+  validateExtractionJson,
+} from "../lib/document-verification.ts";
+import {
+  activeExtractionSchemaVersion,
+  documentRubricProfiles,
+  getRubricProfile,
+} from "../lib/rubrics.ts";
+import {
   canAdministerDemoData,
   canAdministerTemplates,
   canCreateApplication,
@@ -22,8 +32,12 @@ const sources = {
   guideRoute: readFileSync("app/api/tams-guide/route.ts", "utf8"),
   guideLogsRoute: readFileSync("app/api/guide-logs/route.ts", "utf8"),
   convexApplications: readFileSync("convex/applications.ts", "utf8"),
+  convexSchema: readFileSync("convex/schema.ts", "utf8"),
+  convexVerification: readFileSync("convex/verification.ts", "utf8"),
   convexGuide: readFileSync("convex/guide.ts", "utf8"),
+  verificationRoute: readFileSync("app/api/document-verification/route.ts", "utf8"),
   uploadAdapter: readFileSync("components/requirement-upload-adapter.ts", "utf8"),
+  middleware: readFileSync("middleware.ts", "utf8"),
 };
 
 const student = { id: "juan", name: "Juan Reyes", role: "Student Officer" };
@@ -81,7 +95,7 @@ test("auth config keeps demo credentials explicit and role-aware", () => {
 });
 
 test("API routes derive access from authenticated server actors", () => {
-  for (const source of [sources.applicationsRoute, sources.usersRoute, sources.guideLogsRoute, sources.guideRoute, sources.workflowRoute]) {
+  for (const source of [sources.applicationsRoute, sources.usersRoute, sources.guideLogsRoute, sources.guideRoute, sources.workflowRoute, sources.verificationRoute]) {
     assert.match(source, /getAccessActor\(\)/);
     assert.match(source, /Authentication required\./);
     assert.match(source, /\{ status: 401 \}/);
@@ -92,14 +106,17 @@ test("API routes derive access from authenticated server actors", () => {
   assert.match(sources.workflowRoute, /canEndorseApplication\(actor, application\)/);
   assert.match(sources.workflowRoute, /canAdministerTemplates\(actor\)/);
   assert.match(sources.workflowRoute, /client\.query\(api\.applications\.get, \{ applicationId, actor \}\)/);
+  assert.match(sources.middleware, /\/api\/document-verification\/:path\*/, "document verification route should be protected by auth middleware");
 });
 
 test("upload path validates metadata and supports replacement and removal", () => {
   assert.match(sources.workflowRoute, /"generateAttachmentUploadUrl"/);
   assert.match(sources.workflowRoute, /"recordAttachmentUpload"/);
   assert.match(sources.workflowRoute, /"removeAttachment"/);
+  assert.match(sources.workflowRoute, /sha256/);
   assert.match(sources.workflowRoute, /Only the application owner can upload requirement files/);
   assert.match(sources.convexApplications, /generateUploadUrl/);
+  assert.match(sources.convexApplications, /uploadedDocuments/);
   assert.match(sources.convexApplications, /sizeBytes > requirement\.maxSizeBytes/);
   assert.match(sources.convexApplications, /!requirement\.accepts\.includes\(args\.contentType\)/);
   assert.match(sources.convexApplications, /status: "replaced"/);
@@ -126,6 +143,8 @@ test("role-specific UI scopes creation, admin, review, and adviser affordances",
   assert.match(sources.app, /<WorkflowActions role=\{activeUser\.role\}/);
   assert.match(sources.app, /activeUser\.role === "Faculty Adviser"/);
   assert.match(sources.app, /visibleApplications = useMemo/);
+  assert.match(sources.app, /onVerifyDocuments=\{verifyDocuments\}/);
+  assert.match(sources.app, /Verification Evidence/);
 });
 
 test("submission readiness includes required attachments", () => {
@@ -133,4 +152,97 @@ test("submission readiness includes required attachments", () => {
   assert.equal(readiness.ready, false);
   assert.ok(readiness.missing.some((item) => item.includes("Budget worksheet or quotation file")));
   assert.ok(readiness.missing.some((item) => item.includes("Draft publication material")));
+});
+
+test("document verification rubrics cover every template and validate extraction JSON", () => {
+  assert.equal(documentRubricProfiles.length, 7);
+  for (const applicationTemplate of seedApplications[0].templates) {
+    assert.ok(getRubricProfile(applicationTemplate.templateId), `${applicationTemplate.templateId} should have a rubric profile`);
+  }
+
+  assert.equal(validateExtractionJson({}).ok, false);
+  const valid = validateExtractionJson({
+    documentType: "proposal",
+    schemaVersion: activeExtractionSchemaVersion,
+    normalizedFields: [{
+      fieldId: "overview",
+      label: "Event overview",
+      value: "Career expo",
+      confidence: 0.94,
+      evidence: ["Career expo"],
+      sourceLocations: ["page 1"],
+    }],
+    missingFields: [],
+    unknownFields: [],
+    confidence: 0.94,
+    evidence: ["Career expo"],
+    sourceLocations: ["page 1"],
+  });
+  assert.equal(valid.ok, true);
+});
+
+test("verification aggregation blocks critical failures and allows warning-only summaries", () => {
+  const profile = getRubricProfile("proposal");
+  const failed = runDeterministicVerification({
+    profile,
+    mimeType: "application/pdf",
+    extractionError: "CODEX_LB_API_KEY is required.",
+  });
+  const blocked = compileVerificationSummary({
+    rubricVersionId: profile.rubricVersionId,
+    documentCount: 1,
+    fileSignature: "proposal:hash:tams-placeholder-v1:event-document-extraction-v1:document-verification-prompt-v1",
+    results: failed,
+    runStatuses: ["failed_ai_timeout"],
+  });
+  assert.equal(blocked.readyForSadu, false);
+  assert.equal(blocked.status, "failed_ai_timeout");
+  assert.ok(blocked.criticalFailureCount >= 1);
+
+  const passed = runDeterministicVerification({
+    profile,
+    mimeType: "application/pdf",
+    extraction: {
+      documentType: "proposal",
+      schemaVersion: activeExtractionSchemaVersion,
+      normalizedFields: profile.requiredFieldIds.map((fieldId) => ({
+        fieldId,
+        label: fieldId,
+        value: "present",
+        confidence: 0.92,
+        evidence: ["present"],
+        sourceLocations: ["page 1"],
+      })),
+      missingFields: [],
+      unknownFields: [],
+      confidence: 0.92,
+      evidence: ["present"],
+      sourceLocations: ["page 1"],
+    },
+  });
+  const ready = compileVerificationSummary({
+    rubricVersionId: profile.rubricVersionId,
+    documentCount: 1,
+    fileSignature: "proposal:hash:tams-placeholder-v1:event-document-extraction-v1:document-verification-prompt-v1",
+    results: passed,
+  });
+  assert.equal(ready.readyForSadu, true);
+  assert.equal(ready.status, "ready_for_sadu");
+});
+
+test("document verification route is separate, Codex-LB only, and fail-closed", () => {
+  assert.match(sources.verificationRoute, /api\.verification\.listActiveDocuments/);
+  assert.match(sources.verificationRoute, /CODEX_LB_API_KEY is required; verification fails closed/);
+  assert.match(sources.verificationRoute, /validateExtractionJson/);
+  assert.match(sources.verificationRoute, /response_format: \{ type: "json_object" \}/);
+  assert.match(sources.verificationRoute, /fetchDocumentSource/);
+  assert.match(sources.verificationRoute, /extractDocxText/);
+  assert.match(sources.verificationRoute, /extractXlsxText/);
+  assert.match(sources.verificationRoute, /extractPdfText/);
+  assert.doesNotMatch(sources.verificationRoute, /mock/i);
+  assert.match(sources.convexSchema, /uploadedDocuments/);
+  assert.match(sources.convexSchema, /extractionRuns/);
+  assert.match(sources.convexSchema, /verificationResults/);
+  assert.match(sources.convexSchema, /compiledVerificationSummaries/);
+  assert.match(sources.convexVerification, /saveVerificationOutcome/);
 });

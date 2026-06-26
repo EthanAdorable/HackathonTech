@@ -79,7 +79,7 @@ assert.match(guideRoute, /CODEX_LB_TIMEOUT_MS/, "Codex-LB calls must have an exp
 assert.match(guideRoute, /mock-codex-lb-timeout/, "Codex-LB timeout fallback must be observable in the response source.");
 assert.match(guideRoute, /mock-codex-lb-error/, "Codex-LB error fallback must be observable in the response source.");
 assert.match(guideRoute, /mock-no-key/, "Missing Codex-LB key fallback must be labeled separately from live Codex-LB.");
-assert.match(guideRoute, /saduGuidePolicy\.sourceLabel/, "OpenAI prompts must reference the structured SADU policy source.");
+assert.match(guideRoute, /saduGuidePolicy\.sourceLabel/, "Codex-LB prompts must reference the structured SADU policy source.");
 assert.match(saduGuidePolicy, /saduGuidePolicy/, "A structured SADU guide policy source must exist.");
 assert.match(saduGuidePolicy, /makePolicyChecklist/, "Checklist generation must use the policy source.");
 assert.match(saduGuidePolicy, /findPolicyIssues/, "Missing and inconsistent detail checks must use the policy source.");
@@ -88,7 +88,7 @@ assert.match(saduGuidePolicy, /makePolicyClarificationDraft/, "Clarification dra
 assert.match(appComponent, /applicationId: selectedApp\.id/, "Guide generation should send only the selected application id.");
 assert.doesNotMatch(appComponent, /application: selectedApp/, "Guide generation must not post the selected application object.");
 assert.match(appComponent, /guideSourceLabel/, "Guide UI must label the current guidance source.");
-assert.match(appComponent, /mock-openai-timeout/, "Guide UI must expose timeout fallback state.");
+assert.match(appComponent, /mock-codex-lb-timeout/, "Guide UI must expose timeout fallback state.");
 assert.match(appComponent, /Access-controlled Convex audit/, "Guide audit history should describe access-controlled Convex logs.");
 assert.match(convexSchema, /actorId: v\.string\(\)/, "Guide audit logs must persist the actor id.");
 assert.match(convexSchema, /actorRole: v\.string\(\)/, "Guide audit logs must persist the actor role.");

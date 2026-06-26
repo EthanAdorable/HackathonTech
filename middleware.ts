@@ -11,6 +11,7 @@ export const config = {
     "/api/convex-applications/:path*",
     "/api/convex-users/:path*",
     "/api/convex-workflow/:path*",
+    "/api/document-verification/:path*",
     "/api/guide-logs/:path*",
     "/api/tams-guide/:path*",
   ],

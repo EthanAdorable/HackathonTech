@@ -52,11 +52,45 @@ export type RequirementAttachmentVersion = {
 };
 
 export type RequirementAttachment = RequirementAttachmentVersion & {
+  attachmentId?: string;
   mimeType: string;
+  sha256?: string;
   status: "uploaded" | "needs-revision" | "accepted";
   reviewerVisible: boolean;
   reviewNote?: string;
+  verificationStatus?: string;
   versions: RequirementAttachmentVersion[];
+};
+
+export type VerificationSummaryFinding = {
+  checkId: string;
+  label: string;
+  recommendation: string;
+  failureReason?: string;
+};
+
+export type ApplicationVerificationSummary = {
+  id?: string;
+  status:
+    | "queued"
+    | "extracting"
+    | "extracted"
+    | "verifying"
+    | "ready_for_sadu"
+    | "blocked_critical"
+    | "needs_human_review"
+    | "failed_schema"
+    | "failed_ai_timeout"
+    | "failed_rubric_unavailable";
+  rubricVersionId: string;
+  documentCount: number;
+  criticalFailureCount: number;
+  warningCount: number;
+  readyForSadu: boolean;
+  currentFileSignature: string;
+  blockingFindings: VerificationSummaryFinding[];
+  warnings: VerificationSummaryFinding[];
+  generatedAt: string;
 };
 
 export type TemplateEntry = {
@@ -66,6 +100,11 @@ export type TemplateEntry = {
   values: Record<string, string>;
   enabled: boolean;
   attachments?: RequirementAttachment[];
+  requirements?: Array<{
+    id: string;
+    requirementId?: string;
+    label?: string;
+  }>;
 };
 
 export type Message = {
@@ -115,6 +154,7 @@ export type EventApplication = {
   adviserEndorsement: AdviserEndorsement;
   messages: Message[];
   timeline: TimelineEntry[];
+  verificationSummary?: ApplicationVerificationSummary | null;
 };
 
 export type DemoUser = {
@@ -558,16 +598,34 @@ export function getSubmissionReadiness(application: EventApplication) {
   const templateMissing = completion.missing;
   const aiMissing = isAiPrecheckComplete(application) ? [] : ["Run the TAMS Guide AI completeness check."];
   const endorsement = getAdviserEndorsementReadiness(application);
-  const missing = [...templateMissing, ...aiMissing, ...endorsement.missing];
+  const verificationMissing = getVerificationMissing(application);
+  const missing = [...templateMissing, ...aiMissing, ...verificationMissing, ...endorsement.missing];
 
   return {
     ready: missing.length === 0,
     missing,
     templateComplete: templateMissing.length === 0,
     aiPrecheckComplete: aiMissing.length === 0,
+    verificationReady: verificationMissing.length === 0,
     adviserEndorsed: endorsement.complete,
     adviserRequired: endorsement.required,
   };
+}
+
+function shouldRequireVerification(application: EventApplication) {
+  if (!["AI Pre-check", "Pending Adviser Endorsement", "Revision Requested"].includes(application.status)) return false;
+  return application.templates.some((template) => (template.attachments ?? []).some((attachment) => attachment.reviewerVisible));
+}
+
+function getVerificationMissing(application: EventApplication) {
+  if (!shouldRequireVerification(application)) return [] as string[];
+  const summary = application.verificationSummary;
+  if (!summary) return ["Run document verification for the current required files."];
+  if (!summary.readyForSadu) {
+    const findings = summary.blockingFindings.map((finding) => `${finding.label}: ${finding.recommendation}`);
+    return findings.length ? findings : [`Document verification is ${summary.status.replace(/_/g, " ")}.`];
+  }
+  return [];
 }
 
 export function makeAiSummary(application: EventApplication) {

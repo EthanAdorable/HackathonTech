@@ -79,6 +79,8 @@ type ConvexApplicationsResponse = {
   source: "convex" | "local";
   applications: EventApplication[];
   createdApplicationId?: string;
+  uploadUrl?: string;
+  error?: string;
 };
 
 type ConvexUsersResponse = {
@@ -156,6 +158,7 @@ export function TamsHubApp() {
   const [applicationSource, setApplicationSource] = useState<"convex" | "local">("local");
   const [roleUsers, setRoleUsers] = useState<DemoUser[]>(users);
   const [uploadState, setUploadState] = useState<Record<string, { loading: boolean; error?: string }>>({});
+  const [verificationPending, setVerificationPending] = useState(false);
 
   const hasVerifiedSessionUser = Boolean(session?.user?.id && session.user.name && session.user.role);
   const activeUser = useMemo<DemoUser>(() => {
@@ -476,14 +479,43 @@ export function TamsHubApp() {
     const stateKey = `${selectedApp.id}:${templateId}`;
     setUploadState((current) => ({ ...current, [stateKey]: { loading: true } }));
     try {
+      const sha256 = await sha256BrowserFile(file);
       const currentTemplate = selectedApp.templates.find((template) => template.templateId === templateId);
       const previousAttachment = currentTemplate?.attachments?.[0];
+      const requirement = currentTemplate?.requirements?.[0];
+      if (applicationSource === "convex" && isConvexApplicationId(selectedApp.id) && requirement?.id) {
+        const uploadUrlData = await postConvexWorkflow({ action: "generateAttachmentUploadUrl" });
+        if (!uploadUrlData?.uploadUrl) throw new Error(uploadUrlData?.error ?? "Convex upload URL unavailable.");
+        const uploadResponse = await fetch(uploadUrlData.uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file,
+        });
+        if (!uploadResponse.ok) throw new Error("Convex storage upload failed.");
+        const { storageId } = (await uploadResponse.json()) as { storageId: string };
+        const data = await postConvexWorkflow({
+          action: "recordAttachmentUpload",
+          applicationId: selectedApp.id,
+          requirementId: requirement.id,
+          storageId,
+          fileName: file.name,
+          contentType: file.type || "application/octet-stream",
+          sizeBytes: file.size,
+          sha256,
+        });
+        if (!data?.applications?.length) throw new Error(data?.error ?? "Upload metadata was not recorded.");
+        applyRemoteApplications(data.applications, selectedApp.id);
+        setUploadState((current) => ({ ...current, [stateKey]: { loading: false } }));
+        return;
+      }
+
       const attachment = await localRequirementUploadAdapter.uploadRequirementFile(file, {
         applicationId: selectedApp.id,
         templateId,
         uploaderName: activeUser.name,
         previousAttachment,
       });
+      attachment.sha256 = sha256;
       setApplications((current) =>
         current.map((application) => {
           if (application.id !== selectedApp.id) return application;
@@ -510,6 +542,17 @@ export function TamsHubApp() {
     const stateKey = `${selectedApp.id}:${templateId}`;
     setUploadState((current) => ({ ...current, [stateKey]: { loading: true } }));
     try {
+      if (applicationSource === "convex" && isConvexApplicationId(selectedApp.id) && attachment.attachmentId) {
+        const data = await postConvexWorkflow({
+          action: "removeAttachment",
+          applicationId: selectedApp.id,
+          attachmentId: attachment.attachmentId,
+          deleteFromStorage: true,
+        });
+        if (data?.applications?.length) applyRemoteApplications(data.applications, selectedApp.id);
+        setUploadState((current) => ({ ...current, [stateKey]: { loading: false } }));
+        return;
+      }
       await localRequirementUploadAdapter.removeRequirementFile(attachment, {
         applicationId: selectedApp.id,
         templateId,
@@ -533,6 +576,37 @@ export function TamsHubApp() {
         ...current,
         [stateKey]: { loading: false, error: error instanceof Error ? error.message : "Remove failed. Try again." },
       }));
+    }
+  }
+
+  async function verifyDocuments() {
+    if (applicationSource !== "convex" || !isConvexApplicationId(selectedApp.id)) {
+      setGuideOutput(["Document verification requires a Convex-backed application."]);
+      return;
+    }
+    setVerificationPending(true);
+    setGuideOutput(["Running document verification..."]);
+    try {
+      const response = await fetch("/api/document-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId: selectedApp.id }),
+      });
+      const data = (await response.json()) as { summary?: EventApplication["verificationSummary"]; error?: string };
+      const refreshed = await loadConvexApplications();
+      if (refreshed) applyRemoteApplications(refreshed, selectedApp.id);
+      if (data.summary?.readyForSadu) {
+        setGuideOutput(["Document verification passed. Critical checks are clear for SADU submission."]);
+      } else {
+        setGuideOutput([
+          response.ok ? "Document verification needs attention." : "Document verification blocked submission.",
+          ...(data.summary?.blockingFindings?.map((finding) => `${finding.label}: ${finding.recommendation}`) ?? [data.error ?? "Review verification evidence."]),
+        ]);
+      }
+    } catch (error) {
+      setGuideOutput([error instanceof Error ? error.message : "Document verification failed."]);
+    } finally {
+      setVerificationPending(false);
     }
   }
 
@@ -806,6 +880,8 @@ export function TamsHubApp() {
             onRequirementRemove={removeRequirement}
             uploadState={uploadState}
             onPrecheck={runComplianceCheck}
+            onVerifyDocuments={verifyDocuments}
+            verificationPending={verificationPending}
             onSubmit={submitApplication}
             onResubmit={resubmitApplication}
           />
@@ -1407,6 +1483,8 @@ function FileEventView({
   onRequirementRemove,
   uploadState,
   onPrecheck,
+  onVerifyDocuments,
+  verificationPending,
   onSubmit,
   onResubmit,
 }: {
@@ -1420,6 +1498,8 @@ function FileEventView({
   onRequirementRemove: (templateId: string, attachment: RequirementAttachment) => void;
   uploadState: Record<string, { loading: boolean; error?: string }>;
   onPrecheck: () => void;
+  onVerifyDocuments: () => void;
+  verificationPending: boolean;
   onSubmit: () => void;
   onResubmit: () => void;
 }) {
@@ -1437,6 +1517,7 @@ function FileEventView({
   const revisionDetail = revisionAlert ? revisionGuideDetail(applicationCompletion.missing, application.messages) : "";
   const canEditDetails = activeUser.role === "Student Officer" && ["Draft", "Template Completion", "AI Pre-check", "Revision Requested"].includes(application.status);
   const canManageUploads = canEditDetails;
+  const verificationSummary = application.verificationSummary;
 
   return (
     <section className="file-layout">
@@ -1597,6 +1678,13 @@ function FileEventView({
         {revisionAlert && <div className="warning-box" role="alert"><AlertTriangle size={16} /><div><strong>Revision Inconsistency</strong><p>{revisionDetail}</p></div></div>}
         <div className="warning-box amber" role="status" aria-live="polite"><CircleAlert size={16} /><div><strong>{submissionReadiness.missing.length || "No"} required item(s) missing</strong><p>{submissionReadiness.ready ? `${completionPercent}% of required fields and attachments are complete.` : submissionReadiness.missing.slice(0, 2).join(" ") || `${requiredAttachmentMissing} required attachment(s) still need a file.`}</p></div></div>
         <button className="gold-button full" onClick={onPrecheck}><Sparkles size={16} /> Run AI Completeness Check</button>
+        <button className="secondary-button full" disabled={verificationPending || !canManageUploads} onClick={onVerifyDocuments}><ShieldCheck size={16} /> {verificationPending ? "Verifying Documents" : "Verify Documents"}</button>
+        {verificationSummary && (
+          <div className={verificationSummary.readyForSadu ? "verification-summary ok" : "verification-summary blocked"} role="status">
+            <strong>{verificationSummary.readyForSadu ? "Verification ready" : "Verification blocked"}</strong>
+            <span>{verificationSummary.rubricVersionId} - {verificationSummary.documentCount} document(s), {verificationSummary.criticalFailureCount} critical blocker(s), {verificationSummary.warningCount} warning(s)</span>
+          </div>
+        )}
         <div className="guide-says" role="status" aria-live="polite"><strong>TAMS Guide says:</strong>{guideLines.map((line) => <p key={line}>{line}</p>)}</div>
         {revisionAlert ? (
           <button className="primary-button full" disabled={missingCount > 0} onClick={onResubmit}><UploadCloud size={16} /> Upload Revised Documents</button>
@@ -1741,6 +1829,10 @@ function getRequiredActionCards(application: EventApplication) {
     return [{ title: "Run AI pre-check", detail: "TAMS Guide must complete the required pre-check before SADU submission." }];
   }
 
+  if (!readiness.verificationReady) {
+    return readiness.missing.slice(0, 3).map((item) => ({ title: "Verify documents", detail: item }));
+  }
+
   if (readiness.adviserRequired && !readiness.adviserEndorsed) {
     return [{ title: "Await adviser endorsement", detail: "The assigned faculty adviser must endorse this application before SADU review." }];
   }
@@ -1775,7 +1867,8 @@ function revisionGuideDetail(missingItems: string[], messages: EventApplication[
 }
 
 function ReviewerInsightsPanel({ application, completionPercent }: { application: EventApplication; completionPercent: number }) {
-  const completion = getApplicationCompletion(application);
+  const readiness = getSubmissionReadiness(application);
+  const summary = application.verificationSummary;
 
   return (
     <section className="reviewer-grid">
@@ -1802,10 +1895,27 @@ function ReviewerInsightsPanel({ application, completionPercent }: { application
         </div>
       </article>
       <article className="reviewer-card">
-        <div className="reviewer-heading"><CircleAlert size={18} /><strong>Review Focus</strong><span>{completion.missing.length ? "Needs attention" : "Ready"}</span></div>
+        <div className="reviewer-heading"><CircleAlert size={18} /><strong>Review Focus</strong><span>{readiness.missing.length ? "Needs attention" : "Ready"}</span></div>
         <ul className="review-focus-list">
-          {(completion.missing.length ? completion.missing.slice(0, 4) : ["Confirm final SADU decision and record reviewer notes."]).map((item) => <li key={item}>{item}</li>)}
+          {(readiness.missing.length ? readiness.missing.slice(0, 4) : ["Confirm final SADU decision and record reviewer notes."]).map((item) => <li key={item}>{item}</li>)}
         </ul>
+      </article>
+      <article className="reviewer-card">
+        <div className="reviewer-heading"><ShieldCheck size={18} /><strong>Verification Evidence</strong><span>{summary?.status?.replace(/_/g, " ") ?? "Not run"}</span></div>
+        {summary ? (
+          <div className="verification-evidence">
+            <p><strong>Rubric:</strong> {summary.rubricVersionId} - {formatShortDate(summary.generatedAt)}</p>
+            <p><strong>Scope:</strong> {summary.documentCount} document(s), {summary.criticalFailureCount} critical blocker(s), {summary.warningCount} warning(s)</p>
+            <ul className="review-focus-list">
+              {[...summary.blockingFindings, ...summary.warnings].slice(0, 5).map((finding) => (
+                <li key={`${finding.checkId}-${finding.label}`}>{finding.label}: {finding.recommendation}</li>
+              ))}
+              {!summary.blockingFindings.length && !summary.warnings.length && <li>Critical document verification checks are clear.</li>}
+            </ul>
+          </div>
+        ) : (
+          <p>No compiled verification summary has been recorded for the current uploaded files.</p>
+        )}
       </article>
     </section>
   );
@@ -2163,11 +2273,11 @@ function localGuideResponse(application: EventApplication, mode: GuideMode, ques
 }
 
 function guideSourceLabel(source: string) {
-  if (source === "openai") return "OpenAI live source";
+  if (source === "codex-lb") return "Codex-LB live source";
   if (source === "local-demo") return "Local demo rules";
-  if (source === "mock-no-key") return "Mock rules: no OpenAI key";
-  if (source === "mock-openai-timeout") return "Mock fallback: OpenAI timeout";
-  if (source === "mock-openai-error") return "Mock fallback: OpenAI error";
+  if (source === "mock-no-key") return "Mock rules: no Codex-LB key";
+  if (source === "mock-codex-lb-timeout") return "Mock fallback: Codex-LB timeout";
+  if (source === "mock-codex-lb-error") return "Mock fallback: Codex-LB error";
   if (source === "access-denied") return "Access denied";
   if (source === "loading") return "Generating...";
   if (source === "client-fallback") return "Local client fallback";
@@ -2202,6 +2312,11 @@ function formatFileSize(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function sha256BrowserFile(file: File) {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function formatDashboardDate(applications: EventApplication[]) {

@@ -1550,6 +1550,36 @@ p {
   background: #edf2ef;
 }
 
+.verification-summary {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #d7e4dc;
+  border-radius: 8px;
+  background: #f7faf8;
+  padding: 10px 11px;
+  margin-bottom: 12px;
+}
+
+.verification-summary.blocked {
+  border-color: #f4d28a;
+  background: #fff8e8;
+}
+
+.verification-summary strong {
+  color: var(--green-800);
+  font-size: 13px;
+}
+
+.verification-summary.blocked strong {
+  color: #9a6a00;
+}
+
+.verification-summary span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .template-stack,
 .application-list,
 .action-list,
@@ -1715,6 +1745,11 @@ p {
   color: #354b42;
   font-size: 13px;
   line-height: 1.45;
+}
+
+.verification-evidence {
+  display: grid;
+  gap: 8px;
 }
 
 .review-attachments-panel {
